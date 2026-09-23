@@ -1,0 +1,27 @@
+#ifndef FILAARMAS_H
+#define FILAARMAS_H
+
+#include "Armas.h"
+
+constexpr int MAX_ARMAS = 5;
+
+class FilaArmas{
+private:
+    int ultimo;
+    Armas vetor[MAX_ARMAS];
+
+public:
+    FilaArmas();
+    ~FilaArmas();
+
+    int get_indiceUltimo() const;
+    Armas get_Arma(int) const;
+
+    bool Vazio() const;
+    bool Cheio() const;
+
+    bool Inserir(Armas);
+    bool Retirar(Armas&);
+};
+
+#endif
