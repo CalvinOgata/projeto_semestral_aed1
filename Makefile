@@ -1,41 +1,37 @@
-# Makefile
+# Projeto AED - roguelike top-down em C++ com SDL2
+#
+#   make          compila em build/ e gera o executavel ./jogo
+#   make run      compila e executa
+#   make clean    apaga os arquivos gerados
 
-CXX := g++
-CXXFLAGS := -std=c++17 -Wall -Wextra
+CXX      := g++
+CXXFLAGS := -std=c++17 -Wall -Wextra -O2 $(shell pkg-config --cflags sdl2)
+LDLIBS   := $(shell pkg-config --libs sdl2)
 
-# Caminho da SFML baixada
-SFML_DIR := external/SFML-3.1.0
-SFML_INC := $(SFML_DIR)/include
-SFML_LIB := $(SFML_DIR)/lib
+ALVO     := jogo
+DIR_BUILD := build
 
-# Includes e libs
-INCLUDES := -I$(SFML_INC) -I include
-LIBS := -L$(SFML_LIB) -lsfml-graphics -lsfml-window -lsfml-system
-RPATH := -Wl,-rpath,'$$ORIGIN/$(SFML_LIB)'
+FONTES   := $(wildcard *.cpp)
+OBJETOS  := $(patsubst %.cpp,$(DIR_BUILD)/%.o,$(FONTES))
+DEPS     := $(OBJETOS:.o=.d)
 
-# Arquivos fonte e objeto
-SRC_DIR := src
-BUILD_DIR := build
-SRCS := $(wildcard $(SRC_DIR)/*.cpp)
-OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))
+.PHONY: all run clean
 
-TARGET := jogo
+all: $(ALVO)
 
-.PHONY: all clean run
+$(ALVO): $(OBJETOS)
+	$(CXX) $(OBJETOS) -o $@ $(LDLIBS)
 
-all: $(TARGET)
+$(DIR_BUILD)/%.o: %.cpp | $(DIR_BUILD)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
-$(TARGET): $(OBJS)
-	$(CXX) $(OBJS) -o $@ $(LIBS) $(RPATH)
+$(DIR_BUILD):
+	mkdir -p $(DIR_BUILD)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
-
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
-
-run: all
-	./$(TARGET)
+run: $(ALVO)
+	./$(ALVO)
 
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(DIR_BUILD) $(ALVO)
+
+-include $(DEPS)

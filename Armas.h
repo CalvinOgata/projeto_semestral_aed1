@@ -16,7 +16,9 @@ public:
     int get_quantidadeDisparos() const;
     bool sem_municao() const;
 
-    void atirar(int);
+    // Consome municao. Devolve true quando o disparo aconteceu.
+    bool atirar();
+    void recarregar(int);
 
     void set_dano(int);
     void set_municao(int);

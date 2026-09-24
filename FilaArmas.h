@@ -15,6 +15,7 @@ public:
     ~FilaArmas();
 
     int get_indiceUltimo() const;
+    int get_quantidade() const;
     Armas get_Arma(int) const;
 
     bool Vazio() const;

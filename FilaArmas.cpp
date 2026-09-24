@@ -15,17 +15,27 @@ int FilaArmas::get_indiceUltimo() const
     return this->ultimo;
 }
 
+int FilaArmas::get_quantidade() const
+{
+    return this->get_indiceUltimo() + 1;
+}
+
 Armas FilaArmas::get_Arma(int indice) const
 {
+    if(this->Vazio())
+    {
+        // Sem armas guardadas nao existe indice valido para devolver.
+        return Armas();
+    }
     if(indice > this->get_indiceUltimo())
     {
         return this->vetor[this->ultimo];
     }
-    else if(indice < 0)
+    if(indice < 0)
     {
         return this->vetor[0];
     }
-    return this->vetor[indice]
+    return this->vetor[indice];
 }
 
 bool FilaArmas::Vazio() const
@@ -63,13 +73,12 @@ bool FilaArmas::Retirar(Armas &arma)
     {
         return false;
     }
-    arma = this->get_Arma(0);
+    arma = this->vetor[0];
 
-    Armas aux;
-    for(int i = 1; i <= this->ultimo;; i++)
+    for(int i = 1; i <= this->ultimo; i++)
     {
-        aux = this->get_Arma(i);
-        this->vetor[i-1] = aux;
+        this->vetor[i-1] = this->vetor[i];
     }
+    this->ultimo--;
     return true;
 }
