@@ -27,15 +27,23 @@ O menu tambem responde ao mouse (passar por cima seleciona, clique confirma).
 
 ## Estrutura
 
-| Arquivo | Papel |
+```
+src/
+├── include/   cabecalhos (.h)
+└── source/    implementacoes (.cpp)
+build/         objetos gerados pelo make (fora do git)
+jogo           executavel gerado pelo make (fora do git)
+```
+
+| Modulo | Papel |
 | --- | --- |
-| `main.cpp` | ponto de entrada |
-| `Jogo.*` | janela, laco principal, estados (jogando / pausado / saindo) |
-| `Menu.*` | menu de pausa (continuar / sair) |
-| `Jogador.*` | vida, estamina, posicao, movimento e desenho |
-| `Armas.*` | municao, dano e disparo |
-| `FilaArmas.*` | fila de armas do jogador (FIFO, ate `MAX_ARMAS`) |
-| `Texto.*` | fonte de bitmap 5x7 desenhada com retangulos |
+| `main` | ponto de entrada |
+| `Jogo` | janela, laco principal, estados (jogando / pausado / saindo) |
+| `Menu` | menu de pausa (continuar / sair) |
+| `Jogador` | vida, estamina, posicao, movimento e desenho |
+| `Armas` | municao, dano e disparo |
+| `FilaArmas` | fila de armas do jogador (FIFO, ate `MAX_ARMAS`) |
+| `Texto` | fonte de bitmap 5x7 desenhada com retangulos |
 | `Config.h` | resolucao, paleta e constantes de ajuste |
 
 O jogo trabalha sempre em 960x540; a janela pode ser redimensionada que o SDL
