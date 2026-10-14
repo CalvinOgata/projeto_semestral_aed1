@@ -6,7 +6,8 @@
 #include "Camera.h"
 #include "FilaArmas.h"
 
-class Jogador{
+class Jogador
+{
 private:
     int vida;
     int estamina;
@@ -17,8 +18,8 @@ private:
     float y;
     float largura;
     float altura;
-    float velocidade;   // pixels por segundo
-    float anguloMira;   // graus, 0 = apontando para a direita
+    float velocidade; // pixels por segundo
+    float anguloMira; // graus, 0 = apontando para a direita
 
     FilaArmas armas;
 
@@ -58,14 +59,14 @@ public:
     void mirar_em(float mundoX, float mundoY);
     float get_anguloMira() const;
     SDL_FPoint get_direcaoMira() const;
-    SDL_FPoint get_boca_arma() const;   // de onde o projetil sai
-    Armas* get_armaEquipada();          // nullptr se a fila estiver vazia
+    SDL_FPoint get_boca_arma() const; // de onde o projetil sai
+    Armas *get_armaEquipada();        // nullptr se a fila estiver vazia
 
     // --- inventario ---
-    FilaArmas& get_armas();
-    const FilaArmas& get_armas() const;
+    FilaArmas &get_armas();
+    const FilaArmas &get_armas() const;
 
-    void desenhar(SDL_Renderer*, const Camera&) const;
+    void desenhar(SDL_Renderer *, const Camera &) const;
 };
 
 #endif

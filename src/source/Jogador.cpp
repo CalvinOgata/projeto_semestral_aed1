@@ -6,10 +6,8 @@
 #include "Desenho.h"
 
 Jogador::Jogador()
-    : vida(0), estamina(0), vidaMax(0), estaminaMax(0),
-      x(0.0f), y(0.0f),
-      largura(LADO_JOGADOR), altura(LADO_JOGADOR),
-      velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
+    : vida(0), estamina(0), vidaMax(0), estaminaMax(0), x(0.0f), y(0.0f), largura(LADO_JOGADOR),
+      altura(LADO_JOGADOR), velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
 {
     // mudar_vidaMax()/mudar_estaminaMax() somam ao valor atual, por isso os
     // atributos comecam zerados na lista de inicializacao acima.
@@ -32,7 +30,7 @@ void Jogador::rec_vida(int quantidade)
 {
     this->vida += quantidade;
 
-    if(this->get_vida() > this->get_vidaMax())
+    if (this->get_vida() > this->get_vidaMax())
     {
         this->vida = this->vidaMax;
     }
@@ -42,7 +40,7 @@ void Jogador::rec_estamina(int quantidade)
 {
     this->estamina += quantidade;
 
-    if(this->get_estamina() > this->get_estaminaMax())
+    if (this->get_estamina() > this->get_estaminaMax())
     {
         this->estamina = this->estaminaMax;
     }
@@ -52,7 +50,7 @@ void Jogador::perder_vida(int quantidade)
 {
     this->vida -= quantidade;
 
-    if(this->vida < 0)
+    if (this->vida < 0)
     {
         this->vida = 0;
     }
@@ -62,7 +60,7 @@ void Jogador::perder_estamina(int quantidade)
 {
     this->estamina -= quantidade;
 
-    if(this->estamina < 0)
+    if (this->estamina < 0)
     {
         this->estamina = 0;
     }
@@ -72,11 +70,11 @@ void Jogador::mudar_vidaMax(int quantidade)
 {
     this->vidaMax += quantidade;
 
-    if(this->get_vidaMax() < 1)
+    if (this->get_vidaMax() < 1)
     {
         this->vidaMax = 1;
     }
-    if(this->get_vida() > this->get_vidaMax())
+    if (this->get_vida() > this->get_vidaMax())
     {
         this->vida = this->vidaMax;
     }
@@ -86,11 +84,11 @@ void Jogador::mudar_estaminaMax(int quantidade)
 {
     this->estaminaMax += quantidade;
 
-    if(this->get_estaminaMax() < 1)
+    if (this->get_estaminaMax() < 1)
     {
         this->estaminaMax = 1;
     }
-    if(this->get_estamina() > this->get_estaminaMax())
+    if (this->get_estamina() > this->get_estaminaMax())
     {
         this->estamina = this->estaminaMax;
     }
@@ -118,7 +116,7 @@ int Jogador::get_estaminaMax() const
 
 bool Jogador::Morto() const
 {
-    if(this->get_vida() > 0)
+    if (this->get_vida() > 0)
     {
         return false;
     }
@@ -133,7 +131,7 @@ void Jogador::set_posicao(float novoX, float novoY)
 
 void Jogador::set_velocidade(float nova)
 {
-    if(nova < 0.0f)
+    if (nova < 0.0f)
     {
         this->velocidade = 0.0f;
     }
@@ -145,7 +143,7 @@ void Jogador::set_velocidade(float nova)
 
 void Jogador::mover(int dirX, int dirY, float dt)
 {
-    if(dirX == 0 && dirY == 0)
+    if (dirX == 0 && dirY == 0)
     {
         return;
     }
@@ -154,7 +152,7 @@ void Jogador::mover(int dirX, int dirY, float dt)
     float dy = static_cast<float>(dirY);
 
     // Normaliza para a diagonal nao ficar mais rapida que a linha reta.
-    const float comprimento = std::sqrt(dx*dx + dy*dy);
+    const float comprimento = std::sqrt(dx * dx + dy * dy);
     dx /= comprimento;
     dy /= comprimento;
 
@@ -212,9 +210,9 @@ void Jogador::mirar_em(float mundoX, float mundoY)
     const float dx = mundoX - this->get_centroX();
     const float dy = mundoY - this->get_centroY();
 
-    if(dx == 0.0f && dy == 0.0f)
+    if (dx == 0.0f && dy == 0.0f)
     {
-        return;   // mouse exatamente em cima: mantem a mira anterior
+        return; // mouse exatamente em cima: mantem a mira anterior
     }
 
     // atan2 devolve radianos; o SDL gira texturas em graus.
@@ -247,43 +245,43 @@ SDL_FPoint Jogador::get_boca_arma() const
     return boca;
 }
 
-Armas* Jogador::get_armaEquipada()
+Armas *Jogador::get_armaEquipada()
 {
     return this->armas.get_ponteiro(0);
 }
 
-FilaArmas& Jogador::get_armas()
+FilaArmas &Jogador::get_armas()
 {
     return this->armas;
 }
 
-const FilaArmas& Jogador::get_armas() const
+const FilaArmas &Jogador::get_armas() const
 {
     return this->armas;
 }
 
 void Jogador::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
 {
-    if(renderizador == nullptr)
+    if (renderizador == nullptr)
     {
         return;
     }
 
     const SDL_FRect corpo = camera.para_tela(this->get_retangulo());
 
-    SDL_SetRenderDrawColor(renderizador, COR_JOGADOR.r, COR_JOGADOR.g, COR_JOGADOR.b, COR_JOGADOR.a);
+    SDL_SetRenderDrawColor(renderizador, COR_JOGADOR.r, COR_JOGADOR.g, COR_JOGADOR.b,
+                           COR_JOGADOR.a);
     SDL_RenderFillRectF(renderizador, &corpo);
 
-    SDL_SetRenderDrawColor(renderizador, COR_JOGADOR_BORDA.r, COR_JOGADOR_BORDA.g, COR_JOGADOR_BORDA.b, COR_JOGADOR_BORDA.a);
+    SDL_SetRenderDrawColor(renderizador, COR_JOGADOR_BORDA.r, COR_JOGADOR_BORDA.g,
+                           COR_JOGADOR_BORDA.b, COR_JOGADOR_BORDA.a);
     SDL_RenderDrawRectF(renderizador, &corpo);
 
     // O cano vai por cima do corpo, senao o quadrado vermelho o esconde.
     const SDL_FPoint centro = camera.para_tela(this->get_centroX(), this->get_centroY());
     const SDL_FPoint direcao = this->get_direcaoMira();
 
-    Desenho::retangulo_rotacionado(renderizador,
-                                   centro.x - direcao.x * RECUO_ARMA,
-                                   centro.y - direcao.y * RECUO_ARMA,
-                                   COMPRIMENTO_ARMA, ESPESSURA_ARMA,
-                                   this->anguloMira, COR_ARMA);
+    Desenho::retangulo_rotacionado(renderizador, centro.x - direcao.x * RECUO_ARMA,
+                                   centro.y - direcao.y * RECUO_ARMA, COMPRIMENTO_ARMA,
+                                   ESPESSURA_ARMA, this->anguloMira, COR_ARMA);
 }

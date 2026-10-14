@@ -1,7 +1,8 @@
 #ifndef ARMAS_H
 #define ARMAS_H
 
-class Armas{
+class Armas
+{
 private:
     int municao;
     int dano;

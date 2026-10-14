@@ -1,10 +1,10 @@
 #include "Jogo.h"
 
-int main(int /*argc*/, char* /*argv*/[])
+int main(int /*argc*/, char * /*argv*/[])
 {
     Jogo jogo;
 
-    if(!jogo.inicializar())
+    if (!jogo.inicializar())
     {
         return 1;
     }

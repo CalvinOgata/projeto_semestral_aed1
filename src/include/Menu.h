@@ -11,7 +11,8 @@ enum class AcaoMenu
     SAIR
 };
 
-class Menu{
+class Menu
+{
 public:
     static constexpr int NUM_OPCOES = 2;
 
@@ -27,8 +28,8 @@ public:
     int get_selecionado() const;
     void mover_selecao(int);
 
-    AcaoMenu tratar_evento(const SDL_Event&);
-    void desenhar(SDL_Renderer*) const;
+    AcaoMenu tratar_evento(const SDL_Event &);
+    void desenhar(SDL_Renderer *) const;
 
 private:
     AcaoMenu acao_da_opcao(int) const;

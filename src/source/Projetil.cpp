@@ -5,19 +5,18 @@
 #include "Config.h"
 
 Projetil::Projetil()
-    : x(0.0f), y(0.0f), velX(0.0f), velY(0.0f),
-      lado(LADO_PROJETIL), alcanceRestante(0.0f), dano(0), ativo(false)
+    : x(0.0f), y(0.0f), velX(0.0f), velY(0.0f), lado(LADO_PROJETIL), alcanceRestante(0.0f), dano(0),
+      ativo(false)
 {
 }
 
 Projetil::Projetil(float origemX, float origemY, float dirX, float dirY, int dano)
-    : x(origemX), y(origemY), velX(0.0f), velY(0.0f),
-      lado(LADO_PROJETIL), alcanceRestante(ALCANCE_PROJETIL),
-      dano(dano), ativo(true)
+    : x(origemX), y(origemY), velX(0.0f), velY(0.0f), lado(LADO_PROJETIL),
+      alcanceRestante(ALCANCE_PROJETIL), dano(dano), ativo(true)
 {
-    const float comprimento = std::sqrt(dirX*dirX + dirY*dirY);
+    const float comprimento = std::sqrt(dirX * dirX + dirY * dirY);
 
-    if(comprimento <= 0.0f)
+    if (comprimento <= 0.0f)
     {
         // Sem direcao nao ha tiro: nasce ja desativado.
         this->ativo = false;
@@ -30,7 +29,7 @@ Projetil::Projetil(float origemX, float origemY, float dirX, float dirY, int dan
 
 void Projetil::atualizar(float dt)
 {
-    if(!this->ativo)
+    if (!this->ativo)
     {
         return;
     }
@@ -41,9 +40,9 @@ void Projetil::atualizar(float dt)
     this->x += passoX;
     this->y += passoY;
 
-    this->alcanceRestante -= std::sqrt(passoX*passoX + passoY*passoY);
+    this->alcanceRestante -= std::sqrt(passoX * passoX + passoY * passoY);
 
-    if(this->alcanceRestante <= 0.0f)
+    if (this->alcanceRestante <= 0.0f)
     {
         this->ativo = false;
     }
@@ -86,13 +85,14 @@ SDL_FRect Projetil::get_retangulo() const
 
 void Projetil::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
 {
-    if(renderizador == nullptr || !this->ativo)
+    if (renderizador == nullptr || !this->ativo)
     {
         return;
     }
 
     const SDL_FRect naTela = camera.para_tela(this->get_retangulo());
 
-    SDL_SetRenderDrawColor(renderizador, COR_PROJETIL.r, COR_PROJETIL.g, COR_PROJETIL.b, COR_PROJETIL.a);
+    SDL_SetRenderDrawColor(renderizador, COR_PROJETIL.r, COR_PROJETIL.g, COR_PROJETIL.b,
+                           COR_PROJETIL.a);
     SDL_RenderFillRectF(renderizador, &naTela);
 }

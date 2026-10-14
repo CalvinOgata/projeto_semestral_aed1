@@ -5,14 +5,15 @@
 
 #include "Camera.h"
 
-class Inimigo{
+class Inimigo
+{
 private:
-    float x;    // canto superior esquerdo, em coordenadas de mundo
+    float x; // canto superior esquerdo, em coordenadas de mundo
     float y;
     float lado;
     float velocidade;
-    int   vida;
-    bool  vivo;
+    int vida;
+    bool vivo;
 
 public:
     Inimigo();
@@ -23,14 +24,14 @@ public:
     void levar_dano(int);
 
     bool get_vivo() const;
-    int  get_vida() const;
+    int get_vida() const;
 
     float get_centroX() const;
     float get_centroY() const;
     float get_lado() const;
     SDL_FRect get_retangulo() const;
 
-    void desenhar(SDL_Renderer*, const Camera&) const;
+    void desenhar(SDL_Renderer *, const Camera &) const;
 };
 
 #endif

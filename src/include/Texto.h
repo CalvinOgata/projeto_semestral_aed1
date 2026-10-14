@@ -9,18 +9,18 @@
 // de fonte externos: cada caractere e desenhado com retangulos.
 namespace Texto
 {
-    constexpr int LARGURA_GLIFO = 5;
-    constexpr int ALTURA_GLIFO  = 7;
-    constexpr int ESPACO_GLIFO  = 1;   // colunas em branco entre caracteres
+constexpr int LARGURA_GLIFO = 5;
+constexpr int ALTURA_GLIFO = 7;
+constexpr int ESPACO_GLIFO = 1; // colunas em branco entre caracteres
 
-    int largura(const std::string &texto, int escala);
-    int altura(int escala);
+int largura(const std::string &texto, int escala);
+int altura(int escala);
 
-    void desenhar(SDL_Renderer *renderizador, const std::string &texto,
-                  int x, int y, int escala, SDL_Color cor);
+void desenhar(SDL_Renderer *renderizador, const std::string &texto, int x, int y, int escala,
+              SDL_Color cor);
 
-    void desenhar_centralizado(SDL_Renderer *renderizador, const std::string &texto,
-                               int centroX, int y, int escala, SDL_Color cor);
-}
+void desenhar_centralizado(SDL_Renderer *renderizador, const std::string &texto, int centroX, int y,
+                           int escala, SDL_Color cor);
+} // namespace Texto
 
 #endif

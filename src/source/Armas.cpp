@@ -28,7 +28,7 @@ int Armas::get_quantidadeDisparos() const
 
 bool Armas::sem_municao() const
 {
-    if(this->get_municao() > 0)
+    if (this->get_municao() > 0)
     {
         return false;
     }
@@ -37,7 +37,7 @@ bool Armas::sem_municao() const
 
 bool Armas::atirar()
 {
-    if(this->sem_municao())
+    if (this->sem_municao())
     {
         return false;
     }
@@ -47,7 +47,7 @@ bool Armas::atirar()
 
 void Armas::recarregar(int quantidade)
 {
-    if(quantidade > 0)
+    if (quantidade > 0)
     {
         this->set_municao(this->get_municao() + quantidade);
     }
@@ -55,7 +55,7 @@ void Armas::recarregar(int quantidade)
 
 void Armas::set_dano(int valor)
 {
-    if(valor < 1)
+    if (valor < 1)
     {
         this->dano = 1;
     }
@@ -68,7 +68,7 @@ void Armas::set_dano(int valor)
 void Armas::set_municao(int quantidade)
 {
     // Precisa aceitar zero, senao sem_municao() nunca seria verdadeiro.
-    if(quantidade < 0)
+    if (quantidade < 0)
     {
         this->municao = 0;
     }
@@ -80,7 +80,7 @@ void Armas::set_municao(int quantidade)
 
 void Armas::set_quantidadeDisparos(int quantidade)
 {
-    if(quantidade < 1)
+    if (quantidade < 1)
     {
         this->quantidadeDisparos = 1;
     }

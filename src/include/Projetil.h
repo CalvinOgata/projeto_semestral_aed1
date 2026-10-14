@@ -5,16 +5,17 @@
 
 #include "Camera.h"
 
-class Projetil{
+class Projetil
+{
 private:
-    float x;    // centro, em coordenadas de mundo
+    float x; // centro, em coordenadas de mundo
     float y;
     float velX;
     float velY;
     float lado;
     float alcanceRestante;
-    int   dano;
-    bool  ativo;
+    int dano;
+    bool ativo;
 
 public:
     Projetil();
@@ -25,13 +26,13 @@ public:
 
     bool get_ativo() const;
     void desativar();
-    int  get_dano() const;
+    int get_dano() const;
 
     float get_x() const;
     float get_y() const;
     SDL_FRect get_retangulo() const;
 
-    void desenhar(SDL_Renderer*, const Camera&) const;
+    void desenhar(SDL_Renderer *, const Camera &) const;
 };
 
 #endif

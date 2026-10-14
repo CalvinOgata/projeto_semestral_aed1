@@ -5,7 +5,8 @@
 
 constexpr int MAX_ARMAS = 5;
 
-class FilaArmas{
+class FilaArmas
+{
 private:
     int ultimo;
     Armas vetor[MAX_ARMAS];
@@ -20,13 +21,13 @@ public:
 
     // Acesso direto para alterar a arma guardada (gastar municao, recarregar).
     // Devolve nullptr se a fila estiver vazia ou o indice nao existir.
-    Armas* get_ponteiro(int);
+    Armas *get_ponteiro(int);
 
     bool Vazio() const;
     bool Cheio() const;
 
     bool Inserir(Armas);
-    bool Retirar(Armas&);
+    bool Retirar(Armas &);
 };
 
 #endif

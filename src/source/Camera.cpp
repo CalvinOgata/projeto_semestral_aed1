@@ -2,15 +2,14 @@
 
 #include "Config.h"
 
-Camera::Camera()
-    : x(0.0f), y(0.0f)
+Camera::Camera() : x(0.0f), y(0.0f)
 {
 }
 
 void Camera::centralizar_em(float mundoX, float mundoY)
 {
     this->x = mundoX - LARGURA_TELA / 2.0f;
-    this->y = mundoY - ALTURA_TELA  / 2.0f;
+    this->y = mundoY - ALTURA_TELA / 2.0f;
 }
 
 float Camera::get_x() const

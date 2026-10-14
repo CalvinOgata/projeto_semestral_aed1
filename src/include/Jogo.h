@@ -18,24 +18,25 @@ enum class EstadoJogo
     SAINDO
 };
 
-class Jogo{
+class Jogo
+{
 private:
-    SDL_Window   *janela;
+    SDL_Window *janela;
     SDL_Renderer *renderizador;
 
     EstadoJogo estado;
-    Jogador    jogador;
-    Menu       menu;
-    Camera     camera;
+    Jogador jogador;
+    Menu menu;
+    Camera camera;
 
     std::vector<Projetil> projeteis;
-    std::vector<Inimigo>  inimigos;
+    std::vector<Inimigo> inimigos;
 
     Uint64 tempoAnterior;
-    float  esperaTiro;    // segundos que faltam para o proximo disparo
-    bool   atirando;      // botao esquerdo do mouse segurado
-    float  mouseTelaX;    // posicao do mouse em coordenadas de tela
-    float  mouseTelaY;
+    float esperaTiro; // segundos que faltam para o proximo disparo
+    bool atirando;    // botao esquerdo do mouse segurado
+    float mouseTelaX; // posicao do mouse em coordenadas de tela
+    float mouseTelaY;
 
 public:
     Jogo();
