@@ -2,3 +2,4 @@ build/
 jogo
 *.o
 *.d
+claude-session.txt
