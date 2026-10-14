@@ -38,6 +38,15 @@ Armas FilaArmas::get_Arma(int indice) const
     return this->vetor[indice];
 }
 
+Armas* FilaArmas::get_ponteiro(int indice)
+{
+    if(this->Vazio() || indice < 0 || indice > this->get_indiceUltimo())
+    {
+        return nullptr;
+    }
+    return &this->vetor[indice];
+}
+
 bool FilaArmas::Vazio() const
 {
     if(this->get_indiceUltimo() == -1)

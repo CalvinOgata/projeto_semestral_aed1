@@ -3,6 +3,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "Camera.h"
 #include "FilaArmas.h"
 
 class Jogador{
@@ -17,6 +18,7 @@ private:
     float largura;
     float altura;
     float velocidade;   // pixels por segundo
+    float anguloMira;   // graus, 0 = apontando para a direita
 
     FilaArmas armas;
 
@@ -42,20 +44,28 @@ public:
     void set_posicao(float, float);
     void set_velocidade(float);
     void mover(int dirX, int dirY, float dt);
-    void manter_nos_limites(const SDL_Rect &limites);
 
     float get_x() const;
     float get_y() const;
+    float get_centroX() const;
+    float get_centroY() const;
     float get_largura() const;
     float get_altura() const;
     float get_velocidade() const;
     SDL_FRect get_retangulo() const;
 
+    // --- mira e arma ---
+    void mirar_em(float mundoX, float mundoY);
+    float get_anguloMira() const;
+    SDL_FPoint get_direcaoMira() const;
+    SDL_FPoint get_boca_arma() const;   // de onde o projetil sai
+    Armas* get_armaEquipada();          // nullptr se a fila estiver vazia
+
     // --- inventario ---
     FilaArmas& get_armas();
     const FilaArmas& get_armas() const;
 
-    void desenhar(SDL_Renderer*) const;
+    void desenhar(SDL_Renderer*, const Camera&) const;
 };
 
 #endif

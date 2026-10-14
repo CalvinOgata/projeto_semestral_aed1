@@ -3,8 +3,13 @@
 
 #include <SDL2/SDL.h>
 
+#include <vector>
+
+#include "Camera.h"
+#include "Inimigo.h"
 #include "Jogador.h"
 #include "Menu.h"
+#include "Projetil.h"
 
 enum class EstadoJogo
 {
@@ -21,8 +26,16 @@ private:
     EstadoJogo estado;
     Jogador    jogador;
     Menu       menu;
-    SDL_Rect   arena;
-    Uint64     tempoAnterior;
+    Camera     camera;
+
+    std::vector<Projetil> projeteis;
+    std::vector<Inimigo>  inimigos;
+
+    Uint64 tempoAnterior;
+    float  esperaTiro;    // segundos que faltam para o proximo disparo
+    bool   atirando;      // botao esquerdo do mouse segurado
+    float  mouseTelaX;    // posicao do mouse em coordenadas de tela
+    float  mouseTelaY;
 
 public:
     Jogo();
@@ -32,14 +45,23 @@ public:
     void executar();
 
     EstadoJogo get_estado() const;
+    int get_inimigos_vivos() const;
 
 private:
     void tratar_eventos();
     void atualizar(float dt);
     void desenhar();
 
-    void desenhar_arena();
-    void desenhar_hud();
+    void mover_jogador(float dt);
+    void atualizar_mira();
+    void disparar();
+    void atualizar_projeteis(float dt);
+    void atualizar_inimigos(float dt);
+    void resolver_colisoes();
+    void limpar_inativos();
+
+    void povoar_inimigos();
+    void desenhar_grade();
 
     void pausar();
     void retomar();

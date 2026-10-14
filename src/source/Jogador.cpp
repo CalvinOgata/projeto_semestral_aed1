@@ -3,12 +3,13 @@
 #include <cmath>
 
 #include "Config.h"
+#include "Desenho.h"
 
 Jogador::Jogador()
     : vida(0), estamina(0), vidaMax(0), estaminaMax(0),
       x(0.0f), y(0.0f),
       largura(LADO_JOGADOR), altura(LADO_JOGADOR),
-      velocidade(VELOCIDADE_JOGADOR)
+      velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
 {
     // mudar_vidaMax()/mudar_estaminaMax() somam ao valor atual, por isso os
     // atributos comecam zerados na lista de inicializacao acima.
@@ -16,6 +17,11 @@ Jogador::Jogador()
     this->mudar_estaminaMax(100);
     this->rec_vida(this->get_vidaMax());
     this->rec_estamina(this->get_estaminaMax());
+
+    // Arma inicial: entra na fila, que e de onde o jogo le o dano e a municao.
+    Armas inicial;
+    inicial.set_municao(MUNICAO_INICIAL);
+    this->armas.Inserir(inicial);
 }
 
 Jogador::~Jogador()
@@ -156,19 +162,6 @@ void Jogador::mover(int dirX, int dirY, float dt)
     this->y += dy * this->velocidade * dt;
 }
 
-void Jogador::manter_nos_limites(const SDL_Rect &limites)
-{
-    const float minX = static_cast<float>(limites.x);
-    const float minY = static_cast<float>(limites.y);
-    const float maxX = static_cast<float>(limites.x + limites.w) - this->largura;
-    const float maxY = static_cast<float>(limites.y + limites.h) - this->altura;
-
-    if(this->x < minX) this->x = minX;
-    if(this->y < minY) this->y = minY;
-    if(this->x > maxX) this->x = maxX;
-    if(this->y > maxY) this->y = maxY;
-}
-
 float Jogador::get_x() const
 {
     return this->x;
@@ -177,6 +170,16 @@ float Jogador::get_x() const
 float Jogador::get_y() const
 {
     return this->y;
+}
+
+float Jogador::get_centroX() const
+{
+    return this->x + this->largura / 2.0f;
+}
+
+float Jogador::get_centroY() const
+{
+    return this->y + this->altura / 2.0f;
 }
 
 float Jogador::get_largura() const
@@ -204,6 +207,51 @@ SDL_FRect Jogador::get_retangulo() const
     return retangulo;
 }
 
+void Jogador::mirar_em(float mundoX, float mundoY)
+{
+    const float dx = mundoX - this->get_centroX();
+    const float dy = mundoY - this->get_centroY();
+
+    if(dx == 0.0f && dy == 0.0f)
+    {
+        return;   // mouse exatamente em cima: mantem a mira anterior
+    }
+
+    // atan2 devolve radianos; o SDL gira texturas em graus.
+    this->anguloMira = std::atan2(dy, dx) * 180.0f / static_cast<float>(M_PI);
+}
+
+float Jogador::get_anguloMira() const
+{
+    return this->anguloMira;
+}
+
+SDL_FPoint Jogador::get_direcaoMira() const
+{
+    const float radianos = this->anguloMira * static_cast<float>(M_PI) / 180.0f;
+
+    SDL_FPoint direcao;
+    direcao.x = std::cos(radianos);
+    direcao.y = std::sin(radianos);
+    return direcao;
+}
+
+SDL_FPoint Jogador::get_boca_arma() const
+{
+    const SDL_FPoint direcao = this->get_direcaoMira();
+    const float distancia = COMPRIMENTO_ARMA - RECUO_ARMA;
+
+    SDL_FPoint boca;
+    boca.x = this->get_centroX() + direcao.x * distancia;
+    boca.y = this->get_centroY() + direcao.y * distancia;
+    return boca;
+}
+
+Armas* Jogador::get_armaEquipada()
+{
+    return this->armas.get_ponteiro(0);
+}
+
 FilaArmas& Jogador::get_armas()
 {
     return this->armas;
@@ -214,18 +262,28 @@ const FilaArmas& Jogador::get_armas() const
     return this->armas;
 }
 
-void Jogador::desenhar(SDL_Renderer *renderizador) const
+void Jogador::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
 {
     if(renderizador == nullptr)
     {
         return;
     }
 
-    const SDL_FRect corpo = this->get_retangulo();
+    const SDL_FRect corpo = camera.para_tela(this->get_retangulo());
 
     SDL_SetRenderDrawColor(renderizador, COR_JOGADOR.r, COR_JOGADOR.g, COR_JOGADOR.b, COR_JOGADOR.a);
     SDL_RenderFillRectF(renderizador, &corpo);
 
     SDL_SetRenderDrawColor(renderizador, COR_JOGADOR_BORDA.r, COR_JOGADOR_BORDA.g, COR_JOGADOR_BORDA.b, COR_JOGADOR_BORDA.a);
     SDL_RenderDrawRectF(renderizador, &corpo);
+
+    // O cano vai por cima do corpo, senao o quadrado vermelho o esconde.
+    const SDL_FPoint centro = camera.para_tela(this->get_centroX(), this->get_centroY());
+    const SDL_FPoint direcao = this->get_direcaoMira();
+
+    Desenho::retangulo_rotacionado(renderizador,
+                                   centro.x - direcao.x * RECUO_ARMA,
+                                   centro.y - direcao.y * RECUO_ARMA,
+                                   COMPRIMENTO_ARMA, ESPESSURA_ARMA,
+                                   this->anguloMira, COR_ARMA);
 }

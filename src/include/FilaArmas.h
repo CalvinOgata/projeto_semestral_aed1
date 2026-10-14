@@ -18,6 +18,10 @@ public:
     int get_quantidade() const;
     Armas get_Arma(int) const;
 
+    // Acesso direto para alterar a arma guardada (gastar municao, recarregar).
+    // Devolve nullptr se a fila estiver vazia ou o indice nao existir.
+    Armas* get_ponteiro(int);
+
     bool Vazio() const;
     bool Cheio() const;
 
