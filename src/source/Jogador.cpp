@@ -19,7 +19,7 @@ Jogador::Jogador()
     // Arma inicial: entra na fila, que e de onde o jogo le o dano e a municao.
     Armas inicial;
     inicial.set_municao(MUNICAO_INICIAL);
-    this->armas.Inserir(inicial);
+    this->armas.inserir(inicial);
 }
 
 Jogador::~Jogador()
@@ -114,7 +114,7 @@ int Jogador::get_estaminaMax() const
     return this->estaminaMax;
 }
 
-bool Jogador::Morto() const
+bool Jogador::morto() const
 {
     if (this->get_vida() > 0)
     {
@@ -234,7 +234,7 @@ SDL_FPoint Jogador::get_direcaoMira() const
     return direcao;
 }
 
-SDL_FPoint Jogador::get_boca_arma() const
+SDL_FPoint Jogador::get_bocaArma() const
 {
     const SDL_FPoint direcao = this->get_direcaoMira();
     const float distancia = COMPRIMENTO_ARMA - RECUO_ARMA;

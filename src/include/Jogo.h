@@ -46,7 +46,7 @@ public:
     void executar();
 
     EstadoJogo get_estado() const;
-    int get_inimigos_vivos() const;
+    int get_inimigosVivos() const;
 
 private:
     void tratar_eventos();

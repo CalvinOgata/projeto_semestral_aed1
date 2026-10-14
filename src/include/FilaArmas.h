@@ -17,17 +17,17 @@ public:
 
     int get_indiceUltimo() const;
     int get_quantidade() const;
-    Armas get_Arma(int) const;
+    Armas get_arma(int) const;
 
     // Acesso direto para alterar a arma guardada (gastar municao, recarregar).
     // Devolve nullptr se a fila estiver vazia ou o indice nao existir.
     Armas *get_ponteiro(int);
 
-    bool Vazio() const;
-    bool Cheio() const;
+    bool vazio() const;
+    bool cheio() const;
 
-    bool Inserir(Armas);
-    bool Retirar(Armas &);
+    bool inserir(Armas);
+    bool retirar(Armas &);
 };
 
 #endif

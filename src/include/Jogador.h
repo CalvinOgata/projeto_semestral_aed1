@@ -39,7 +39,7 @@ public:
     int get_vida() const;
     int get_vidaMax() const;
     int get_estaminaMax() const;
-    bool Morto() const;
+    bool morto() const;
 
     // --- posicao e movimento ---
     void set_posicao(float, float);
@@ -59,8 +59,8 @@ public:
     void mirar_em(float mundoX, float mundoY);
     float get_anguloMira() const;
     SDL_FPoint get_direcaoMira() const;
-    SDL_FPoint get_boca_arma() const; // de onde o projetil sai
-    Armas *get_armaEquipada();        // nullptr se a fila estiver vazia
+    SDL_FPoint get_bocaArma() const; // de onde o projetil sai
+    Armas *get_armaEquipada();       // nullptr se a fila estiver vazia
 
     // --- inventario ---
     FilaArmas &get_armas();

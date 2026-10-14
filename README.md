@@ -34,6 +34,23 @@ camera segue o jogador e a grade serve so de referencia de movimento. Cinco
 inimigos azuis nascem em volta, perseguem o jogador e morrem depois de
 `VIDA_INIMIGO` acertos. A municao sai da `FilaArmas` do jogador.
 
+## Convencoes de nome
+
+| Tipo | Padrao | Exemplo |
+| --- | --- | --- |
+| classes | `PascalCase` | `FilaArmas`, `Jogador` |
+| metodos | comecam em minuscula | `vazio()`, `inserir()`, `atirar()` |
+| metodo com frase verbal | `snake_case` | `levar_dano()`, `mirar_em()`, `afastar_de()` |
+| metodo com nome composto | `camelCase` no final | `get_vidaMax()`, `get_anguloMira()` |
+| atributos | `camelCase` | `vidaMax`, `quantidadeDisparos` |
+| constantes | `MAIUSCULA_COM_SUBLINHADO` | `LADO_JOGADOR`, `MAX_ARMAS` |
+
+O `.clang-format` cuida do espacamento, mas **nao** verifica nomes: a regra
+acima e mista (verbo em `snake_case`, substantivo composto em `camelCase`) e o
+`readability-identifier-naming` do clang-tidy nao consegue descrever isso. Se um
+dia o grupo quiser verificacao automatica, o caminho e adotar `snake_case` puro
+(`get_vida_max`) e ligar o clang-tidy.
+
 ## Estrutura
 
 ```

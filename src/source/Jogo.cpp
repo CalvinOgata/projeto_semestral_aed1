@@ -83,7 +83,7 @@ EstadoJogo Jogo::get_estado() const
     return this->estado;
 }
 
-int Jogo::get_inimigos_vivos() const
+int Jogo::get_inimigosVivos() const
 {
     int vivos = 0;
 
@@ -255,7 +255,7 @@ void Jogo::disparar()
         return; // sem arma na fila ou sem municao
     }
 
-    const SDL_FPoint boca = this->jogador.get_boca_arma();
+    const SDL_FPoint boca = this->jogador.get_bocaArma();
     const SDL_FPoint direcao = this->jogador.get_direcaoMira();
 
     this->projeteis.push_back(Projetil(boca.x, boca.y, direcao.x, direcao.y, arma->get_dano()));
