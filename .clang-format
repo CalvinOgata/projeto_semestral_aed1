@@ -1,0 +1,27 @@
+# Estilo do projeto: Allman com indentacao de 4 espacos.
+# Escolhido por ser o que a maior parte do codigo ja usava.
+#
+#   make format        reformata src/ no lugar
+#   make format-check   falha se algo estiver fora do padrao
+#
+# Use a mesma versao do clang-format no grupo (gerada com a 22):
+# versoes diferentes produzem pequenas diferencas e viram diff fantasma.
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+AccessModifierOffset: -4
+ColumnLimit: 100
+
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+
+PointerAlignment: Right
+ReferenceAlignment: Right
+
+SortIncludes: CaseSensitive
+IndentCaseLabels: false
