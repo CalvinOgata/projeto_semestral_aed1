@@ -1,0 +1,8 @@
+# Commits que so mexeram em formatacao. O git blame pula eles, entao a autoria
+# continua apontando para quem escreveu a logica.
+#
+# Cada pessoa precisa habilitar uma vez na sua copia:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# style: aplicar o .clang-format em todo o src/
+181585a09a2c52a2f965f8cede5d5d14ede097b1
