@@ -10,6 +10,8 @@ class Jogador
 {
 private:
     int vida;
+    int escudo;
+    int escudoMax;
     int estamina;
     int vidaMax;
     int estaminaMax;
@@ -29,6 +31,10 @@ public:
 
     // --- atributos ---
     void rec_vida(int);
+    void rec_escudo(int);
+    void perder_escudo(int);
+    int get_escudo() const;
+    int get_escudoMax() const;
     void rec_estamina(int);
     void perder_vida(int);
     void perder_estamina(int);

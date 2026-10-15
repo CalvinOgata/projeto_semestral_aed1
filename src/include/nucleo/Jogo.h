@@ -6,10 +6,13 @@
 #include "entidades/Jogador.h"
 #include "graficos/Camera.h"
 #include "interface/Menu.h"
-#include "mundo/Fase.h"
+#include "mundo/Campanha.h"
+#include "persistencia/ArquivoProgresso.h"
 
 enum class EstadoJogo
 {
+    INICIAL,
+    VITORIA,
     JOGANDO,
     PAUSADO,
     SAINDO
@@ -26,7 +29,10 @@ private:
     Menu menu;
     Camera camera;
 
-    Fase fase;
+    Campanha campanha;
+    ArquivoProgresso progresso;
+    bool savePendente = false;
+    std::string mensagemSave;
 
     Uint64 tempoAnterior;
     float esperaTiro; // segundos que faltam para o proximo disparo
@@ -58,6 +64,10 @@ private:
 
     void atualizar_camera();
 
+    void abrir_inicio();
+    void iniciar_partida(bool continuar);
+    void salvar_progresso();
+    void preparar_entrada();
     void pausar();
     void retomar();
     void finalizar();

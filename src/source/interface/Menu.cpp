@@ -5,10 +5,11 @@
 
 namespace
 {
-const char *OPCOES[Menu::NUM_OPCOES] = {"CONTINUAR", "SAIR"};
+const char *OPCOES_PAUSA[Menu::NUM_OPCOES] = {"CONTINUAR", "MENU INICIAL", "SAIR"};
+const char *OPCOES_INICIAIS[Menu::NUM_OPCOES] = {"NOVO JOGO", "CONTINUAR", "SAIR"};
 
-constexpr int LARGURA_PAINEL = 460;
-constexpr int ALTURA_PAINEL = 254;
+constexpr int LARGURA_PAINEL = 700;
+constexpr int ALTURA_PAINEL = 370;
 constexpr int ALTURA_OPCAO = 44;
 constexpr int TOPO_OPCOES = 100; // relativo ao topo do painel
 constexpr int ESCALA_TITULO = 5;
@@ -43,9 +44,27 @@ void Menu::mover_selecao(int passo)
 
 AcaoMenu Menu::acao_da_opcao(int indice) const
 {
-    if (indice == 0)
+    if (this->inicial)
     {
-        return AcaoMenu::CONTINUAR;
+        if (indice == 0)
+        {
+            return AcaoMenu::NOVO_JOGO;
+        }
+        if (indice == 1)
+        {
+            return this->podeContinuar ? AcaoMenu::CONTINUAR : AcaoMenu::NENHUMA;
+        }
+    }
+    else
+    {
+        if (indice == 0)
+        {
+            return AcaoMenu::CONTINUAR;
+        }
+        if (indice == 1)
+        {
+            return AcaoMenu::MENU_INICIAL;
+        }
     }
     return AcaoMenu::SAIR;
 }
@@ -94,7 +113,7 @@ AcaoMenu Menu::tratar_evento(const SDL_Event &evento)
             return this->acao_da_opcao(this->selecionado);
 
         case SDLK_ESCAPE:
-            return AcaoMenu::CONTINUAR;
+            return this->inicial ? AcaoMenu::NENHUMA : AcaoMenu::CONTINUAR;
 
         default:
             break;
@@ -154,7 +173,8 @@ void Menu::desenhar(SDL_Renderer *renderizador) const
 
     const int centroX = painel.x + painel.w / 2;
 
-    Texto::desenhar_centralizado(renderizador, "PAUSADO", centroX, painel.y + 36, ESCALA_TITULO,
+    Texto::desenhar_centralizado(renderizador, this->inicial ? "CODIGOS DO BEM" : "PAUSADO",
+                                 centroX, painel.y + 36, this->inicial ? 4 : ESCALA_TITULO,
                                  COR_TEXTO);
 
     for (int i = 0; i < NUM_OPCOES; i++)
@@ -174,11 +194,42 @@ void Menu::desenhar(SDL_Renderer *renderizador) const
             SDL_RenderFillRect(renderizador, &marcador);
         }
 
-        const SDL_Color cor = ativa ? COR_OPCAO_ATIVA : COR_OPCAO;
+        const bool desabilitada = this->inicial && i == 1 && !this->podeContinuar;
+        const SDL_Color cor = desabilitada ? COR_TEXTO_APAGADO :
+            (ativa ? COR_OPCAO_ATIVA : COR_OPCAO);
         const int textoY = area.y + (area.h - Texto::altura(ESCALA_OPCAO)) / 2;
-        Texto::desenhar_centralizado(renderizador, OPCOES[i], centroX, textoY, ESCALA_OPCAO, cor);
+        Texto::desenhar_centralizado(renderizador,
+                                     this->inicial ? OPCOES_INICIAIS[i] : OPCOES_PAUSA[i],
+                                     centroX, textoY, ESCALA_OPCAO, cor);
+    }
+
+    if (this->inicial)
+    {
+        Texto::desenhar_centralizado(renderizador, this->detalhe, centroX,
+                                     painel.y + 278, 2, COR_TEXTO);
+        Texto::desenhar_centralizado(renderizador, "NOVO JOGO SUBSTITUI O PROGRESSO SALVO", centroX,
+                                     painel.y + 308, 2, COR_TEXTO_APAGADO);
+    }
+    else
+    {
+        Texto::desenhar_centralizado(renderizador, "MENU INICIAL: RETORNO PELO CHECKPOINT", centroX,
+                                     painel.y + 290, 2, COR_TEXTO_APAGADO);
     }
 
     Texto::desenhar_centralizado(renderizador, "SETAS NAVEGAR - ENTER CONFIRMAR", centroX,
                                  painel.y + painel.h - 32, ESCALA_DICA, COR_TEXTO_APAGADO);
+}
+
+void Menu::configurar_inicial(bool podeContinuar, const std::string &detalhe)
+{
+    this->inicial = true;
+    this->podeContinuar = podeContinuar;
+    this->detalhe = detalhe;
+    this->selecionado = podeContinuar ? 1 : 0;
+}
+
+void Menu::configurar_pausa()
+{
+    this->inicial = false;
+    this->reiniciar();
 }

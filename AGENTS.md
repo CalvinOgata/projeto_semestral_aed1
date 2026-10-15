@@ -36,25 +36,31 @@ As inspected on 2026-10-14:
 
 - The build uses C++17, SDL2, and a Makefile. Text uses an embedded bitmap font;
   SDL2_ttf is not required.
-- The world now consists of a linear authored phase of three bounded rooms.
+- The game starts at a main menu (New game, Continue, Exit). The campaign has
+  five sequential authored phases, each with three bounded rooms.
   Each `Sala` owns its `Combate` and persists its state when revisited. `Fase`
   stores rooms in `ListaSequencial<Sala>` and controls navigation.
 - Rooms have configurable name, size, difficulty, enemy count, and release
-  requirements (eliminate enemies and/or minimum active time). Current rooms:
-  800x400 / difficulty 1 / 4 enemies; 1120x640 / difficulty 2 / 7 enemies;
-  1440x800 / difficulty 3 / 10 enemies plus a 20-second minimum.
-- Doors remain locked until requirements are met. E near the right/left door
-  advances/returns; the last right door completes the phase. R resets the entire
-  phase/player. Cleared rooms do not respawn enemies; projectiles are discarded
-  on leaving. Only the active room updates; pause freezes its timer.
+  requirements (currently eliminate all enemies, without a timer). Phase 1 rooms:
+  936x516 / difficulty 1 / 4 enemies; 1120x640 / difficulty 2 / 7 enemies;
+  1440x800 / difficulty 3 / 10 enemies. Each subsequent phase adds 1 to
+  difficulty and 2 enemies per room.
+- Doors remain locked until requirements are met. Touching the right/left door
+  automatically advances/returns (no interaction key or proximity radius); the last right door completes the phase. R resets the entire
+  current phase/player without discarding completed phases. Cleared rooms do not respawn enemies; projectiles are discarded
+  on leaving. Only the active room updates. Arrival positions are away from doors to avoid
+  immediate return transitions. The user explicitly removed minimum room timers.
 - Difficulty increases enemy count (configured per room), health, and speed.
   Walls constrain players/enemies and discard projectiles. The camera is bounded
-  with margins for walls/HUD. Room status, ammunition, and controls appear on screen.
+  with only 12-pixel wall margins. The gameplay HUD shows only health, shield,
+  energy in one compact translucent top-left box, and ammunition as a bare
+  number in the bottom-right corner; room/difficulty/enemy
+  details are available during pause. No permanent footer or save banners during play.
 - This first room system is deterministic, not procedural. Enemy contact damage,
   bosses, pickups, and death rules are still not implemented.
 - Movement, mouse aiming, sustained shooting, projectiles, enemy pursuit,
   enemy damage, and a pause menu already exist.
-- `Jogador` models health and stamina and provides methods to change them.
+- `Jogador` models health, shield (initial/max 50), and stamina and provides methods to change them.
   Their presence does not imply a complete damage, stamina-cost, or powers system.
 - `FilaArmas` adapts a reusable circular-array FIFO weapon queue with capacity `MAX_ARMAS`
   (currently five). `Armas` holds ammunition and shooting/damage properties.
@@ -70,14 +76,16 @@ implementation changes make it stale.
   stays in headers. `ListaSequencial` currently uses `std::vector`, not linked nodes.
 - `inventario/`: game-specific adapter `FilaArmas`.
 - `sistemas/`: each room owns a `Combate` with its enemies/projectiles and combat rules.
-- `mundo/`: `Sala`, room configuration/requirements, and `Fase` navigation.
+- `mundo/`: `Sala`, `Fase` navigation, and `Campanha` phase progression.
+- `persistencia/`: `ArquivoProgresso` reads/writes versioned JSON checkpoints.
 - `nucleo/`, `entidades/`, `graficos/`, `interface/`, `config/`: application,
   game entities, rendering helpers, UI, and configuration.
 - `Jogo`: SDL lifecycle, main loop, input, game states, and system coordination.
 - `Jogador`, `Inimigo`, `Projetil`: player, enemies, and projectiles.
 - `Armas`, `FilaArmas`: weapons and the player's weapon queue.
 - `Camera`: world/screen coordinates and camera tracking.
-- `Menu`, `Texto`, `Desenho`: pause menu, bitmap text, and drawing helpers.
+- `Hud`: translucent stat bars and ammunition; `Menu`, `Texto`, `Desenho`: menus,
+  bitmap text, and drawing helpers.
 - `src/include/config/Config.h`: resolution, colors, and tuning constants.
 - `README.md`: setup, controls, and naming conventions.
 
@@ -109,6 +117,26 @@ Use the existing `.clang-format` configuration.
 - `docs/arquitetura.md` explains implemented TADs, complexity, responsibilities,
   and tentative future uses. Keep it and README consistent with this file.
 
+## Campaign and persistence decisions
+
+- Save at new-game start and after each completed phase. Continue resumes at the
+  beginning of the next unfinished phase, not the exact room/position.
+- Every phase starts with a fresh player (health, stamina, starting weapon/ammo),
+  consistently for advancement, restart, and loading. R restarts only the current
+  phase. Completing phase five shows victory and records campaign completion.
+- `saves/progresso.json` is relative to the executable directory, resolved via
+  SDL_GetBasePath. Schema v1: `versao` = 1, `fases_concluidas` = integer 0..5.
+  A completed campaign disables Continue. New game replaces the old checkpoint.
+- Persistence is SDL-independent and accepts an explicit file path. Its narrow
+  JSON reader validates the entire two-integer schema, version, and range.
+  Unknown/duplicate fields and malformed data are rejected. No external JSON
+  dependency has been added; extend/replace the parser if the schema grows.
+- Saves use a temporary file in the same directory followed by rename; failed
+  writes preserve the previous checkpoint. Show failures in menus/pause (hidden during gameplay); F5 retries
+  pending writes. Saves are ignored by Git and preserved by make clean.
+- Pause offers Resume, Main menu, and Exit. Main-menu Continue uses the disk
+  checkpoint; returning there abandons unsaved progress within the current phase.
+
 ## Maintaining context
 
 - Keep this file in **English**, even when conversations are in Portuguese.
@@ -137,3 +165,16 @@ Use the existing `.clang-format` configuration.
 - When a reported issue is resolved, remove its entry from the relevant review
   document. Keep review documents focused on unresolved issues instead of
   appending resolved notes.
+
+## HUD decisions
+
+- The user wants nearly the whole window usable for gameplay, only health,
+  shield, energy, and ammunition visible while playing. Hide tutorial footers,
+  room status, and save messages during gameplay; keep details accessible in pause.
+- `interface/Hud` owns drawing of one translucent 200x104 top-left box containing three
+  stacked stat bars with custom icons and values. Ammunition is only a number
+  at bottom right, without a card or label. `Fase` no longer draws UI. The first room is 936x516 so
+  the floor plus 12-pixel walls fills the 960x540 logical viewport.
+- Shield is a real bounded player attribute, initially 50/50, with recovery/loss
+  methods. No damage absorption, regeneration, or contact-damage mechanics were
+  introduced by the HUD change. Energy still reflects existing stamina state.

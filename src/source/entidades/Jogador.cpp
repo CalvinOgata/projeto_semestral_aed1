@@ -1,12 +1,13 @@
 #include "entidades/Jogador.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "config/Config.h"
 #include "graficos/Desenho.h"
 
 Jogador::Jogador()
-    : vida(0), estamina(0), vidaMax(0), estaminaMax(0), x(0.0f), y(0.0f), largura(LADO_JOGADOR),
+    : vida(0), escudo(50), escudoMax(50), estamina(0), vidaMax(0), estaminaMax(0), x(0.0f), y(0.0f), largura(LADO_JOGADOR),
       altura(LADO_JOGADOR), velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
 {
     // mudar_vidaMax()/mudar_estaminaMax() somam ao valor atual, por isso os
@@ -284,4 +285,30 @@ void Jogador::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
     Desenho::retangulo_rotacionado(renderizador, centro.x - direcao.x * RECUO_ARMA,
                                    centro.y - direcao.y * RECUO_ARMA, COMPRIMENTO_ARMA,
                                    ESPESSURA_ARMA, this->anguloMira, COR_ARMA);
+}
+
+void Jogador::rec_escudo(int quantidade)
+{
+    if (quantidade > 0)
+    {
+        this->escudo += std::min(quantidade, this->escudoMax - this->escudo);
+    }
+}
+
+void Jogador::perder_escudo(int quantidade)
+{
+    if (quantidade > 0)
+    {
+        this->escudo -= std::min(quantidade, this->escudo);
+    }
+}
+
+int Jogador::get_escudo() const
+{
+    return this->escudo;
+}
+
+int Jogador::get_escudoMax() const
+{
+    return this->escudoMax;
 }

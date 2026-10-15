@@ -21,8 +21,8 @@ Arch: `sudo pacman -S sdl2` · Debian/Ubuntu: `sudo apt install libsdl2-dev`
 | `W` `A` `S` `D` ou setas | mover dentro da sala |
 | mouse | mirar: a arma gira acompanhando o cursor |
 | botao esquerdo | atirar (segurar mantem o tiro na cadencia) |
-| `E` | usar uma porta liberada quando estiver perto |
-| `R` | reiniciar toda a fase e o jogador |
+| `R` | reiniciar a fase atual e o jogador, mantendo fases ja concluidas |
+| `F5` | tentar salvar novamente se houver falha de gravacao |
 | `Esc` | abrir o menu de pausa (e voltar ao jogo) |
 | setas / `W` `S` | navegar no menu |
 | `Enter` ou `Espaco` | confirmar |
@@ -31,28 +31,61 @@ O menu tambem responde ao mouse (passar por cima seleciona, clique confirma).
 
 ## Como esta agora
 
-Uma fase com tres salas conectadas, com tamanhos e dificuldades crescentes.
+Uma campanha com **cinco fases**, cada uma com tres salas conectadas.
+A tabela mostra a primeira fase; cada fase seguinte acrescenta 1 a dificuldade
+e 2 inimigos por sala.
 Cada sala tem seus proprios inimigos, projeteis e requisitos de liberacao.
 
 | Sala | Tamanho | Dificuldade | Inimigos | Requisito para abrir portas |
 | --- | --- | --- | --- | --- |
-| Setor de Boot | 800x400 | 1 | 4 | Eliminar todos |
+| Setor de Boot | 936x516 | 1 | 4 | Eliminar todos |
 | Rede Infectada | 1120x640 | 2 | 7 | Eliminar todos |
-| Nucleo em Quarentena | 1440x800 | 3 | 10 | Eliminar todos e permanecer 20 segundos ativos |
+| Nucleo em Quarentena | 1440x800 | 3 | 10 | Eliminar todos |
 
-As portas vermelhas estao bloqueadas; verdes estao liberadas. Aproxime-se da
-porta direita e aperte `E` para avancar. Nas salas seguintes, a porta esquerda
+As portas vermelhas estao bloqueadas; verdes estao liberadas. Encoste na
+porta direita para avancar automaticamente. Nas salas seguintes, a porta esquerda
 permite voltar depois de completar o desafio. Salas ja liberadas permanecem
 vazias ao revisitar. A saida direita da ultima sala conclui a fase.
 
 A dificuldade aumenta vida e velocidade dos inimigos. Paredes limitam movimento
-e tiros; a camera acompanha o jogador dentro dos limites da sala. O painel
-mostra sala, dificuldade, inimigos, municao e tempo restante. `Esc` pausa tambem
-o cronometro. `R` permite recomecar, inclusive se acabar a municao.
+e tiros; a camera acompanha o jogador dentro dos limites da sala. O HUD agrupa vida, escudo e energia numa caixa compacta e semitransparente
+no canto superior esquerdo, com barras coloridas e icones. A municao aparece
+apenas como numero no canto inferior direito. Sala, dificuldade e quantidade de
+inimigos aparecem somente na pausa. `Esc` pausa o jogo. `R` permite recomecar, inclusive se acabar a municao.
 
-As salas desta primeira fase sao fixas. Dano de contato ao jogador, bosses,
+As configuracoes das salas sao fixas. Dano de contato ao jogador, bosses,
 recompensas e geracao procedural ainda serao adicionados conforme as decisoes
 do projeto.
+
+## Tela inicial e salvamento
+
+- **Novo jogo** inicia a fase 1 e substitui o progresso salvo.
+- **Continuar** retoma o inicio da proxima fase ainda nao concluida.
+- **Sair** fecha o jogo. No menu de pausa ha tambem **Menu inicial**.
+
+O jogo salva automaticamente ao iniciar uma nova campanha e ao concluir cada
+fase. O arquivo `saves/progresso.json` fica ao lado do executavel, mesmo quando
+o jogo e iniciado de outro diretorio. Ele nao e incluido no Git e `make clean`
+nao o remove. Exemplo apos concluir duas fases:
+
+```json
+{
+  "versao": 1,
+  "fases_concluidas": 2
+}
+```
+
+O salvamento e por fase: sair no meio da fase faz `Continuar` voltar ao inicio
+dela. Salas, tiros e posicoes em andamento nao sao serializados. Cada fase comeca
+com vida, estamina e municao iniciais, tanto ao avancar quanto ao carregar.
+Apos a quinta fase, aparece a tela de vitoria e o save registra cinco fases
+concluidas. `Continuar` fica desabilitado; escolha `Novo jogo` para recomecar.
+
+Sem save, com arquivo invalido ou com campanha concluida, a tela inicial explica
+por que nao e possivel continuar. Falhas de escrita aparecem nos menus/pausa e podem ser
+repetidas com `F5`. O arquivo anterior so e substituido depois da escrita completa
+de um arquivo temporario. Se sair antes de uma gravacao bem-sucedida, apenas o
+ultimo checkpoint gravado estara disponivel.
 
 ## Convencoes de nome
 
@@ -81,11 +114,12 @@ mesmos modulos nos dois diretorios (templates ficam apenas nos cabecalhos):
 | `estruturas/` | TADs genericos: fila circular e lista sequencial |
 | `inventario/` | `FilaArmas`: aplica a fila ao inventario |
 | `entidades/` | `Jogador`, `Inimigo`, `Projetil`, `Armas` |
-| `mundo/` | `Sala`: entidades e requisitos; `Fase`: sequencia e navegacao |
+| `mundo/` | `Sala`: entidades; `Fase`: salas; `Campanha`: cinco fases |
+| `persistencia/` | `ArquivoProgresso`: leitura e escrita do checkpoint JSON |
 | `sistemas/` | `Combate`: disparos, inimigos, colisoes e remocao de inativos |
 | `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao |
 | `graficos/` | `Camera`, `Desenho`: coordenadas e desenho auxiliar |
-| `interface/` | `Menu`, `Texto`: menu de pausa e fonte bitmap |
+| `interface/` | `Hud`: barras; `Menu`, `Texto`: menus e fonte bitmap |
 | `config/` | `Config.h`: resolucao, paleta e constantes |
 
 O Makefile descobre os fontes nos subdiretorios e espelha essa estrutura em
@@ -94,3 +128,18 @@ SDL escala a imagem quando a janela e redimensionada.
 
 Veja [Arquitetura e TADs](docs/arquitetura.md) para contratos, custos das
 operacoes e exemplos de aplicacao das estruturas ao jogo.
+
+## Area de jogo e HUD
+
+A sala inicial ocupa 936x516 dos 960x540 pixels logicos, com paredes de 12 pixels.
+A camera das salas maiores usa a mesma margem, sem reservar faixas para paineis.
+O HUD e uma sobreposicao e nao bloqueia movimento, mira ou cliques.
+
+Vida (rosa/vermelho), escudo (azul) e energia (amarelo) aparecem em barras com
+icones, valores e preenchimento proporcional. As tres barras ficam juntas em uma unica caixa de 200x104 pixels no canto
+superior esquerdo. A municao aparece somente como numero no canto inferior
+direito, sem caixa ou legenda. O escudo inicia com 50/50; vida e energia com 100/100. Os valores voltam
+ao inicial junto com o jogador ao iniciar/reiniciar uma fase. Ainda nao existem
+dano de contato, absorcao de dano pelo escudo ou consumo de energia no combate.
+Os rodapes de ajuda e as mensagens de save ficam ocultos durante a partida;
+mensagens de salvamento podem ser consultadas na pausa ou nos outros menus.

@@ -8,7 +8,6 @@
 struct RequisitoSala
 {
     bool eliminarInimigos = true;
-    float tempoMinimo = 0.0f; // segundos ativos dentro da sala; pausa nao conta
 };
 
 struct ConfiguracaoSala
@@ -35,7 +34,6 @@ private:
     ConfiguracaoSala configuracao;
     Combate combate;
     EstadoSala estado = EstadoSala::NAO_VISITADA;
-    float tempoAtivo = 0.0f;
 
 public:
     explicit Sala(const ConfiguracaoSala &configuracao);
@@ -44,11 +42,10 @@ public:
     void atualizar(float dt, const Jogador &jogador);
     void disparar(Jogador &jogador);
     void limitar_jogador(Jogador &jogador) const;
-    bool perto_porta(const Jogador &jogador, bool direita) const;
+    bool tocando_porta(const Jogador &jogador, bool direita) const;
     bool liberada() const;
     EstadoSala get_estado() const;
     int get_inimigosVivos() const;
-    float get_tempoRestante() const;
     const ConfiguracaoSala &get_configuracao() const;
     SDL_FRect get_limites() const;
     SDL_FRect get_porta(bool direita) const;

@@ -9,8 +9,7 @@ Sala::Sala(const ConfiguracaoSala &configuracao) : configuracao(configuracao)
 {
     // Mantem espaco para entrada, portas e entidades sem clamp com limites invertidos.
     if (configuracao.largura < 400 || configuracao.altura < 300 ||
-        configuracao.dificuldade < 1 || configuracao.quantidadeInimigos < 0 ||
-        configuracao.requisito.tempoMinimo < 0)
+        configuracao.dificuldade < 1 || configuracao.quantidadeInimigos < 0)
     {
         throw std::invalid_argument("Configuracao de sala invalida");
     }
@@ -45,10 +44,9 @@ void Sala::atualizar(float dt, const Jogador &jogador)
     this->combate.atualizar(dt, jogador);
     if (this->estado == EstadoSala::EM_COMBATE)
     {
-        this->tempoAtivo += std::max(0.0f, dt);
         const bool eliminados = !this->configuracao.requisito.eliminarInimigos ||
                                 this->combate.get_inimigosVivos() == 0;
-        if (eliminados && this->get_tempoRestante() <= 0.0f)
+        if (eliminados)
         {
             this->estado = EstadoSala::LIBERADA;
         }
@@ -79,13 +77,12 @@ SDL_FRect Sala::get_porta(bool direita) const
             this->configuracao.altura / 2.0f - 48, 18, 96};
 }
 
-bool Sala::perto_porta(const Jogador &jogador, bool direita) const
+bool Sala::tocando_porta(const Jogador &jogador, bool direita) const
 {
-    SDL_FRect area = this->get_porta(direita);
-    area.x -= 40;
-    area.w += 80;
+    const SDL_FRect area = this->get_porta(direita);
     const SDL_FRect corpo = jogador.get_retangulo();
-    return SDL_HasIntersectionF(&area, &corpo);
+    return corpo.x <= area.x + area.w && corpo.x + corpo.w >= area.x &&
+           corpo.y <= area.y + area.h && corpo.y + corpo.h >= area.y;
 }
 
 bool Sala::liberada() const
@@ -101,11 +98,6 @@ EstadoSala Sala::get_estado() const
 int Sala::get_inimigosVivos() const
 {
     return this->combate.get_inimigosVivos();
-}
-
-float Sala::get_tempoRestante() const
-{
-    return std::max(0.0f, this->configuracao.requisito.tempoMinimo - this->tempoAtivo);
 }
 
 const ConfiguracaoSala &Sala::get_configuracao() const

@@ -8,19 +8,20 @@
 class Fase
 {
 private:
+    int numero;
     ListaSequencial<Sala> salas;
     std::size_t indiceAtual = 0;
     bool concluida = false;
 
 public:
-    Fase();
+    explicit Fase(int numero = 1);
     void reiniciar(Jogador &jogador);
-    bool interagir(Jogador &jogador);
+    // Verifica contato com portas liberadas uma vez por atualizacao.
+    bool atualizar_transicao(Jogador &jogador);
     Sala &get_salaAtual();
     const Sala &get_salaAtual() const;
     std::size_t get_indiceAtual() const;
     bool get_concluida() const;
-    void desenhar_painel(SDL_Renderer *renderizador, const Jogador &jogador) const;
 };
 
 #endif

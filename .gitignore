@@ -3,3 +3,4 @@ jogo
 *.o
 *.d
 claude-session.txt
+saves/

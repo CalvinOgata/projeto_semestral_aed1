@@ -11,12 +11,13 @@ Jogo (janela, entrada, estados e laco principal)
   |-- Jogador (movimento, mira, vida e estamina)
   |     `-- FilaArmas (inventario: primeira arma = equipada)
   |           `-- Fila<Armas, MAX_ARMAS> (armazenamento FIFO)
-  |-- Fase (progressao e sala ativa)
-  |     `-- ListaSequencial<Sala>
-  |           `-- Sala (tamanho, dificuldade, requisitos e estado)
-  |                 `-- Combate (entidades exclusivas desta sala)
-  |                       |-- ListaSequencial<Inimigo>
-  |                       `-- ListaSequencial<Projetil>
+  |-- Campanha (cinco fases; mantem a fase atual)
+  |     `-- Fase (progressao e sala ativa)
+  |           `-- ListaSequencial<Sala>
+  |                 `-- Sala (tamanho, dificuldade, requisitos e estado)
+  |                       `-- Combate (entidades exclusivas desta sala)
+  |                             |-- ListaSequencial<Inimigo>
+  |                             `-- ListaSequencial<Projetil>
   |-- Camera
   `-- Menu
 ```
@@ -95,29 +96,58 @@ como parte implementada do jogo.
 ## Salas e progressao
 
 `ConfiguracaoSala` define nome, largura, altura, dificuldade, quantidade de
-inimigos e `RequisitoSala`. Este combina eliminacao de inimigos e tempo minimo:
-os dois requisitos habilitados precisam ser atendidos. Para uma sala apenas
-temporizada, use `eliminarInimigos = false`; para combate simples, tempo zero.
+inimigos e `RequisitoSala`. Atualmente o requisito e eliminar todos os inimigos,
+sem tempo minimo. `eliminarInimigos = false` permite uma sala de passagem livre.
 
 `Sala` transita de `NAO_VISITADA` para `EM_COMBATE` na primeira entrada e para
 `LIBERADA` quando cumpre os requisitos. Uma revisita preserva os inimigos e o
 estado; apenas a primeira entrada cria entidades. `sair` descarta projeteis.
-Apenas a sala ativa recebe atualizacoes, e nenhum tempo avanca durante a pausa.
+Apenas a sala ativa recebe atualizacoes, interrompidas durante a pausa.
 
 `Fase` guarda a sequencia em `ListaSequencial<Sala>` e acessa a atual por indice.
 Avancar/voltar nao remove salas da lista; isso preserva seu estado. A navegacao
-exige proximidade da porta e liberacao da sala atual. A porta final marca a fase
-como concluida, e `R` recria fase e jogador. Essa lista sequencial serve a uma
+ocorre automaticamente ao tocar o retangulo da porta, inclusive suas bordas,
+e exige liberacao da sala atual. `Jogo` verifica a transicao apos atualizar o
+combate. A posicao de chegada fica afastada da porta para evitar retorno imediato. A porta final marca a fase
+como concluida; `Campanha` avanca para a seguinte e `Jogo` grava o checkpoint.
+`R` recria somente a fase atual e o jogador. Essa lista sequencial serve a uma
 fase linear; ramificacoes futuras poderao justificar um grafo de conexoes.
 
 Para configurar a fase inicial, edite os registros no construtor de `Fase`, em
 `src/source/mundo/Fase.cpp`. As dimensoes minimas sao 400x300, dificuldade pelo
-menos 1, quantidade de inimigos e tempo nao negativos. Os inimigos nascem na
+menos 1, quantidade de inimigos nao negativa. Os inimigos nascem na
 metade direita, afastados da entrada inicial. Dificuldade `d` aplica vida
 `VIDA_INIMIGO + d - 1` e velocidade `VELOCIDADE_INIMIGO * (1 + 0.12 * (d - 1))`.
 
 O piso define a area caminhavel. Jogador e inimigos sao limitados ao piso;
-projeteis saindo dele sao desativados. A camera respeita os limites com margem
-para paredes e interface. `Sala` desenha piso, portas e entidades, enquanto
-`Fase` desenha o painel de progresso. Novos objetos de sala devem ter seu ciclo
+projeteis saindo dele sao desativados. A camera respeita os limites com margem de 12 pixels
+para paredes. `Sala` desenha piso, portas e entidades; `interface/Hud` desenha
+vida, escudo e energia em uma caixa unica e compacta no canto superior esquerdo
+e somente o numero de municao no canto inferior direito, sobre o mundo. `Fase` nao desenha interface. Novos objetos de sala devem ter seu ciclo
 de vida associado a `Sala`, evitando listas globais compartilhadas entre salas.
+
+## Campanha, menus e persistencia
+
+`Campanha` conhece o numero de fases concluidas e a fase atual. Ela controla a
+passagem entre cinco fases e reinicializa o jogador em cada etapa. `Fase(numero)`
+aplica a dificuldade e quantidade de inimigos daquele estagio, mantendo a
+estrutura de tres salas. Nao e preciso armazenar todas as fases simultaneamente.
+
+`Jogo` coordena os estados `INICIAL`, `JOGANDO`, `PAUSADO`, `VITORIA` e `SAINDO`.
+`Menu` oferece modos inicial e pausa, com teclado e mouse. O menu solicita acoes;
+ele nao le arquivos nem altera diretamente o progresso.
+
+`ArquivoProgresso`, em `persistencia/`, recebe um caminho e trata somente leitura,
+validacao e escrita. O esquema JSON v1 tem `versao` e `fases_concluidas` (0 a 5).
+O leitor e especifico para esse esquema, sem biblioteca externa; um esquema mais
+complexo deve motivar a revisao dessa escolha. O arquivo temporario e renomeado
+somente apos fechar a escrita com sucesso, preservando o save anterior em erros.
+Isso protege contra escritas incompletas, mas nao promete durabilidade contra
+queda de energia, pois nao utiliza fsync.
+
+A camada de aplicacao resolve `saves/progresso.json` ao lado do executavel e
+salva ao iniciar um jogo novo e quando o contador de fases concluidas muda.
+O checkpoint nao armazena entidades, salas intermediarias ou posicoes. Carregar
+reconstroi o inicio da proxima fase; concluir cinco fases registra a vitoria.
+Falhas sao exibidas na pausa e nos menus e podem ser repetidas por F5, sem
+interromper o jogo. Durante a partida os avisos permanecem ocultos.
