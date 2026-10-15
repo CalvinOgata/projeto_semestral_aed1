@@ -34,7 +34,7 @@ brainstorming examples into approved mechanics, characters, or assets.
 
 As inspected on 2026-10-14:
 
-- The build uses C++17, SDL2, and a Makefile. Text uses an embedded bitmap font;
+- The build uses C++17, SDL2, libpng, and a Makefile. Text uses an embedded bitmap font;
   SDL2_ttf is not required.
 - The game starts at a main menu (New game, Continue, Exit). The campaign has
   five sequential authored phases, each with three bounded rooms.
@@ -168,6 +168,10 @@ Use the existing `.clang-format` configuration.
 
 ## HUD decisions
 
+- Each living enemy draws a simple red health bar above its body, with no icon
+  or text. Its fill uses current health divided by that enemy's initial maximum,
+  including difficulty scaling; the bar disappears when the enemy dies.
+
 - The user wants nearly the whole window usable for gameplay, only health,
   shield, energy, and ammunition visible while playing. Hide tutorial footers,
   room status, and save messages during gameplay; keep details accessible in pause.
@@ -178,3 +182,35 @@ Use the existing `.clang-format` configuration.
 - Shield is a real bounded player attribute, initially 50/50, with recovery/loss
   methods. No damage absorption, regeneration, or contact-damage mechanics were
   introduced by the HUD change. Energy still reflects existing stamina state.
+
+## Sprite sizing and hitboxes
+
+- `config/DimensoesEntidade.h` separates per-entity collision width/height from
+  visual frame width/height. Defaults: hero 32x32 / 48x48; common enemy 28x28 /
+  48x48; bodyguard 44x44 / 64x64; boss 88x88 / 128x128. Bodyguard/boss profiles
+  are reserved, not spawned or implemented as new gameplay types.
+- Positions refer to the hitbox's top-left corner. Visual frames are centered
+  on hitboxes, not foot-anchored. World coordinates use logical pixels at 960x540.
+  Collision rectangles retain the original player/common-enemy sizes.
+- Entity constructors accept custom positive rectangular profiles whose visual
+  frame contains the hitbox. Enemy separation handles differing rectangle sizes.
+  Walls/doors/projectiles use get_retangulo(); rendering uses get_retanguloVisual().
+  Aim/fire origins remain at the hitbox center; health bars sit above the visual frame.
+- F2 toggles green hitbox outlines during gameplay. Enemy placeholder rectangles show visual frame sizes; the player now uses
+  the Tux PNG. Animation is not implemented.
+- `docs/sprites.md` defines transparent PNG frame sizes, offsets and alignment for
+  user-created art. Keep it synchronized with the size profiles. Character selection
+  is not implemented; phase resets still create the default hero profile.
+
+## Player sprite asset
+
+- The user-provided root `tux.png` was moved intact to
+  `assets/sprites/personagens/tux.png`. It is a 48x61 RGBA PNG, rendered with
+  preserved aspect ratio inside the 48x48 hero visual frame (about 37.8x48).
+  Hitbox remains 32x32; weapon aiming/drawing remains separate.
+- `graficos/Sprite` loads PNG via libpng into an SDL texture, with alpha blending
+  and nearest-neighbor scaling. Makefile now requires pkg-config sdl2 libpng.
+- Jogo owns the noncopyable texture resource; load once at startup and free before
+  destroying the renderer. Player resets must not own/copy/reload textures.
+- Assets resolve relative to SDL_GetBasePath, alongside the executable. Missing
+  or invalid required Tux assets produce a startup error. Distribute assets/ with jogo.

@@ -151,3 +151,19 @@ O checkpoint nao armazena entidades, salas intermediarias ou posicoes. Carregar
 reconstroi o inicio da proxima fase; concluir cinco fases registra a vitoria.
 Falhas sao exibidas na pausa e nos menus e podem ser repetidas por F5, sem
 interromper o jogo. Durante a partida os avisos permanecem ocultos.
+
+## Geometria das entidades
+
+`DimensoesEntidade` separa o tamanho de colisao do quadro visual por composicao,
+sem misturar dimensoes com TADs ou armazenamento. `Jogador` e `Inimigo` guardam
+seus perfis; suas posicoes sao relativas a hitbox. `get_retanguloVisual()` calcula
+a area centralizada para desenho, e `get_retangulo()` continua sendo a colisao.
+Detalhes e medidas para artistas estao no [guia de sprites](sprites.md).
+
+## Recursos graficos
+
+`Sprite` possui uma textura SDL, carrega PNG RGBA via libpng e desenha a imagem
+centralizada dentro de um quadro, preservando proporcoes e transparencia.
+`Jogo` possui o sprite do Tux e o fornece ao desenho de `Jogador`. A textura
+nao faz parte das entidades copiadas/reiniciadas, e e liberada antes do renderizador.
+O arquivo fica em `assets/sprites/personagens/tux.png`, relativo ao executavel.

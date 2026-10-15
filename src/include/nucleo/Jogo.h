@@ -5,6 +5,7 @@
 
 #include "entidades/Jogador.h"
 #include "graficos/Camera.h"
+#include "graficos/Sprite.h"
 #include "interface/Menu.h"
 #include "mundo/Campanha.h"
 #include "persistencia/ArquivoProgresso.h"
@@ -28,6 +29,7 @@ private:
     Jogador jogador;
     Menu menu;
     Camera camera;
+    Sprite spriteJogador;
 
     Campanha campanha;
     ArquivoProgresso progresso;
@@ -36,6 +38,7 @@ private:
 
     Uint64 tempoAnterior;
     float esperaTiro; // segundos que faltam para o proximo disparo
+    bool mostrarHitboxes = false;
     bool atirando;    // botao esquerdo do mouse segurado
     float mouseTelaX; // posicao do mouse em coordenadas de tela
     float mouseTelaY;

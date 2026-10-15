@@ -49,7 +49,8 @@ public:
     const ConfiguracaoSala &get_configuracao() const;
     SDL_FRect get_limites() const;
     SDL_FRect get_porta(bool direita) const;
-    void desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAnterior) const;
+    void desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAnterior,
+                  bool mostrarHitboxes = false) const;
 };
 
 #endif

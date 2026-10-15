@@ -4,7 +4,7 @@ Roguelike top-down em C++ com SDL2.
 
 ## Compilar e rodar
 
-Precisa apenas do SDL2 (sem SDL2_ttf: o texto usa uma fonte de bitmap embutida).
+Precisa de SDL2 e libpng (sem SDL2_ttf: o texto usa uma fonte de bitmap embutida).
 
 ```sh
 make        # gera ./jogo
@@ -12,7 +12,7 @@ make run    # compila e executa
 make clean  # apaga build/ e o executavel
 ```
 
-Arch: `sudo pacman -S sdl2` · Debian/Ubuntu: `sudo apt install libsdl2-dev`
+Arch: `sudo pacman -S sdl2 libpng` · Debian/Ubuntu: `sudo apt install libsdl2-dev libpng-dev`
 
 ## Controles
 
@@ -21,6 +21,7 @@ Arch: `sudo pacman -S sdl2` · Debian/Ubuntu: `sudo apt install libsdl2-dev`
 | `W` `A` `S` `D` ou setas | mover dentro da sala |
 | mouse | mirar: a arma gira acompanhando o cursor |
 | botao esquerdo | atirar (segurar mantem o tiro na cadencia) |
+| `F2` | mostrar/esconder hitboxes para conferir sprites |
 | `R` | reiniciar a fase atual e o jogador, mantendo fases ja concluidas |
 | `F5` | tentar salvar novamente se houver falha de gravacao |
 | `Esc` | abrir o menu de pausa (e voltar ao jogo) |
@@ -118,7 +119,7 @@ mesmos modulos nos dois diretorios (templates ficam apenas nos cabecalhos):
 | `persistencia/` | `ArquivoProgresso`: leitura e escrita do checkpoint JSON |
 | `sistemas/` | `Combate`: disparos, inimigos, colisoes e remocao de inativos |
 | `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao |
-| `graficos/` | `Camera`, `Desenho`: coordenadas e desenho auxiliar |
+| `graficos/` | `Camera`, `Desenho`, `Sprite`: coordenadas, desenho e texturas PNG |
 | `interface/` | `Hud`: barras; `Menu`, `Texto`: menus e fonte bitmap |
 | `config/` | `Config.h`: resolucao, paleta e constantes |
 
@@ -143,3 +144,21 @@ ao inicial junto com o jogador ao iniciar/reiniciar uma fase. Ainda nao existem
 dano de contato, absorcao de dano pelo escudo ou consumo de energia no combate.
 Os rodapes de ajuda e as mensagens de save ficam ocultos durante a partida;
 mensagens de salvamento podem ser consultadas na pausa ou nos outros menus.
+
+## Sprites
+
+Hitbox e imagem agora possuem tamanhos separados e configuraveis por entidade.
+Os padroes sao: heroi 32x32 / sprite 48x48; inimigo comum 28x28 / sprite 48x48;
+guarda-costas 44x44 / sprite 64x64; boss 88x88 / sprite 128x128.
+Os dois ultimos sao perfis preparados para uso futuro, sem novos inimigos nas salas.
+Veja o [guia de sprites](docs/sprites.md) para medidas, alinhamento e exportacao.
+`F2` mostra a hitbox verde sobre os retangulos visuais provisórios.
+
+O jogador agora usa `assets/sprites/personagens/tux.png`. A imagem original de
+48x61 e encaixada proporcionalmente no quadro de 48x48, sem recorte ou distorcao,
+com transparencia e filtro de pixel art. A hitbox continua 32x32 e a arma gira
+separadamente. O sprite e estatico, ainda sem animacao.
+
+Mantenha a pasta `assets/` ao lado de `jogo` ao copiar o executavel. Os recursos
+sao localizados pelo diretorio do executavel, independentemente do diretorio do
+terminal. Se o PNG estiver ausente ou invalido, o jogo informa o erro ao iniciar.

@@ -105,7 +105,8 @@ const ConfiguracaoSala &Sala::get_configuracao() const
     return this->configuracao;
 }
 
-void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAnterior) const
+void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAnterior,
+                    bool mostrarHitboxes) const
 {
     const SDL_FRect piso = camera.para_tela(this->get_limites());
     SDL_SetRenderDrawColor(renderizador, COR_MUNDO.r, COR_MUNDO.g, COR_MUNDO.b, 255);
@@ -138,5 +139,5 @@ void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAn
         const SDL_FRect esquerda = camera.para_tela(this->get_porta(false));
         SDL_RenderFillRectF(renderizador, &esquerda);
     }
-    this->combate.desenhar(renderizador, camera);
+    this->combate.desenhar(renderizador, camera, mostrarHitboxes);
 }

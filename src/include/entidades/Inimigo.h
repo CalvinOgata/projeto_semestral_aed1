@@ -3,6 +3,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "config/DimensoesEntidade.h"
 #include "graficos/Camera.h"
 
 class Inimigo
@@ -10,16 +11,18 @@ class Inimigo
 private:
     float x; // canto superior esquerdo, em coordenadas de mundo
     float y;
-    float lado;
+    DimensoesEntidade dimensoes;
     float velocidade;
     int vida;
+    int vidaMax;
     bool vivo;
 
 public:
     Inimigo();
     Inimigo(float mundoX, float mundoY);
 
-    Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial);
+    Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial,
+            const DimensoesEntidade &dimensoes = DIMENSOES_INIMIGO_COMUM);
     void limitar_a(const SDL_FRect &area);
 
     void perseguir(float alvoX, float alvoY, float dt);
@@ -31,10 +34,12 @@ public:
 
     float get_centroX() const;
     float get_centroY() const;
-    float get_lado() const;
-    SDL_FRect get_retangulo() const;
+    float get_largura() const;
+    float get_altura() const;
+    SDL_FRect get_retangulo() const; // hitbox
+    SDL_FRect get_retanguloVisual() const; // destino do sprite
 
-    void desenhar(SDL_Renderer *, const Camera &) const;
+    void desenhar(SDL_Renderer *, const Camera &, bool mostrarHitbox = false) const;
 };
 
 #endif

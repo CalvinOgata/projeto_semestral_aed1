@@ -3,8 +3,11 @@
 
 #include <SDL2/SDL.h>
 
+#include "config/DimensoesEntidade.h"
 #include "graficos/Camera.h"
 #include "inventario/FilaArmas.h"
+
+class Sprite;
 
 class Jogador
 {
@@ -18,15 +21,14 @@ private:
 
     float x;
     float y;
-    float largura;
-    float altura;
+    DimensoesEntidade dimensoes;
     float velocidade; // pixels por segundo
     float anguloMira; // graus, 0 = apontando para a direita
 
     FilaArmas armas;
 
 public:
-    Jogador();
+    explicit Jogador(const DimensoesEntidade &dimensoes = DIMENSOES_HEROI);
     ~Jogador();
 
     // --- atributos ---
@@ -59,7 +61,8 @@ public:
     float get_largura() const;
     float get_altura() const;
     float get_velocidade() const;
-    SDL_FRect get_retangulo() const;
+    SDL_FRect get_retangulo() const; // hitbox: colisao, portas e limites
+    SDL_FRect get_retanguloVisual() const; // destino do sprite em coordenadas de mundo
 
     // --- mira e arma ---
     void mirar_em(float mundoX, float mundoY);
@@ -72,7 +75,8 @@ public:
     FilaArmas &get_armas();
     const FilaArmas &get_armas() const;
 
-    void desenhar(SDL_Renderer *, const Camera &) const;
+    void desenhar(SDL_Renderer *, const Camera &, bool mostrarHitbox = false,
+                  const Sprite *sprite = nullptr) const;
 };
 
 #endif

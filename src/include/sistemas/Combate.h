@@ -25,7 +25,8 @@ public:
     void limpar_projeteis();
     void disparar(Jogador &jogador);
     void atualizar(float dt, const Jogador &jogador);
-    void desenhar(SDL_Renderer *renderizador, const Camera &camera) const;
+    void desenhar(SDL_Renderer *renderizador, const Camera &camera,
+                  bool mostrarHitboxes = false) const;
     int get_inimigosVivos() const;
 };
 

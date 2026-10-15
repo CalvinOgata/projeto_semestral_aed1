@@ -14,7 +14,6 @@ constexpr char TITULO_JANELA[] = "Projeto AED - Roguelike";
 constexpr int PASSO_GRADE = 48;
 
 // Jogador
-constexpr float LADO_JOGADOR = 32.0f;
 constexpr float VELOCIDADE_JOGADOR = 260.0f; // pixels por segundo
 
 // Arma (o cano que gira acompanhando o mouse)
@@ -30,7 +29,6 @@ constexpr float VELOCIDADE_PROJETIL = 680.0f;
 constexpr float ALCANCE_PROJETIL = 900.0f; // some depois de percorrer isso
 
 // Inimigos
-constexpr float LADO_INIMIGO = 28.0f;
 constexpr float VELOCIDADE_INIMIGO = 115.0f;
 constexpr int VIDA_INIMIGO = 2;
 

@@ -12,8 +12,8 @@ DIR_INC   := src/include
 DIR_SRC   := src/source
 DIR_BUILD := build
 
-CXXFLAGS  := -std=c++17 -Wall -Wextra -O2 -I$(DIR_INC) $(shell pkg-config --cflags sdl2)
-LDLIBS    := $(shell pkg-config --libs sdl2)
+CXXFLAGS  := -std=c++17 -Wall -Wextra -O2 -I$(DIR_INC) $(shell pkg-config --cflags sdl2 libpng)
+LDLIBS    := $(shell pkg-config --libs sdl2 libpng)
 
 ALVO      := jogo
 

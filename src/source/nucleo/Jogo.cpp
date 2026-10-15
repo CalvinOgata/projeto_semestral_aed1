@@ -13,17 +13,17 @@ namespace
 // e o jogador atravessaria meio mapa de uma vez.
 constexpr float DT_MAXIMO = 0.05f;
 
-std::filesystem::path caminho_save()
+std::filesystem::path diretorio_jogo()
 {
     char *base = SDL_GetBasePath();
     const auto diretorio = base ? std::filesystem::path(base) : std::filesystem::current_path();
     SDL_free(base);
-    return diretorio / "saves" / "progresso.json";
+    return diretorio;
 }
 } // namespace
 
 Jogo::Jogo()
-    : janela(nullptr), renderizador(nullptr), estado(EstadoJogo::INICIAL), progresso(caminho_save()),
+    : janela(nullptr), renderizador(nullptr), estado(EstadoJogo::INICIAL), progresso(diretorio_jogo() / "saves" / "progresso.json"),
       tempoAnterior(0),
       esperaTiro(0.0f), atirando(false), mouseTelaX(LARGURA_TELA / 2.0f + 120.0f),
       mouseTelaY(ALTURA_TELA / 2.0f)
@@ -72,6 +72,14 @@ bool Jogo::inicializar()
     if (!Desenho::inicializar(this->renderizador))
     {
         std::fprintf(stderr, "Erro ao preparar o desenho: %s\n", SDL_GetError());
+        return false;
+    }
+
+    const auto caminhoSprite = diretorio_jogo() / "assets" / "sprites" / "personagens" / "tux.png";
+    if (!this->spriteJogador.carregar(this->renderizador, caminhoSprite.string()))
+    {
+        std::fprintf(stderr, "Erro ao carregar %s: %s\n", caminhoSprite.string().c_str(),
+                     this->spriteJogador.get_erro().c_str());
         return false;
     }
 
@@ -196,6 +204,10 @@ void Jogo::tratar_eventos()
             {
                 this->pausar();
             }
+            else if (evento.key.keysym.sym == SDLK_F2)
+            {
+                this->mostrarHitboxes = !this->mostrarHitboxes;
+            }
             else if (evento.key.keysym.sym == SDLK_r)
             {
                 this->campanha.reiniciar_fase(this->jogador);
@@ -297,9 +309,11 @@ void Jogo::desenhar()
     else
     {
         this->campanha.get_faseAtual().get_salaAtual().desenhar(this->renderizador, this->camera,
-                                           this->campanha.get_faseAtual().get_indiceAtual() > 0);
+                                           this->campanha.get_faseAtual().get_indiceAtual() > 0,
+                                           this->mostrarHitboxes);
 
-        this->jogador.desenhar(this->renderizador, this->camera);
+        this->jogador.desenhar(this->renderizador, this->camera, this->mostrarHitboxes,
+                               &this->spriteJogador);
         Hud::desenhar(this->renderizador, this->jogador);
 
         if (this->estado == EstadoJogo::PAUSADO)
@@ -354,6 +368,7 @@ void Jogo::retomar()
 
 void Jogo::finalizar()
 {
+    this->spriteJogador.liberar();
     Desenho::finalizar();
 
     if (this->renderizador != nullptr)

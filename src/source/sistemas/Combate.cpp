@@ -143,11 +143,11 @@ void Combate::limpar_inativos()
     this->inimigos.remover_se([](const Inimigo &i) { return !i.get_vivo(); });
 }
 
-void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
+void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mostrarHitboxes) const
 {
     for (const Inimigo &inimigo : this->inimigos)
     {
-        inimigo.desenhar(renderizador, camera);
+        inimigo.desenhar(renderizador, camera, mostrarHitboxes);
     }
 
     for (const Projetil &projetil : this->projeteis)

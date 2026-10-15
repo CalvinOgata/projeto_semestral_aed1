@@ -2,14 +2,20 @@
 
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 
 #include "config/Config.h"
 #include "graficos/Desenho.h"
+#include "graficos/Sprite.h"
 
-Jogador::Jogador()
-    : vida(0), escudo(50), escudoMax(50), estamina(0), vidaMax(0), estaminaMax(0), x(0.0f), y(0.0f), largura(LADO_JOGADOR),
-      altura(LADO_JOGADOR), velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
+Jogador::Jogador(const DimensoesEntidade &dimensoes)
+    : vida(0), escudo(50), escudoMax(50), estamina(0), vidaMax(0), estaminaMax(0),
+      x(0.0f), y(0.0f), dimensoes(dimensoes), velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
 {
+    if (!dimensoes.valida())
+    {
+        throw std::invalid_argument("Dimensoes de jogador invalidas");
+    }
     // mudar_vidaMax()/mudar_estaminaMax() somam ao valor atual, por isso os
     // atributos comecam zerados na lista de inicializacao acima.
     this->mudar_vidaMax(100);
@@ -173,22 +179,22 @@ float Jogador::get_y() const
 
 float Jogador::get_centroX() const
 {
-    return this->x + this->largura / 2.0f;
+    return this->x + this->dimensoes.larguraHitbox / 2.0f;
 }
 
 float Jogador::get_centroY() const
 {
-    return this->y + this->altura / 2.0f;
+    return this->y + this->dimensoes.alturaHitbox / 2.0f;
 }
 
 float Jogador::get_largura() const
 {
-    return this->largura;
+    return this->dimensoes.larguraHitbox;
 }
 
 float Jogador::get_altura() const
 {
-    return this->altura;
+    return this->dimensoes.alturaHitbox;
 }
 
 float Jogador::get_velocidade() const
@@ -201,9 +207,17 @@ SDL_FRect Jogador::get_retangulo() const
     SDL_FRect retangulo;
     retangulo.x = this->x;
     retangulo.y = this->y;
-    retangulo.w = this->largura;
-    retangulo.h = this->altura;
+    retangulo.w = this->dimensoes.larguraHitbox;
+    retangulo.h = this->dimensoes.alturaHitbox;
     return retangulo;
+}
+
+SDL_FRect Jogador::get_retanguloVisual() const
+{
+    const float largura = static_cast<float>(this->dimensoes.larguraSprite);
+    const float altura = static_cast<float>(this->dimensoes.alturaSprite);
+    return {this->get_centroX() - largura / 2.0f, this->get_centroY() - altura / 2.0f,
+            largura, altura};
 }
 
 void Jogador::mirar_em(float mundoX, float mundoY)
@@ -261,30 +275,41 @@ const FilaArmas &Jogador::get_armas() const
     return this->armas;
 }
 
-void Jogador::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
+void Jogador::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mostrarHitbox,
+                       const Sprite *sprite) const
 {
     if (renderizador == nullptr)
     {
         return;
     }
 
-    const SDL_FRect corpo = camera.para_tela(this->get_retangulo());
+    const SDL_FRect corpo = camera.para_tela(this->get_retanguloVisual());
 
-    SDL_SetRenderDrawColor(renderizador, COR_JOGADOR.r, COR_JOGADOR.g, COR_JOGADOR.b,
-                           COR_JOGADOR.a);
-    SDL_RenderFillRectF(renderizador, &corpo);
+    if (sprite == nullptr || !sprite->desenhar(renderizador, corpo))
+    {
+        SDL_SetRenderDrawColor(renderizador, COR_JOGADOR.r, COR_JOGADOR.g, COR_JOGADOR.b,
+                               COR_JOGADOR.a);
+        SDL_RenderFillRectF(renderizador, &corpo);
 
-    SDL_SetRenderDrawColor(renderizador, COR_JOGADOR_BORDA.r, COR_JOGADOR_BORDA.g,
-                           COR_JOGADOR_BORDA.b, COR_JOGADOR_BORDA.a);
-    SDL_RenderDrawRectF(renderizador, &corpo);
+        SDL_SetRenderDrawColor(renderizador, COR_JOGADOR_BORDA.r, COR_JOGADOR_BORDA.g,
+                               COR_JOGADOR_BORDA.b, COR_JOGADOR_BORDA.a);
+        SDL_RenderDrawRectF(renderizador, &corpo);
+    }
 
-    // O cano vai por cima do corpo, senao o quadrado vermelho o esconde.
+    // A arma continua independente do sprite e acompanha a mira.
     const SDL_FPoint centro = camera.para_tela(this->get_centroX(), this->get_centroY());
     const SDL_FPoint direcao = this->get_direcaoMira();
 
     Desenho::retangulo_rotacionado(renderizador, centro.x - direcao.x * RECUO_ARMA,
                                    centro.y - direcao.y * RECUO_ARMA, COMPRIMENTO_ARMA,
                                    ESPESSURA_ARMA, this->anguloMira, COR_ARMA);
+    if (mostrarHitbox)
+    {
+        const SDL_FRect hitbox = camera.para_tela(this->get_retangulo());
+        SDL_SetRenderDrawColor(renderizador, 100, 255, 140, 255);
+        SDL_RenderDrawRectF(renderizador, &hitbox);
+    }
+
 }
 
 void Jogador::rec_escudo(int quantidade)
