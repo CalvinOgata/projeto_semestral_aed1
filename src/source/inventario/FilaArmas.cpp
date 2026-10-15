@@ -29,3 +29,14 @@ const Armas *FilaArmas::frente() const
 {
     return this->armas.frente();
 }
+
+bool FilaArmas::alternar()
+{
+    if (get_quantidade() < 2)
+    {
+        return false;
+    }
+    Armas atual;
+    armas.retirar(atual);
+    return armas.inserir(atual);
+}

@@ -32,7 +32,7 @@ brainstorming examples into approved mechanics, characters, or assets.
 
 ## Verified prototype baseline
 
-As inspected on 2026-10-14:
+As inspected on 2026-10-15:
 
 - The build uses C++17, SDL2, libpng, and a Makefile. Text uses an embedded bitmap font;
   SDL2_ttf is not required.
@@ -57,7 +57,7 @@ As inspected on 2026-10-14:
   number in the bottom-right corner; room/difficulty/enemy
   details are available during pause. No permanent footer or save banners during play.
 - This first room system is deterministic, not procedural. Enemy contact damage,
-  bosses, pickups, and death rules are still not implemented.
+  bosses, non-weapon pickups, and death rules are still not implemented.
 - Movement, mouse aiming, sustained shooting, projectiles, enemy pursuit,
   enemy damage, and a pause menu already exist.
 - `Jogador` models health, shield (initial/max 50), and stamina and provides methods to change them.
@@ -146,7 +146,7 @@ Use the existing `.clang-format` configuration.
 - Distinguish confirmed decisions, proposed ideas, and implemented behavior.
   Replace stale information instead of accumulating contradictory notes.
 - Current open decisions include the final hero/boss/bodyguard rosters, powers,
-  weapon variety, branching/procedural stages, further progression, and stamina rules.
+  further weapon balancing/variety, branching/procedural stages, further progression, and stamina rules.
   Procedural generation and death/restart rules have not yet been specified.
 - This document preserves context; it does not authorize implementing the
   entire roadmap without a corresponding user request.
@@ -214,3 +214,26 @@ Use the existing `.clang-format` configuration.
   destroying the renderer. Player resets must not own/copy/reload textures.
 - Assets resolve relative to SDL_GetBasePath, alongside the executable. Missing
   or invalid required Tux assets produce a startup error. Distribute assets/ with jogo.
+
+## Weapon inventory and combat
+
+- Seven weapon types now extend the existing `Armas` class (the repository name,
+  retained instead of renaming to singular): shotgun (three pellets at 0/+45/-45
+  degrees), piercing instant laser, forward/backward double shot, wall ricochet
+  (up to four bounces), 80-pixel/90-degree sword fan, bow/arrow, and returning boomerang.
+- `FilaArmas` still holds five weapons. F collects the nearest floor weapon within
+  54 pixels into the tail; full inventory leaves it untouched. Q moves the front
+  to the tail through FIFO operations; G drops the front with its remaining ammo.
+  These supplementary controls and floor distribution are initial implementation choices.
+- Each room initially offers all seven new types on its left side. `Sala` owns floor
+  items and preserves collections/drops on revisits. Phase reset/advancement recreates
+  the player and items. Existing phase checkpoint semantics remain unchanged.
+- Each finite-ammo attack costs one unit, regardless of projectile count. New weapons
+  start with 40 units; sword/boomerang are reusable (HUD displays `--`). Each weapon
+  has its own cadence; switching does not bypass the current firing cooldown.
+- Laser/sword damage is immediate with brief visual traces. Projectiles update in
+  steps no longer than 1/240 second. Boomerangs return toward the player, damage once
+  per enemy per outbound/return leg, and expire if unable to return. Dead enemies
+  remain inactive in the room list to preserve hit indices until room reset.
+- Floor weapons have provisional labeled drawings. Equipped weapon and inventory
+  count/controls are shown in pause; no extra permanent gameplay HUD was added.

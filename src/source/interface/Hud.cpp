@@ -101,7 +101,7 @@ void Hud::desenhar(SDL_Renderer *renderizador, const Jogador &jogador)
 
     const auto *arma = jogador.get_armas().frente();
     const int municao = arma ? arma->get_municao() : 0;
-    const std::string numero = std::to_string(municao);
+    const std::string numero = arma && arma->municao_infinita() ? "--" : std::to_string(municao);
     const int escala = 3;
     const int x = LARGURA_TELA - 20 - Texto::largura(numero, escala);
     const int y = ALTURA_TELA - 20 - Texto::altura(escala);

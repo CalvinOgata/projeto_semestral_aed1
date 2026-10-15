@@ -24,8 +24,9 @@ Jogo (janela, entrada, estados e laco principal)
 
 `Jogo` controla a cadencia dos tiros e chama a sala ativa, que delega a
 `Combate`. Este consulta a arma
-na frente da fila, consome municao e insere o projetil. Depois atualiza os
-projeteis e inimigos, resolve colisoes e remove os inativos. A remocao acontece
+na frente da fila, consome uma unidade de municao por ataque e cria projeteis
+ou ataques instantaneos conforme o tipo. Depois atualiza os
+projeteis e inimigos, resolve colisoes e remove projeteis inativos. A remocao acontece
 apos os percursos para evitar referencias invalidadas durante a iteracao.
 A ordem de atualizacao e de desenho do prototipo foi preservada.
 
@@ -60,7 +61,8 @@ ser registrada antes de substituir o armazenamento.
   existem durante toda a vida da fila; retirar nao destroi imediatamente o slot.
 - `FilaArmas` limita a capacidade a cinco e oferece apenas operacoes de
   inventario FIFO. O tiro altera a municao da arma da frente, sem remove-la.
-  Troca automatica de arma e coleta de armas ainda nao sao mecanicas implementadas.
+  F coleta no fim, Q alterna retirando a frente e reinserindo no fim em O(1),
+  e G solta a frente no chao. Fila cheia recusa a coleta sem perder a arma.
 - Consulte novamente ponteiros apos alterar a estrutura.
 
 ### Lista e combate
@@ -120,7 +122,7 @@ metade direita, afastados da entrada inicial. Dificuldade `d` aplica vida
 `VIDA_INIMIGO + d - 1` e velocidade `VELOCIDADE_INIMIGO * (1 + 0.12 * (d - 1))`.
 
 O piso define a area caminhavel. Jogador e inimigos sao limitados ao piso;
-projeteis saindo dele sao desativados. A camera respeita os limites com margem de 12 pixels
+projeteis saindo dele sao desativados, exceto ricochetes e boomerangs. A camera respeita os limites com margem de 12 pixels
 para paredes. `Sala` desenha piso, portas e entidades; `interface/Hud` desenha
 vida, escudo e energia em uma caixa unica e compacta no canto superior esquerdo
 e somente o numero de municao no canto inferior direito, sobre o mundo. `Fase` nao desenha interface. Novos objetos de sala devem ter seu ciclo
@@ -167,3 +169,18 @@ centralizada dentro de um quadro, preservando proporcoes e transparencia.
 `Jogo` possui o sprite do Tux e o fornece ao desenho de `Jogador`. A textura
 nao faz parte das entidades copiadas/reiniciadas, e e liberada antes do renderizador.
 O arquivo fica em `assets/sprites/personagens/tux.png`, relativo ao executavel.
+
+## Tipos de armas e objetos de sala
+
+`Armas` guarda `TipoArma`, municao, dano, quantidade de projeteis e cadencia;
+continua independente de SDL. `Combate` implementa shotgun, laser, tiro duplo,
+ricochete, espada, arco e boomerang. Laser e espada aplicam dano imediato e
+armazenam rastros visuais breves. Projeteis usam passos de no maximo 1/240 s
+para evitar saltar sobre hitboxes. Boomerangs registram indices atingidos por
+trajeto; inimigos mortos permanecem inativos na lista ate reiniciar a sala,
+preservando esses indices. Apenas projeteis inativos e rastros vencidos sao removidos.
+
+`Sala` possui `ListaSequencial<ArmaChao>` com armas coletaveis e descartadas.
+A busca da arma mais proxima custa O(n); as coletas ficam marcadas para preservar
+o estado local. Revisitar nao recria itens. As sete armas ficam disponiveis em
+cada sala como distribuicao inicial deterministica. Nenhum TAD conhece essas regras.

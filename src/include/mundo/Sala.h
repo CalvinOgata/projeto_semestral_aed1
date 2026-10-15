@@ -33,6 +33,13 @@ class Sala
 private:
     ConfiguracaoSala configuracao;
     Combate combate;
+    struct ArmaChao
+    {
+        Armas arma;
+        float x, y;
+        bool coletada = false;
+    };
+    ListaSequencial<ArmaChao> armasChao;
     EstadoSala estado = EstadoSala::NAO_VISITADA;
 
 public:
@@ -41,6 +48,8 @@ public:
     void sair();
     void atualizar(float dt, const Jogador &jogador);
     void disparar(Jogador &jogador);
+    bool coletar_arma(Jogador &jogador);
+    void soltar_arma(Jogador &jogador);
     void limitar_jogador(Jogador &jogador) const;
     bool tocando_porta(const Jogador &jogador, bool direita) const;
     bool liberada() const;

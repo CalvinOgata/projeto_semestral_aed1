@@ -1,10 +1,63 @@
 #include "entidades/Armas.h"
 
-Armas::Armas()
+Armas::Armas() : Armas(TipoArma::PISTOLA)
 {
-    this->set_municao(50);
-    this->set_dano(1);
-    this->set_quantidadeDisparos(1);
+}
+
+Armas::Armas(TipoArma tipo) : tipo(tipo)
+{
+    set_municao(tipo == TipoArma::PISTOLA ? 50 : 40);
+    set_dano(tipo == TipoArma::ESPADA ? 3 : (tipo == TipoArma::ARCO || tipo == TipoArma::LASER ? 2 : 1));
+    set_quantidadeDisparos(tipo == TipoArma::SHOTGUN ? 3 : (tipo == TipoArma::DUPLA ? 2 : 1));
+}
+
+TipoArma Armas::get_tipo() const
+{
+    return tipo;
+}
+const char *Armas::get_nome() const
+{
+    switch (tipo)
+    {
+    case TipoArma::SHOTGUN:
+        return "SHOTGUN";
+    case TipoArma::LASER:
+        return "LASER";
+    case TipoArma::DUPLA:
+        return "DUPLA";
+    case TipoArma::RICOCHETE:
+        return "RICOCHETE";
+    case TipoArma::ESPADA:
+        return "ESPADA";
+    case TipoArma::ARCO:
+        return "ARCO";
+    case TipoArma::BOOMERANG:
+        return "BOOMERANG";
+    default:
+        return "PISTOLA";
+    }
+}
+float Armas::get_intervalo() const
+{
+    switch (tipo)
+    {
+    case TipoArma::SHOTGUN:
+        return 0.5f;
+    case TipoArma::LASER:
+        return 0.35f;
+    case TipoArma::ESPADA:
+        return 0.4f;
+    case TipoArma::ARCO:
+        return 0.6f;
+    case TipoArma::BOOMERANG:
+        return 0.7f;
+    default:
+        return 0.14f;
+    }
+}
+bool Armas::municao_infinita() const
+{
+    return tipo == TipoArma::ESPADA || tipo == TipoArma::BOOMERANG;
 }
 
 Armas::~Armas()
@@ -28,7 +81,7 @@ int Armas::get_quantidadeDisparos() const
 
 bool Armas::sem_municao() const
 {
-    if (this->get_municao() > 0)
+    if (municao_infinita() || this->get_municao() > 0)
     {
         return false;
     }
@@ -41,7 +94,11 @@ bool Armas::atirar()
     {
         return false;
     }
-    this->set_municao(this->get_municao() - this->get_quantidadeDisparos());
+    // Um cartucho por ataque, independente do numero de projeteis.
+    if (!municao_infinita())
+    {
+        this->set_municao(this->get_municao() - 1);
+    }
     return true;
 }
 

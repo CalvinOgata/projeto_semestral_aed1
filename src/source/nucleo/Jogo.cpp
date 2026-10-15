@@ -208,6 +208,18 @@ void Jogo::tratar_eventos()
             {
                 this->mostrarHitboxes = !this->mostrarHitboxes;
             }
+            else if (evento.key.keysym.sym == SDLK_f)
+            {
+                this->campanha.get_faseAtual().get_salaAtual().coletar_arma(this->jogador);
+            }
+            else if (evento.key.keysym.sym == SDLK_q)
+            {
+                this->jogador.get_armas().alternar();
+            }
+            else if (evento.key.keysym.sym == SDLK_g)
+            {
+                this->campanha.get_faseAtual().get_salaAtual().soltar_arma(this->jogador);
+            }
             else if (evento.key.keysym.sym == SDLK_r)
             {
                 this->campanha.reiniciar_fase(this->jogador);
@@ -246,7 +258,8 @@ void Jogo::atualizar(float dt)
     if (this->atirando && this->esperaTiro <= 0.0f)
     {
         this->campanha.get_faseAtual().get_salaAtual().disparar(this->jogador);
-        this->esperaTiro = INTERVALO_TIRO;
+        const auto *arma = this->jogador.get_armaEquipada();
+        this->esperaTiro = arma ? arma->get_intervalo() : INTERVALO_TIRO;
     }
 
     this->campanha.get_faseAtual().get_salaAtual().atualizar(dt, this->jogador);
@@ -328,6 +341,11 @@ void Jogo::desenhar()
                 std::to_string(sala.get_inimigosVivos());
             Texto::desenhar_centralizado(this->renderizador, resumo, LARGURA_TELA / 2,
                                          36, 2, COR_TEXTO);
+            const auto *arma = this->jogador.get_armaEquipada();
+            const std::string inventario = std::string(arma ? arma->get_nome() : "SEM ARMA") +
+                " - INVENTARIO " + std::to_string(this->jogador.get_armas().get_quantidade()) + "/5";
+            Texto::desenhar_centralizado(this->renderizador, inventario, 480, 64, 2, COR_TEXTO);
+            Texto::desenhar_centralizado(this->renderizador, "F: COLETAR   Q: PROXIMA   G: SOLTAR", 480, 90, 2, COR_TEXTO);
         }
     }
     if (this->estado != EstadoJogo::JOGANDO && !this->mensagemSave.empty())

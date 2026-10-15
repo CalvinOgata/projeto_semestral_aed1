@@ -19,6 +19,7 @@ public:
     bool cheio() const;
     bool inserir(const Armas &arma);
     bool retirar(Armas &arma);
+    bool alternar();
     Armas *frente();
     const Armas *frente() const;
 };

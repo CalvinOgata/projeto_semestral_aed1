@@ -15,7 +15,15 @@ private:
     ListaSequencial<Projetil> projeteis;
     ListaSequencial<Inimigo> inimigos;
 
-    void atualizar_projeteis(float dt);
+    struct Rastro
+    {
+        SDL_FPoint inicio, fim;
+        float tempo;
+        TipoArma tipo;
+    };
+    ListaSequencial<Rastro> rastros;
+    void atacar_instantaneo(const Jogador &jogador, const Armas &arma);
+    void atualizar_projeteis(float dt, const Jogador &jogador);
     void atualizar_inimigos(float dt, const Jogador &jogador);
     void resolver_colisoes();
     void limpar_inativos();

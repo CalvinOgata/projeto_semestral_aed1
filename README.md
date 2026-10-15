@@ -21,6 +21,9 @@ Arch: `sudo pacman -S sdl2 libpng` · Debian/Ubuntu: `sudo apt install libsdl2-d
 | `W` `A` `S` `D` ou setas | mover dentro da sala |
 | mouse | mirar: a arma gira acompanhando o cursor |
 | botao esquerdo | atirar (segurar mantem o tiro na cadencia) |
+| `F` | coletar a arma mais proxima (ate 54 pixels), se houver vaga |
+| `Q` | passar a arma equipada para o fim da fila |
+| `G` | soltar a arma equipada no chao |
 | `F2` | mostrar/esconder hitboxes para conferir sprites |
 | `R` | reiniciar a fase atual e o jogador, mantendo fases ja concluidas |
 | `F5` | tentar salvar novamente se houver falha de gravacao |
@@ -162,3 +165,30 @@ separadamente. O sprite e estatico, ainda sem animacao.
 Mantenha a pasta `assets/` ao lado de `jogo` ao copiar o executavel. Os recursos
 sao localizados pelo diretorio do executavel, independentemente do diretorio do
 terminal. Se o PNG estiver ausente ou invalido, o jogo informa o erro ao iniciar.
+
+## Armas e inventario
+
+`Armas` representa cada arma e `FilaArmas` guarda ate cinco: coleta entra no
+fim, a frente fica equipada. Q retira a frente e a reinsere no fim; G retira
+somente a frente e preserva sua municao no chao. F com fila cheia nao coleta
+nem substitui nada. As sete novidades aparecem identificadas no chao de cada
+sala, na metade esquerda; coletas e descartes persistem ao revisitar a sala.
+A fase seguinte e R reiniciam armas e inventario. A pausa mostra arma equipada,
+ocupacao da fila e controles. Os desenhos das armas ainda sao provisorios.
+
+| Arma | Ataque |
+| --- | --- |
+| Pistola inicial | Um projetil reto |
+| Shotgun | Exatamente tres projeteis: reto e diagonais a -45 e +45 graus |
+| Laser | Raio instantaneo que atravessa inimigos ate a parede ou 1600 pixels |
+| Dupla | Um projetil para frente e outro para tras |
+| Ricochete | Projetil que rebate ate quatro vezes nas paredes |
+| Espada | Golpe em leque de 90 graus, alcance de 80 pixels, um acerto por inimigo |
+| Arco | Flecha com dano 2 e alcance de 1200 pixels |
+| Boomerang | Vai ate 260 pixels e retorna buscando o jogador; acerta uma vez por inimigo na ida e na volta |
+
+Cada ataque consome uma unidade de municao, inclusive shotgun e dupla.
+As novas armas com municao iniciam com 40 unidades. Espada e boomerang sao
+reutilizaveis e mostram `--` no contador. Cada tipo tem sua cadencia; trocar
+arma nao cancela o intervalo do ultimo ataque. Projeteis e efeitos sao
+removidos ao sair da sala, inclusive boomerangs em voo.

@@ -1,6 +1,8 @@
 #include "mundo/Sala.h"
 
 #include <algorithm>
+#include <cmath>
+#include "interface/Texto.h"
 #include <stdexcept>
 
 #include "config/Config.h"
@@ -21,6 +23,11 @@ void Sala::entrar(Jogador &jogador, bool pelaDireita)
     {
         this->combate.reiniciar(this->get_limites(), this->configuracao.quantidadeInimigos,
                                this->configuracao.dificuldade);
+        const TipoArma tipos[] = {TipoArma::SHOTGUN, TipoArma::LASER, TipoArma::DUPLA,
+            TipoArma::RICOCHETE, TipoArma::ESPADA, TipoArma::ARCO, TipoArma::BOOMERANG};
+        for (int i = 0; i < 7; ++i)
+            armasChao.inserir({Armas(tipos[i]), 160.0f + (i % 2) * 130.0f,
+                              configuracao.altura * (i / 2 + 1) / 5.0f, false});
         this->estado = EstadoSala::EM_COMBATE;
     }
     jogador.set_posicao(pelaDireita ? this->configuracao.largura - 90 - jogador.get_largura() : 90,
@@ -139,5 +146,45 @@ void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAn
         const SDL_FRect esquerda = camera.para_tela(this->get_porta(false));
         SDL_RenderFillRectF(renderizador, &esquerda);
     }
+    for (const auto &item : armasChao)
+    {
+        if (item.coletada)
+        {
+            continue;
+        }
+        const auto pos = camera.para_tela(item.x, item.y);
+        SDL_SetRenderDrawColor(renderizador, 245, 210, 90, 255);
+        const SDL_FRect caixa = {pos.x - 12, pos.y - 6, 24, 12};
+        SDL_RenderDrawRectF(renderizador, &caixa);
+        Texto::desenhar_centralizado(renderizador, item.arma.get_nome(), pos.x, pos.y + 12, 1, {255, 240, 180, 255});
+    }
     this->combate.desenhar(renderizador, camera, mostrarHitboxes);
+}
+
+bool Sala::coletar_arma(Jogador &jogador)
+{
+    ArmaChao *maisProxima = nullptr;
+    float distancia = 54;
+    for (auto &item : armasChao)
+    {
+        const float atual = std::hypot(item.x - jogador.get_centroX(), item.y - jogador.get_centroY());
+        if (!item.coletada && atual < distancia)
+        {
+            maisProxima = &item;
+            distancia = atual;
+        }
+    }
+    if (!maisProxima || !jogador.get_armas().inserir(maisProxima->arma))
+    {
+        return false;
+    }
+    maisProxima->coletada = true;
+    return true;
+}
+
+void Sala::soltar_arma(Jogador &jogador)
+{
+    Armas arma;
+    if (jogador.get_armas().retirar(arma))
+        armasChao.inserir({arma, jogador.get_centroX(), jogador.get_centroY(), false});
 }

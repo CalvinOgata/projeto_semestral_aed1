@@ -43,6 +43,7 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade)
 void Combate::limpar_projeteis()
 {
     this->projeteis.limpar();
+    this->rastros.limpar();
 }
 
 void Combate::disparar(Jogador &jogador)
@@ -54,25 +55,71 @@ void Combate::disparar(Jogador &jogador)
         return; // sem arma na fila ou sem municao
     }
 
-    const SDL_FPoint boca = jogador.get_bocaArma();
+    if (arma->get_tipo() == TipoArma::LASER || arma->get_tipo() == TipoArma::ESPADA)
+    {
+        atacar_instantaneo(jogador, *arma);
+        return;
+    }
     const SDL_FPoint direcao = jogador.get_direcaoMira();
-
-    this->projeteis.inserir(Projetil(boca.x, boca.y, direcao.x, direcao.y, arma->get_dano()));
+    const float angulo = std::atan2(direcao.y, direcao.x);
+    const int quantidade = arma->get_quantidadeDisparos();
+    for (int i = 0; i < quantidade; ++i)
+    {
+        float desvio = 0;
+        if (arma->get_tipo() == TipoArma::SHOTGUN)
+        {
+            desvio = (i - 1) * static_cast<float>(M_PI) / 4;
+        }
+        if (arma->get_tipo() == TipoArma::DUPLA)
+        {
+            desvio = i * static_cast<float>(M_PI);
+        }
+        const float dx = std::cos(angulo + desvio), dy = std::sin(angulo + desvio);
+        // Origem no corpo evita nascer alem da parede ao encostar nela.
+        projeteis.inserir(Projetil(jogador.get_centroX(), jogador.get_centroY(), dx, dy,
+                                  arma->get_dano(), arma->get_tipo()));
+    }
 }
 
-void Combate::atualizar_projeteis(float dt)
+void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
 {
-    for (Projetil &projetil : this->projeteis)
+    const bool espada = arma.get_tipo() == TipoArma::ESPADA;
+    const auto direcao = jogador.get_direcaoMira();
+    const float angulo = std::atan2(direcao.y, direcao.x);
+    const SDL_FPoint origem = {jogador.get_centroX(), jogador.get_centroY()};
+    // Nove segmentos formam o leque de 90 graus da espada.
+    const int raios = espada ? 9 : 1;
+    std::vector<bool> atingidos(inimigos.get_quantidade(), false);
+    for (int i = 0; i < raios; ++i)
     {
-        projetil.atualizar(dt);
-        const SDL_FRect area = projetil.get_retangulo();
-        if (area.x < this->limites.x || area.y < this->limites.y ||
-            area.x + area.w > this->limites.x + this->limites.w ||
-            area.y + area.h > this->limites.y + this->limites.h)
+        const float a = angulo + (espada ? (i - 4) * static_cast<float>(M_PI) / 16 : 0);
+        float x1 = origem.x, y1 = origem.y;
+        float x2 = x1 + std::cos(a) * (espada ? 80 : 1600);
+        float y2 = y1 + std::sin(a) * (espada ? 80 : 1600);
+        SDL_IntersectFRectAndLine(&limites, &x1, &y1, &x2, &y2);
+        rastros.inserir({{x1, y1}, {x2, y2}, 0.12f, arma.get_tipo()});
+        for (std::size_t j = 0; j < inimigos.get_quantidade(); ++j)
         {
-            projetil.desativar();
+            auto &inimigo = inimigos.obter(j);
+            if (!inimigo.get_vivo() || atingidos[j])
+            {
+                continue;
+            }
+            auto area = inimigo.get_retangulo();
+            float ax = x1, ay = y1, bx = x2, by = y2;
+            if (SDL_IntersectFRectAndLine(&area, &ax, &ay, &bx, &by))
+            {
+                inimigo.levar_dano(arma.get_dano());
+                atingidos[j] = true;
+            }
         }
     }
+}
+
+void Combate::atualizar_projeteis(float dt, const Jogador &jogador)
+{
+    for (Projetil &projetil : projeteis)
+        projetil.atualizar(dt, limites, {jogador.get_centroX(), jogador.get_centroY()});
 }
 
 void Combate::atualizar_inimigos(float dt, const Jogador &jogador)
@@ -110,8 +157,9 @@ void Combate::resolver_colisoes()
 
         const SDL_FRect areaProjetil = projetil.get_retangulo();
 
-        for (Inimigo &inimigo : this->inimigos)
+        for (std::size_t indice = 0; indice < inimigos.get_quantidade(); ++indice)
         {
+            Inimigo &inimigo = inimigos.obter(indice);
             if (!inimigo.get_vivo())
             {
                 continue;
@@ -119,11 +167,13 @@ void Combate::resolver_colisoes()
 
             const SDL_FRect areaInimigo = inimigo.get_retangulo();
 
-            if (SDL_HasIntersectionF(&areaProjetil, &areaInimigo))
+            if (SDL_HasIntersectionF(&areaProjetil, &areaInimigo) && projetil.atingir(indice))
             {
                 inimigo.levar_dano(projetil.get_dano());
-                projetil.desativar();
-                break; // cada tiro acerta um inimigo so
+                if (!projetil.get_ativo())
+                {
+                    break;
+                }
             }
         }
     }
@@ -131,20 +181,39 @@ void Combate::resolver_colisoes()
 
 void Combate::atualizar(float dt, const Jogador &jogador)
 {
-    this->atualizar_projeteis(dt);
-    this->atualizar_inimigos(dt, jogador);
-    this->resolver_colisoes();
+    // Passos pequenos evitam atravessar inimigos ou paredes entre quadros.
+    float restante = std::max(0.0f, dt);
+    while (restante > 0)
+    {
+        const float passo = std::min(restante, 1.0f / 240.0f);
+        atualizar_projeteis(passo, jogador);
+        atualizar_inimigos(passo, jogador);
+        resolver_colisoes();
+        restante -= passo;
+    }
+    for (auto &rastro : rastros)
+    {
+        rastro.tempo -= dt;
+    }
+    rastros.remover_se([](const Rastro &r) { return r.tempo <= 0; });
     this->limpar_inativos();
 }
 
 void Combate::limpar_inativos()
 {
     this->projeteis.remover_se([](const Projetil &p) { return !p.get_ativo(); });
-    this->inimigos.remover_se([](const Inimigo &i) { return !i.get_vivo(); });
+    // Preserva indices dos inimigos para registrar acertos do boomerang por trajeto.
 }
 
 void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mostrarHitboxes) const
 {
+    for (const auto &rastro : rastros)
+    {
+        const auto a = camera.para_tela(rastro.inicio.x, rastro.inicio.y);
+        const auto b = camera.para_tela(rastro.fim.x, rastro.fim.y);
+        SDL_SetRenderDrawColor(renderizador, 120, 255, rastro.tipo == TipoArma::LASER ? 160 : 255, 255);
+        SDL_RenderDrawLineF(renderizador, a.x, a.y, b.x, b.y);
+    }
     for (const Inimigo &inimigo : this->inimigos)
     {
         inimigo.desenhar(renderizador, camera, mostrarHitboxes);
