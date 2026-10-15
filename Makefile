@@ -17,8 +17,8 @@ LDLIBS    := $(shell pkg-config --libs sdl2)
 
 ALVO      := jogo
 
-CABECALHOS := $(wildcard $(DIR_INC)/*.h)
-FONTES    := $(wildcard $(DIR_SRC)/*.cpp)
+CABECALHOS := $(shell find $(DIR_INC) -name '*.h')
+FONTES    := $(shell find $(DIR_SRC) -name '*.cpp')
 OBJETOS   := $(patsubst $(DIR_SRC)/%.cpp,$(DIR_BUILD)/%.o,$(FONTES))
 DEPS      := $(OBJETOS:.o=.d)
 
@@ -31,11 +31,9 @@ all: $(ALVO)
 $(ALVO): $(OBJETOS)
 	$(CXX) $(OBJETOS) -o $@ $(LDLIBS)
 
-$(DIR_BUILD)/%.o: $(DIR_SRC)/%.cpp | $(DIR_BUILD)
+$(DIR_BUILD)/%.o: $(DIR_SRC)/%.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
-
-$(DIR_BUILD):
-	mkdir -p $(DIR_BUILD)
 
 run: $(ALVO)
 	./$(ALVO)

@@ -1,7 +1,7 @@
-#include "Menu.h"
+#include "interface/Menu.h"
 
-#include "Config.h"
-#include "Texto.h"
+#include "config/Config.h"
+#include "interface/Texto.h"
 
 namespace
 {

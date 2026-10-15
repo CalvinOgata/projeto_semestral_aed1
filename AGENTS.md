@@ -43,7 +43,7 @@ As inspected on 2026-10-14:
   enemy damage, and a pause menu already exist.
 - `Jogador` models health and stamina and provides methods to change them.
   Their presence does not imply a complete damage, stamina-cost, or powers system.
-- `FilaArmas` is an array-backed FIFO weapon queue with capacity `MAX_ARMAS`
+- `FilaArmas` adapts a reusable circular-array FIFO weapon queue with capacity `MAX_ARMAS`
   (currently five). `Armas` holds ammunition and shooting/damage properties.
 - Rendering uses a logical resolution of 960x540 in a resizable window.
 
@@ -52,13 +52,19 @@ implementation changes make it stale.
 
 ## Repository map and commands
 
-- `src/include/`: headers; `src/source/`: implementations.
-- `Jogo`: SDL lifecycle, main loop, game states, entities, and collisions.
+- `src/include/`: headers; `src/source/`: implementations, grouped by responsibility.
+- `estruturas/`: SDL-independent TADs (`Fila`, `ListaSequencial`); template code
+  stays in headers. `ListaSequencial` currently uses `std::vector`, not linked nodes.
+- `inventario/`: game-specific adapter `FilaArmas`.
+- `sistemas/`: `Combate` owns enemies/projectiles and combat rules.
+- `nucleo/`, `entidades/`, `graficos/`, `interface/`, `config/`: application,
+  game entities, rendering helpers, UI, and configuration.
+- `Jogo`: SDL lifecycle, main loop, input, game states, and system coordination.
 - `Jogador`, `Inimigo`, `Projetil`: player, enemies, and projectiles.
 - `Armas`, `FilaArmas`: weapons and the player's weapon queue.
 - `Camera`: world/screen coordinates and camera tracking.
 - `Menu`, `Texto`, `Desenho`: pause menu, bitmap text, and drawing helpers.
-- `src/include/Config.h`: resolution, colors, and tuning constants.
+- `src/include/config/Config.h`: resolution, colors, and tuning constants.
 - `README.md`: setup, controls, and naming conventions.
 
 Run commands from the repository root:
@@ -73,6 +79,21 @@ Preserve existing Portuguese identifiers and follow README naming conventions:
 PascalCase classes, lowercase-starting methods, snake_case verb phrases,
 camelCase attributes/compound-name suffixes, and UPPER_SNAKE_CASE constants.
 Use the existing `.clang-format` configuration.
+
+## Architecture decisions
+
+- The user explicitly wants clear separation of abstract data types and their
+  applications in the game for AED1. Keep storage algorithms in `estruturas/`,
+  domain adapters in their modules, and gameplay rules in entities/systems.
+- Prefer composition and focused classes. TADs must not depend on SDL or game
+  types. Do not expose their internal arrays, nodes, or backing containers.
+- The weapon queue exposes FIFO operations and front access; arbitrary mutable
+  indexing was removed. Empty front access returns nullptr.
+- Preserve prototype gameplay during structural refactors. Do not add a stack,
+  registry, or linked list solely to claim coverage: introduce each when an
+  agreed mechanic needs its semantics. No course ban on STL has been stated.
+- `docs/arquitetura.md` explains implemented TADs, complexity, responsibilities,
+  and tentative future uses. Keep it and README consistent with this file.
 
 ## Maintaining context
 

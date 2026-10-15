@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL.h>
 
-#include "Camera.h"
+#include "graficos/Camera.h"
 
 class Projetil
 {

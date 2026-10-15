@@ -3,8 +3,8 @@
 
 #include <SDL2/SDL.h>
 
-#include "Camera.h"
-#include "FilaArmas.h"
+#include "graficos/Camera.h"
+#include "inventario/FilaArmas.h"
 
 class Jogador
 {

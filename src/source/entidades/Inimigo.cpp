@@ -1,8 +1,8 @@
-#include "Inimigo.h"
+#include "entidades/Inimigo.h"
 
 #include <cmath>
 
-#include "Config.h"
+#include "config/Config.h"
 
 Inimigo::Inimigo()
     : x(0.0f), y(0.0f), lado(LADO_INIMIGO), velocidade(VELOCIDADE_INIMIGO), vida(VIDA_INIMIGO),

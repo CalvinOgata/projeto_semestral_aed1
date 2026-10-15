@@ -1,6 +1,6 @@
-#include "Camera.h"
+#include "graficos/Camera.h"
 
-#include "Config.h"
+#include "config/Config.h"
 
 Camera::Camera() : x(0.0f), y(0.0f)
 {

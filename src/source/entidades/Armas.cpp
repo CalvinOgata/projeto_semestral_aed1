@@ -1,4 +1,4 @@
-#include "Armas.h"
+#include "entidades/Armas.h"
 
 Armas::Armas()
 {

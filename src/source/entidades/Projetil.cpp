@@ -1,8 +1,8 @@
-#include "Projetil.h"
+#include "entidades/Projetil.h"
 
 #include <cmath>
 
-#include "Config.h"
+#include "config/Config.h"
 
 Projetil::Projetil()
     : x(0.0f), y(0.0f), velX(0.0f), velY(0.0f), lado(LADO_PROJETIL), alcanceRestante(0.0f), dano(0),

@@ -1,11 +1,10 @@
-#include "Jogo.h"
+#include "nucleo/Jogo.h"
 
-#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
-#include "Config.h"
-#include "Desenho.h"
+#include "config/Config.h"
+#include "graficos/Desenho.h"
 
 namespace
 {
@@ -71,7 +70,7 @@ bool Jogo::inicializar()
                               -this->jogador.get_altura() / 2.0f);
     this->camera.centralizar_em(this->jogador.get_centroX(), this->jogador.get_centroY());
     this->atualizar_mira();
-    this->povoar_inimigos();
+    this->combate.reiniciar(this->jogador);
 
     this->estado = EstadoJogo::JOGANDO;
     this->tempoAnterior = SDL_GetPerformanceCounter();
@@ -81,38 +80,6 @@ bool Jogo::inicializar()
 EstadoJogo Jogo::get_estado() const
 {
     return this->estado;
-}
-
-int Jogo::get_inimigosVivos() const
-{
-    int vivos = 0;
-
-    for (const Inimigo &inimigo : this->inimigos)
-    {
-        if (inimigo.get_vivo())
-        {
-            vivos++;
-        }
-    }
-    return vivos;
-}
-
-void Jogo::povoar_inimigos()
-{
-    this->inimigos.clear();
-    this->inimigos.reserve(QUANTIDADE_INIMIGOS);
-
-    // Nascem espalhados num circulo em volta do jogador.
-    for (int i = 0; i < QUANTIDADE_INIMIGOS; i++)
-    {
-        const float angulo = (2.0f * static_cast<float>(M_PI) * i) / QUANTIDADE_INIMIGOS;
-
-        const float centroX = this->jogador.get_centroX() + std::cos(angulo) * RAIO_SURGIMENTO;
-        const float centroY = this->jogador.get_centroY() + std::sin(angulo) * RAIO_SURGIMENTO;
-
-        this->inimigos.push_back(
-            Inimigo(centroX - LADO_INIMIGO / 2.0f, centroY - LADO_INIMIGO / 2.0f));
-    }
 }
 
 void Jogo::executar()
@@ -210,14 +177,11 @@ void Jogo::atualizar(float dt)
 
     if (this->atirando && this->esperaTiro <= 0.0f)
     {
-        this->disparar();
+        this->combate.disparar(this->jogador);
         this->esperaTiro = INTERVALO_TIRO;
     }
 
-    this->atualizar_projeteis(dt);
-    this->atualizar_inimigos(dt);
-    this->resolver_colisoes();
-    this->limpar_inativos();
+    this->combate.atualizar(dt, this->jogador);
 }
 
 void Jogo::mover_jogador(float dt)
@@ -246,90 +210,6 @@ void Jogo::atualizar_mira()
     this->jogador.mirar_em(alvo.x, alvo.y);
 }
 
-void Jogo::disparar()
-{
-    Armas *arma = this->jogador.get_armaEquipada();
-
-    if (arma == nullptr || !arma->atirar())
-    {
-        return; // sem arma na fila ou sem municao
-    }
-
-    const SDL_FPoint boca = this->jogador.get_bocaArma();
-    const SDL_FPoint direcao = this->jogador.get_direcaoMira();
-
-    this->projeteis.push_back(Projetil(boca.x, boca.y, direcao.x, direcao.y, arma->get_dano()));
-}
-
-void Jogo::atualizar_projeteis(float dt)
-{
-    for (Projetil &projetil : this->projeteis)
-    {
-        projetil.atualizar(dt);
-    }
-}
-
-void Jogo::atualizar_inimigos(float dt)
-{
-    const float alvoX = this->jogador.get_centroX();
-    const float alvoY = this->jogador.get_centroY();
-
-    for (Inimigo &inimigo : this->inimigos)
-    {
-        inimigo.perseguir(alvoX, alvoY, dt);
-    }
-
-    // Sem isso os cinco se empilham num quadrado so ao chegar no jogador.
-    for (std::size_t a = 0; a < this->inimigos.size(); a++)
-    {
-        for (std::size_t b = a + 1; b < this->inimigos.size(); b++)
-        {
-            this->inimigos[a].afastar_de(this->inimigos[b]);
-        }
-    }
-}
-
-void Jogo::resolver_colisoes()
-{
-    for (Projetil &projetil : this->projeteis)
-    {
-        if (!projetil.get_ativo())
-        {
-            continue;
-        }
-
-        const SDL_FRect areaProjetil = projetil.get_retangulo();
-
-        for (Inimigo &inimigo : this->inimigos)
-        {
-            if (!inimigo.get_vivo())
-            {
-                continue;
-            }
-
-            const SDL_FRect areaInimigo = inimigo.get_retangulo();
-
-            if (SDL_HasIntersectionF(&areaProjetil, &areaInimigo))
-            {
-                inimigo.levar_dano(projetil.get_dano());
-                projetil.desativar();
-                break; // cada tiro acerta um inimigo so
-            }
-        }
-    }
-}
-
-void Jogo::limpar_inativos()
-{
-    this->projeteis.erase(std::remove_if(this->projeteis.begin(), this->projeteis.end(),
-                                         [](const Projetil &p) { return !p.get_ativo(); }),
-                          this->projeteis.end());
-
-    this->inimigos.erase(std::remove_if(this->inimigos.begin(), this->inimigos.end(),
-                                        [](const Inimigo &i) { return !i.get_vivo(); }),
-                         this->inimigos.end());
-}
-
 void Jogo::desenhar()
 {
     SDL_SetRenderDrawColor(this->renderizador, COR_MUNDO.r, COR_MUNDO.g, COR_MUNDO.b, COR_MUNDO.a);
@@ -337,15 +217,7 @@ void Jogo::desenhar()
 
     this->desenhar_grade();
 
-    for (const Inimigo &inimigo : this->inimigos)
-    {
-        inimigo.desenhar(this->renderizador, this->camera);
-    }
-
-    for (const Projetil &projetil : this->projeteis)
-    {
-        projetil.desenhar(this->renderizador, this->camera);
-    }
+    this->combate.desenhar(this->renderizador, this->camera);
 
     this->jogador.desenhar(this->renderizador, this->camera);
 
@@ -409,4 +281,9 @@ void Jogo::finalizar()
         this->janela = nullptr;
     }
     SDL_Quit();
+}
+
+int Jogo::get_inimigosVivos() const
+{
+    return this->combate.get_inimigosVivos();
 }

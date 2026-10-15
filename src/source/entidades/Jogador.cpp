@@ -1,9 +1,9 @@
-#include "Jogador.h"
+#include "entidades/Jogador.h"
 
 #include <cmath>
 
-#include "Config.h"
-#include "Desenho.h"
+#include "config/Config.h"
+#include "graficos/Desenho.h"
 
 Jogador::Jogador()
     : vida(0), estamina(0), vidaMax(0), estaminaMax(0), x(0.0f), y(0.0f), largura(LADO_JOGADOR),
@@ -247,7 +247,7 @@ SDL_FPoint Jogador::get_bocaArma() const
 
 Armas *Jogador::get_armaEquipada()
 {
-    return this->armas.get_ponteiro(0);
+    return this->armas.frente();
 }
 
 FilaArmas &Jogador::get_armas()

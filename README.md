@@ -53,28 +53,23 @@ dia o grupo quiser verificacao automatica, o caminho e adotar `snake_case` puro
 
 ## Estrutura
 
-```
-src/
-├── include/   cabecalhos (.h)
-└── source/    implementacoes (.cpp)
-build/         objetos gerados pelo make (fora do git)
-jogo           executavel gerado pelo make (fora do git)
-```
+Cabecalhos ficam em `src/include/` e implementacoes em `src/source/`, com os
+mesmos modulos nos dois diretorios (templates ficam apenas nos cabecalhos):
 
-| Modulo | Papel |
+| Modulo | Responsabilidade |
 | --- | --- |
-| `main` | ponto de entrada |
-| `Jogo` | janela, laco principal, estados, colisoes e listas de entidades |
-| `Camera` | converte mundo <-> tela; e o que faz o mapa parecer infinito |
-| `Jogador` | vida, estamina, posicao, movimento, mira e arma |
-| `Inimigo` | persegue o jogador, leva dano e se afasta dos outros |
-| `Projetil` | tiro com direcao, alcance e dano |
-| `Armas` | municao, dano e disparo |
-| `FilaArmas` | fila de armas do jogador (FIFO, ate `MAX_ARMAS`) |
-| `Menu` | menu de pausa (continuar / sair) |
-| `Texto` | fonte de bitmap 5x7 desenhada com retangulos |
-| `Desenho` | retangulo girado (o cano da arma), via textura de 1x1 |
-| `Config.h` | resolucao, paleta e constantes de ajuste |
+| `estruturas/` | TADs genericos: fila circular e lista sequencial |
+| `inventario/` | `FilaArmas`: aplica a fila ao inventario |
+| `entidades/` | `Jogador`, `Inimigo`, `Projetil`, `Armas` |
+| `sistemas/` | `Combate`: disparos, inimigos, colisoes e remocao de inativos |
+| `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao |
+| `graficos/` | `Camera`, `Desenho`: coordenadas e desenho auxiliar |
+| `interface/` | `Menu`, `Texto`: menu de pausa e fonte bitmap |
+| `config/` | `Config.h`: resolucao, paleta e constantes |
 
-O jogo trabalha sempre em 960x540; a janela pode ser redimensionada que o SDL
-escala a imagem.
+O Makefile descobre os fontes nos subdiretorios e espelha essa estrutura em
+`build/`. O executavel continua sendo `./jogo`. O jogo trabalha em 960x540 e o
+SDL escala a imagem quando a janela e redimensionada.
+
+Veja [Arquitetura e TADs](docs/arquitetura.md) para contratos, custos das
+operacoes e exemplos de aplicacao das estruturas ao jogo.
