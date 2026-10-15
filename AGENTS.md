@@ -36,9 +36,22 @@ As inspected on 2026-10-14:
 
 - The build uses C++17, SDL2, and a Makefile. Text uses an embedded bitmap font;
   SDL2_ttf is not required.
-- The current world is open and borderless, with a following camera and a
-  reference grid. This is the prototype's current behavior; the intended
-  Soul Knight-inspired stages and challenge rooms are future work.
+- The world now consists of a linear authored phase of three bounded rooms.
+  Each `Sala` owns its `Combate` and persists its state when revisited. `Fase`
+  stores rooms in `ListaSequencial<Sala>` and controls navigation.
+- Rooms have configurable name, size, difficulty, enemy count, and release
+  requirements (eliminate enemies and/or minimum active time). Current rooms:
+  800x400 / difficulty 1 / 4 enemies; 1120x640 / difficulty 2 / 7 enemies;
+  1440x800 / difficulty 3 / 10 enemies plus a 20-second minimum.
+- Doors remain locked until requirements are met. E near the right/left door
+  advances/returns; the last right door completes the phase. R resets the entire
+  phase/player. Cleared rooms do not respawn enemies; projectiles are discarded
+  on leaving. Only the active room updates; pause freezes its timer.
+- Difficulty increases enemy count (configured per room), health, and speed.
+  Walls constrain players/enemies and discard projectiles. The camera is bounded
+  with margins for walls/HUD. Room status, ammunition, and controls appear on screen.
+- This first room system is deterministic, not procedural. Enemy contact damage,
+  bosses, pickups, and death rules are still not implemented.
 - Movement, mouse aiming, sustained shooting, projectiles, enemy pursuit,
   enemy damage, and a pause menu already exist.
 - `Jogador` models health and stamina and provides methods to change them.
@@ -56,7 +69,8 @@ implementation changes make it stale.
 - `estruturas/`: SDL-independent TADs (`Fila`, `ListaSequencial`); template code
   stays in headers. `ListaSequencial` currently uses `std::vector`, not linked nodes.
 - `inventario/`: game-specific adapter `FilaArmas`.
-- `sistemas/`: `Combate` owns enemies/projectiles and combat rules.
+- `sistemas/`: each room owns a `Combate` with its enemies/projectiles and combat rules.
+- `mundo/`: `Sala`, room configuration/requirements, and `Fase` navigation.
 - `nucleo/`, `entidades/`, `graficos/`, `interface/`, `config/`: application,
   game entities, rendering helpers, UI, and configuration.
 - `Jogo`: SDL lifecycle, main loop, input, game states, and system coordination.
@@ -104,7 +118,7 @@ Use the existing `.clang-format` configuration.
 - Distinguish confirmed decisions, proposed ideas, and implemented behavior.
   Replace stale information instead of accumulating contradictory notes.
 - Current open decisions include the final hero/boss/bodyguard rosters, powers,
-  weapon variety, stage and room structure, progression, and stamina rules.
+  weapon variety, branching/procedural stages, further progression, and stamina rules.
   Procedural generation and death/restart rules have not yet been specified.
 - This document preserves context; it does not authorize implementing the
   entire roadmap without a corresponding user request.

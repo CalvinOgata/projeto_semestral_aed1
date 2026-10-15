@@ -6,7 +6,7 @@
 #include "entidades/Jogador.h"
 #include "graficos/Camera.h"
 #include "interface/Menu.h"
-#include "sistemas/Combate.h"
+#include "mundo/Fase.h"
 
 enum class EstadoJogo
 {
@@ -26,7 +26,7 @@ private:
     Menu menu;
     Camera camera;
 
-    Combate combate;
+    Fase fase;
 
     Uint64 tempoAnterior;
     float esperaTiro; // segundos que faltam para o proximo disparo
@@ -56,7 +56,7 @@ private:
     void mover_jogador(float dt);
     void atualizar_mira();
 
-    void desenhar_grade();
+    void atualizar_camera();
 
     void pausar();
     void retomar();

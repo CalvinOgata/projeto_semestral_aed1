@@ -18,9 +18,11 @@ Arch: `sudo pacman -S sdl2` · Debian/Ubuntu: `sudo apt install libsdl2-dev`
 
 | Entrada | Acao |
 | --- | --- |
-| `W` `A` `S` `D` ou setas | mover (mapa aberto, sem bordas) |
+| `W` `A` `S` `D` ou setas | mover dentro da sala |
 | mouse | mirar: a arma gira acompanhando o cursor |
 | botao esquerdo | atirar (segurar mantem o tiro na cadencia) |
+| `E` | usar uma porta liberada quando estiver perto |
+| `R` | reiniciar toda a fase e o jogador |
 | `Esc` | abrir o menu de pausa (e voltar ao jogo) |
 | setas / `W` `S` | navegar no menu |
 | `Enter` ou `Espaco` | confirmar |
@@ -29,10 +31,28 @@ O menu tambem responde ao mouse (passar por cima seleciona, clique confirma).
 
 ## Como esta agora
 
-Mapa aberto no estilo Vampire Survivors / Brotato: nao ha sala nem borda, a
-camera segue o jogador e a grade serve so de referencia de movimento. Cinco
-inimigos azuis nascem em volta, perseguem o jogador e morrem depois de
-`VIDA_INIMIGO` acertos. A municao sai da `FilaArmas` do jogador.
+Uma fase com tres salas conectadas, com tamanhos e dificuldades crescentes.
+Cada sala tem seus proprios inimigos, projeteis e requisitos de liberacao.
+
+| Sala | Tamanho | Dificuldade | Inimigos | Requisito para abrir portas |
+| --- | --- | --- | --- | --- |
+| Setor de Boot | 800x400 | 1 | 4 | Eliminar todos |
+| Rede Infectada | 1120x640 | 2 | 7 | Eliminar todos |
+| Nucleo em Quarentena | 1440x800 | 3 | 10 | Eliminar todos e permanecer 20 segundos ativos |
+
+As portas vermelhas estao bloqueadas; verdes estao liberadas. Aproxime-se da
+porta direita e aperte `E` para avancar. Nas salas seguintes, a porta esquerda
+permite voltar depois de completar o desafio. Salas ja liberadas permanecem
+vazias ao revisitar. A saida direita da ultima sala conclui a fase.
+
+A dificuldade aumenta vida e velocidade dos inimigos. Paredes limitam movimento
+e tiros; a camera acompanha o jogador dentro dos limites da sala. O painel
+mostra sala, dificuldade, inimigos, municao e tempo restante. `Esc` pausa tambem
+o cronometro. `R` permite recomecar, inclusive se acabar a municao.
+
+As salas desta primeira fase sao fixas. Dano de contato ao jogador, bosses,
+recompensas e geracao procedural ainda serao adicionados conforme as decisoes
+do projeto.
 
 ## Convencoes de nome
 
@@ -61,6 +81,7 @@ mesmos modulos nos dois diretorios (templates ficam apenas nos cabecalhos):
 | `estruturas/` | TADs genericos: fila circular e lista sequencial |
 | `inventario/` | `FilaArmas`: aplica a fila ao inventario |
 | `entidades/` | `Jogador`, `Inimigo`, `Projetil`, `Armas` |
+| `mundo/` | `Sala`: entidades e requisitos; `Fase`: sequencia e navegacao |
 | `sistemas/` | `Combate`: disparos, inimigos, colisoes e remocao de inativos |
 | `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao |
 | `graficos/` | `Camera`, `Desenho`: coordenadas e desenho auxiliar |

@@ -3,8 +3,7 @@
 
 #include <SDL2/SDL.h>
 
-// Converte entre coordenadas de mundo (ilimitadas) e de tela.
-// O mundo e aberto: a camera e que anda junto com o jogador.
+// Converte entre coordenadas de mundo e de tela.
 class Camera
 {
 private:
@@ -15,6 +14,8 @@ public:
     Camera();
 
     void centralizar_em(float mundoX, float mundoY);
+
+    void limitar_a(const SDL_FRect &area);
 
     float get_x() const;
     float get_y() const;

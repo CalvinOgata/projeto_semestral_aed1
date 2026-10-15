@@ -10,7 +10,7 @@ constexpr int ALTURA_TELA = 540;
 
 constexpr char TITULO_JANELA[] = "Projeto AED - Roguelike";
 
-// Mundo aberto: nao existe limite de arena, so a grade de referencia.
+// Grade do piso das salas.
 constexpr int PASSO_GRADE = 48;
 
 // Jogador
@@ -33,8 +33,6 @@ constexpr float ALCANCE_PROJETIL = 900.0f; // some depois de percorrer isso
 constexpr float LADO_INIMIGO = 28.0f;
 constexpr float VELOCIDADE_INIMIGO = 115.0f;
 constexpr int VIDA_INIMIGO = 2;
-constexpr int QUANTIDADE_INIMIGOS = 5;
-constexpr float RAIO_SURGIMENTO = 330.0f; // distancia do jogador ao nascer
 
 // Paleta
 constexpr SDL_Color COR_MUNDO = {104, 104, 110, 255};

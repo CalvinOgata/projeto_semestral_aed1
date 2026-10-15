@@ -19,6 +19,9 @@ public:
     Inimigo();
     Inimigo(float mundoX, float mundoY);
 
+    Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial);
+    void limitar_a(const SDL_FRect &area);
+
     void perseguir(float alvoX, float alvoY, float dt);
     void afastar_de(Inimigo &outro);
     void levar_dano(int);

@@ -1,5 +1,6 @@
 #include "entidades/Inimigo.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "config/Config.h"
@@ -144,4 +145,16 @@ void Inimigo::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
     SDL_SetRenderDrawColor(renderizador, COR_INIMIGO_BORDA.r, COR_INIMIGO_BORDA.g,
                            COR_INIMIGO_BORDA.b, COR_INIMIGO_BORDA.a);
     SDL_RenderDrawRectF(renderizador, &naTela);
+}
+
+Inimigo::Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial)
+    : x(mundoX), y(mundoY), lado(LADO_INIMIGO), velocidade(std::max(0.0f, velocidadeInicial)),
+      vida(std::max(1, vidaInicial)), vivo(true)
+{
+}
+
+void Inimigo::limitar_a(const SDL_FRect &area)
+{
+    this->x = std::clamp(this->x, area.x, area.x + area.w - this->lado);
+    this->y = std::clamp(this->y, area.y, area.y + area.h - this->lado);
 }

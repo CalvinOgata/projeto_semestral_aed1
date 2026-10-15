@@ -2,6 +2,8 @@
 
 #include "config/Config.h"
 
+#include <algorithm>
+
 Camera::Camera() : x(0.0f), y(0.0f)
 {
 }
@@ -46,4 +48,12 @@ SDL_FPoint Camera::para_mundo(float telaX, float telaY) const
     ponto.x = telaX + this->x;
     ponto.y = telaY + this->y;
     return ponto;
+}
+
+void Camera::limitar_a(const SDL_FRect &area)
+{
+    this->x = area.w <= LARGURA_TELA ? area.x + (area.w - LARGURA_TELA) / 2.0f
+                                   : std::clamp(this->x, area.x, area.x + area.w - LARGURA_TELA);
+    this->y = area.h <= ALTURA_TELA ? area.y + (area.h - ALTURA_TELA) / 2.0f
+                                  : std::clamp(this->y, area.y, area.y + area.h - ALTURA_TELA);
 }

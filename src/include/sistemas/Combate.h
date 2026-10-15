@@ -11,6 +11,7 @@
 class Combate
 {
 private:
+    SDL_FRect limites = {0, 0, 800, 400};
     ListaSequencial<Projetil> projeteis;
     ListaSequencial<Inimigo> inimigos;
 
@@ -20,7 +21,8 @@ private:
     void limpar_inativos();
 
 public:
-    void reiniciar(const Jogador &jogador);
+    void reiniciar(const SDL_FRect &area, int quantidade, int dificuldade);
+    void limpar_projeteis();
     void disparar(Jogador &jogador);
     void atualizar(float dt, const Jogador &jogador);
     void desenhar(SDL_Renderer *renderizador, const Camera &camera) const;

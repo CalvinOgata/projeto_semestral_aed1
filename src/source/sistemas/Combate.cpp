@@ -1,5 +1,6 @@
 #include "sistemas/Combate.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "config/Config.h"
@@ -18,22 +19,30 @@ int Combate::get_inimigosVivos() const
     return vivos;
 }
 
-void Combate::reiniciar(const Jogador &jogador)
+void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade)
 {
+    this->limites = area;
     this->inimigos.limpar();
-    this->projeteis.limpar();
-
-    // Nascem espalhados num circulo em volta do jogador.
-    for (int i = 0; i < QUANTIDADE_INIMIGOS; i++)
+    this->limpar_projeteis();
+    quantidade = std::max(0, quantidade);
+    dificuldade = std::max(1, dificuldade);
+    // Distribui os inimigos na metade direita, longe da entrada a esquerda.
+    const int colunas = std::max(1, static_cast<int>(std::ceil(std::sqrt(quantidade))));
+    const int linhas = std::max(1, (quantidade + colunas - 1) / colunas);
+    for (int i = 0; i < quantidade; ++i)
     {
-        const float angulo = (2.0f * static_cast<float>(M_PI) * i) / QUANTIDADE_INIMIGOS;
-
-        const float centroX = jogador.get_centroX() + std::cos(angulo) * RAIO_SURGIMENTO;
-        const float centroY = jogador.get_centroY() + std::sin(angulo) * RAIO_SURGIMENTO;
-
-        this->inimigos.inserir(
-            Inimigo(centroX - LADO_INIMIGO / 2.0f, centroY - LADO_INIMIGO / 2.0f));
+        const float x = area.x + area.w * (0.5f + 0.4f * (i % colunas + 1) / (colunas + 1));
+        const float y = area.y + area.h * (i / colunas + 1) / (linhas + 1);
+        Inimigo inimigo(x, y, VIDA_INIMIGO + dificuldade - 1,
+                       VELOCIDADE_INIMIGO * (1.0f + 0.12f * (dificuldade - 1)));
+        inimigo.limitar_a(area);
+        this->inimigos.inserir(inimigo);
     }
+}
+
+void Combate::limpar_projeteis()
+{
+    this->projeteis.limpar();
 }
 
 void Combate::disparar(Jogador &jogador)
@@ -56,6 +65,13 @@ void Combate::atualizar_projeteis(float dt)
     for (Projetil &projetil : this->projeteis)
     {
         projetil.atualizar(dt);
+        const SDL_FRect area = projetil.get_retangulo();
+        if (area.x < this->limites.x || area.y < this->limites.y ||
+            area.x + area.w > this->limites.x + this->limites.w ||
+            area.y + area.h > this->limites.y + this->limites.h)
+        {
+            projetil.desativar();
+        }
     }
 }
 
@@ -76,6 +92,10 @@ void Combate::atualizar_inimigos(float dt, const Jogador &jogador)
         {
             this->inimigos.obter(a).afastar_de(this->inimigos.obter(b));
         }
+    }
+    for (Inimigo &inimigo : this->inimigos)
+    {
+        inimigo.limitar_a(this->limites);
     }
 }
 

@@ -11,14 +11,18 @@ Jogo (janela, entrada, estados e laco principal)
   |-- Jogador (movimento, mira, vida e estamina)
   |     `-- FilaArmas (inventario: primeira arma = equipada)
   |           `-- Fila<Armas, MAX_ARMAS> (armazenamento FIFO)
-  |-- Combate (disparos, perseguicao, colisoes e limpeza)
-  |     |-- ListaSequencial<Inimigo>
-  |     `-- ListaSequencial<Projetil>
+  |-- Fase (progressao e sala ativa)
+  |     `-- ListaSequencial<Sala>
+  |           `-- Sala (tamanho, dificuldade, requisitos e estado)
+  |                 `-- Combate (entidades exclusivas desta sala)
+  |                       |-- ListaSequencial<Inimigo>
+  |                       `-- ListaSequencial<Projetil>
   |-- Camera
   `-- Menu
 ```
 
-`Jogo` controla a cadencia dos tiros e chama `Combate`. Este consulta a arma
+`Jogo` controla a cadencia dos tiros e chama a sala ativa, que delega a
+`Combate`. Este consulta a arma
 na frente da fila, consome municao e insere o projetil. Depois atualiza os
 projeteis e inimigos, resolve colisoes e remove os inativos. A remocao acontece
 apos os percursos para evitar referencias invalidadas durante a iteracao.
@@ -34,7 +38,7 @@ janela e o renderizador SDL e os libera no destrutor.
 | TAD | Implementacao | Uso atual | Custos |
 | --- | --- | --- | --- |
 | `Fila<T, Capacidade>` | Vetor circular com `std::array`, inicio e quantidade | Armas do jogador | Inserir, retirar, frente e consultar: O(1); memoria O(capacidade) |
-| `ListaSequencial<T>` | Armazenamento dinamico via `std::vector` | Inimigos e projeteis de `Combate` | Acesso O(1), inserir O(1) amortizado, remover por criterio O(n) |
+| `ListaSequencial<T>` | Armazenamento dinamico via `std::vector` | Salas de `Fase`, inimigos e projeteis de `Combate` | Acesso O(1), inserir O(1) amortizado, remover por criterio O(n) |
 
 A fila foi implementada pelo projeto; a lista sequencial encapsula a biblioteca
 padrao. Ela **nao** e uma lista encadeada nem uma implementacao manual de
@@ -87,3 +91,33 @@ Novos TADs devem ficar em `estruturas/` e ser usados por classes do dominio.
 Escolha a estrutura pelo comportamento necessario, mantenha seus detalhes
 internos privados e documente o uso real antes de declarar uma nova estrutura
 como parte implementada do jogo.
+
+## Salas e progressao
+
+`ConfiguracaoSala` define nome, largura, altura, dificuldade, quantidade de
+inimigos e `RequisitoSala`. Este combina eliminacao de inimigos e tempo minimo:
+os dois requisitos habilitados precisam ser atendidos. Para uma sala apenas
+temporizada, use `eliminarInimigos = false`; para combate simples, tempo zero.
+
+`Sala` transita de `NAO_VISITADA` para `EM_COMBATE` na primeira entrada e para
+`LIBERADA` quando cumpre os requisitos. Uma revisita preserva os inimigos e o
+estado; apenas a primeira entrada cria entidades. `sair` descarta projeteis.
+Apenas a sala ativa recebe atualizacoes, e nenhum tempo avanca durante a pausa.
+
+`Fase` guarda a sequencia em `ListaSequencial<Sala>` e acessa a atual por indice.
+Avancar/voltar nao remove salas da lista; isso preserva seu estado. A navegacao
+exige proximidade da porta e liberacao da sala atual. A porta final marca a fase
+como concluida, e `R` recria fase e jogador. Essa lista sequencial serve a uma
+fase linear; ramificacoes futuras poderao justificar um grafo de conexoes.
+
+Para configurar a fase inicial, edite os registros no construtor de `Fase`, em
+`src/source/mundo/Fase.cpp`. As dimensoes minimas sao 400x300, dificuldade pelo
+menos 1, quantidade de inimigos e tempo nao negativos. Os inimigos nascem na
+metade direita, afastados da entrada inicial. Dificuldade `d` aplica vida
+`VIDA_INIMIGO + d - 1` e velocidade `VELOCIDADE_INIMIGO * (1 + 0.12 * (d - 1))`.
+
+O piso define a area caminhavel. Jogador e inimigos sao limitados ao piso;
+projeteis saindo dele sao desativados. A camera respeita os limites com margem
+para paredes e interface. `Sala` desenha piso, portas e entidades, enquanto
+`Fase` desenha o painel de progresso. Novos objetos de sala devem ter seu ciclo
+de vida associado a `Sala`, evitando listas globais compartilhadas entre salas.

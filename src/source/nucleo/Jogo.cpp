@@ -1,6 +1,5 @@
 #include "nucleo/Jogo.h"
 
-#include <cmath>
 #include <cstdio>
 
 #include "config/Config.h"
@@ -65,12 +64,9 @@ bool Jogo::inicializar()
         return false;
     }
 
-    // O mundo e aberto: a origem e so o ponto de partida, nao um canto.
-    this->jogador.set_posicao(-this->jogador.get_largura() / 2.0f,
-                              -this->jogador.get_altura() / 2.0f);
-    this->camera.centralizar_em(this->jogador.get_centroX(), this->jogador.get_centroY());
+    this->fase.reiniciar(this->jogador);
+    this->atualizar_camera();
     this->atualizar_mira();
-    this->combate.reiniciar(this->jogador);
 
     this->estado = EstadoJogo::JOGANDO;
     this->tempoAnterior = SDL_GetPerformanceCounter();
@@ -152,6 +148,24 @@ void Jogo::tratar_eventos()
             {
                 this->pausar();
             }
+            else if (evento.key.keysym.sym == SDLK_e)
+            {
+                if (this->fase.interagir(this->jogador))
+                {
+                    this->atirando = false;
+                    this->esperaTiro = 0.0f;
+                    this->atualizar_camera();
+                    this->atualizar_mira();
+                }
+            }
+            else if (evento.key.keysym.sym == SDLK_r)
+            {
+                this->fase.reiniciar(this->jogador);
+                this->atirando = false;
+                this->esperaTiro = 0.0f;
+                this->atualizar_camera();
+                this->atualizar_mira();
+            }
         }
         else if (evento.type == SDL_MOUSEBUTTONDOWN && evento.button.button == SDL_BUTTON_LEFT)
         {
@@ -166,22 +180,26 @@ void Jogo::tratar_eventos()
 
 void Jogo::atualizar(float dt)
 {
+    if (this->fase.get_concluida())
+    {
+        return;
+    }
     this->mover_jogador(dt);
 
     // A camera segue o jogador, entao precisa estar atualizada antes de
     // converter a posicao do mouse em coordenadas de mundo.
-    this->camera.centralizar_em(this->jogador.get_centroX(), this->jogador.get_centroY());
+    this->atualizar_camera();
     this->atualizar_mira();
 
     this->esperaTiro -= dt;
 
     if (this->atirando && this->esperaTiro <= 0.0f)
     {
-        this->combate.disparar(this->jogador);
+        this->fase.get_salaAtual().disparar(this->jogador);
         this->esperaTiro = INTERVALO_TIRO;
     }
 
-    this->combate.atualizar(dt, this->jogador);
+    this->fase.get_salaAtual().atualizar(dt, this->jogador);
 }
 
 void Jogo::mover_jogador(float dt)
@@ -200,8 +218,8 @@ void Jogo::mover_jogador(float dt)
     if (teclas[SDL_SCANCODE_S] || teclas[SDL_SCANCODE_DOWN])
         dirY += 1;
 
-    // Mapa aberto: nada de limites, o jogador anda o quanto quiser.
     this->jogador.mover(dirX, dirY, dt);
+    this->fase.get_salaAtual().limitar_jogador(this->jogador);
 }
 
 void Jogo::atualizar_mira()
@@ -212,14 +230,14 @@ void Jogo::atualizar_mira()
 
 void Jogo::desenhar()
 {
-    SDL_SetRenderDrawColor(this->renderizador, COR_MUNDO.r, COR_MUNDO.g, COR_MUNDO.b, COR_MUNDO.a);
+    SDL_SetRenderDrawColor(this->renderizador, 18, 22, 30, 255);
     SDL_RenderClear(this->renderizador);
 
-    this->desenhar_grade();
-
-    this->combate.desenhar(this->renderizador, this->camera);
+    this->fase.get_salaAtual().desenhar(this->renderizador, this->camera,
+                                       this->fase.get_indiceAtual() > 0);
 
     this->jogador.desenhar(this->renderizador, this->camera);
+    this->fase.desenhar_painel(this->renderizador, this->jogador);
 
     if (this->estado == EstadoJogo::PAUSADO)
     {
@@ -229,29 +247,16 @@ void Jogo::desenhar()
     SDL_RenderPresent(this->renderizador);
 }
 
-void Jogo::desenhar_grade()
+void Jogo::atualizar_camera()
 {
-    SDL_SetRenderDrawColor(this->renderizador, COR_GRADE.r, COR_GRADE.g, COR_GRADE.b, COR_GRADE.a);
-
-    const float camX = this->camera.get_x();
-    const float camY = this->camera.get_y();
-
-    // As linhas ficam presas ao mundo, nao a tela: e isso que da a sensacao
-    // de movimento num mapa que nao tem borda nenhuma.
-    const float primeiraX = std::floor(camX / PASSO_GRADE) * PASSO_GRADE;
-    const float primeiraY = std::floor(camY / PASSO_GRADE) * PASSO_GRADE;
-
-    for (float mundoX = primeiraX; mundoX < camX + LARGURA_TELA; mundoX += PASSO_GRADE)
-    {
-        const float telaX = mundoX - camX;
-        SDL_RenderDrawLineF(this->renderizador, telaX, 0.0f, telaX, ALTURA_TELA);
-    }
-
-    for (float mundoY = primeiraY; mundoY < camY + ALTURA_TELA; mundoY += PASSO_GRADE)
-    {
-        const float telaY = mundoY - camY;
-        SDL_RenderDrawLineF(this->renderizador, 0.0f, telaY, LARGURA_TELA, telaY);
-    }
+    this->camera.centralizar_em(this->jogador.get_centroX(), this->jogador.get_centroY());
+    // Margens mantem paredes visiveis e o piso fora do painel/rodape nas bordas.
+    SDL_FRect vista = this->fase.get_salaAtual().get_limites();
+    vista.x -= 24;
+    vista.y -= 80;
+    vista.w += 48;
+    vista.h += 130;
+    this->camera.limitar_a(vista);
 }
 
 void Jogo::pausar()
@@ -285,5 +290,5 @@ void Jogo::finalizar()
 
 int Jogo::get_inimigosVivos() const
 {
-    return this->combate.get_inimigosVivos();
+    return this->fase.get_salaAtual().get_inimigosVivos();
 }
