@@ -52,9 +52,9 @@ As inspected on 2026-10-15:
   immediate return transitions. The user explicitly removed minimum room timers.
 - Difficulty increases enemy count (configured per room), health, and speed.
   Walls constrain players/enemies and discard projectiles. The camera is bounded
-  with only 12-pixel wall margins. The gameplay HUD shows only health, shield,
-  energy in one compact translucent top-left box, and ammunition as a bare
-  number in the bottom-right corner; room/difficulty/enemy
+  with only 12-pixel wall margins. The gameplay HUD shows health, shield,
+  energy in one compact translucent top-left box, ammunition as a bare
+  number in the bottom-right corner, and three weapon slots at top right; room/difficulty/enemy
   details are available during pause. No permanent footer or save banners during play.
 - This first room system is deterministic, not procedural. Enemy contact damage,
   bosses, non-weapon pickups, and death rules are still not implemented.
@@ -63,7 +63,7 @@ As inspected on 2026-10-15:
 - `Jogador` models health, shield (initial/max 50), and stamina and provides methods to change them.
   Their presence does not imply a complete damage, stamina-cost, or powers system.
 - `FilaArmas` adapts a reusable circular-array FIFO weapon queue with capacity `MAX_ARMAS`
-  (currently five). `Armas` holds ammunition and shooting/damage properties.
+  (currently three). `Armas` holds ammunition and shooting/damage properties.
 - Rendering uses a logical resolution of 960x540 in a resizable window.
 
 Inspect the relevant code before changing behavior; update this baseline when
@@ -172,8 +172,8 @@ Use the existing `.clang-format` configuration.
   or text. Its fill uses current health divided by that enemy's initial maximum,
   including difficulty scaling; the bar disappears when the enemy dies.
 
-- The user wants nearly the whole window usable for gameplay, only health,
-  shield, energy, and ammunition visible while playing. Hide tutorial footers,
+- The user wants nearly the whole window usable for gameplay, health,
+  shield, energy, ammunition, and the three-slot weapon inventory visible while playing. Hide tutorial footers,
   room status, and save messages during gameplay; keep details accessible in pause.
 - `interface/Hud` owns drawing of one translucent 200x104 top-left box containing three
   stacked stat bars with custom icons and values. Ammunition is only a number
@@ -221,7 +221,7 @@ Use the existing `.clang-format` configuration.
   retained instead of renaming to singular): shotgun (three pellets at 0/+45/-45
   degrees), piercing instant laser, forward/backward double shot, wall ricochet
   (up to four bounces), 80-pixel/90-degree sword fan, bow/arrow, and returning boomerang.
-- `FilaArmas` still holds five weapons. F collects the nearest floor weapon within
+- `FilaArmas` holds three weapons. F collects the nearest floor weapon within
   54 pixels into the tail; full inventory leaves it untouched. Q moves the front
   to the tail through FIFO operations; G drops the front with its remaining ammo.
   These supplementary controls and floor distribution are initial implementation choices.
@@ -236,4 +236,16 @@ Use the existing `.clang-format` configuration.
   per enemy per outbound/return leg, and expire if unable to return. Dead enemies
   remain inactive in the room list to preserve hit indices until room reset.
 - Floor weapons have provisional labeled drawings. Equipped weapon and inventory
-  count/controls are shown in pause; no extra permanent gameplay HUD was added.
+  count/controls are shown in pause; weapon icons also appear in the gameplay HUD.
+
+## Inventory HUD
+
+- The user limited inventory to three weapons. `MAX_ARMAS` controls capacity,
+  HUD slot count and the pause counter. Full inventory still refuses collection.
+- Top-right HUD uses a 64x64 equipped slot on the left with a double gold border,
+  then two 48x48 reserve slots in FIFO order, vertically centered, with 8-pixel
+  gaps and 16-pixel window margins. Empty slots stay visible without an icon.
+- `FilaArmas::consultar` delegates read-only logical indexing to `Fila`; no mutable
+  indexing or backing storage is exposed. Collect/drop/rotate update the HUD directly.
+- `graficos/IconeArma` draws distinct embedded 12x12 pixel-art bitmap sprites for
+  all eight weapon types, scaled inside slots. No new external asset dependency.

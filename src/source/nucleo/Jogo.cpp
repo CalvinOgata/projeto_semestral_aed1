@@ -343,7 +343,8 @@ void Jogo::desenhar()
                                          36, 2, COR_TEXTO);
             const auto *arma = this->jogador.get_armaEquipada();
             const std::string inventario = std::string(arma ? arma->get_nome() : "SEM ARMA") +
-                " - INVENTARIO " + std::to_string(this->jogador.get_armas().get_quantidade()) + "/5";
+                " - INVENTARIO " + std::to_string(this->jogador.get_armas().get_quantidade()) +
+                "/" + std::to_string(MAX_ARMAS);
             Texto::desenhar_centralizado(this->renderizador, inventario, 480, 64, 2, COR_TEXTO);
             Texto::desenhar_centralizado(this->renderizador, "F: COLETAR   Q: PROXIMA   G: SOLTAR", 480, 90, 2, COR_TEXTO);
         }

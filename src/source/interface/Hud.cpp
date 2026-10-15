@@ -5,6 +5,7 @@
 
 #include "config/Config.h"
 #include "interface/Texto.h"
+#include "graficos/IconeArma.h"
 
 namespace
 {
@@ -43,6 +44,42 @@ void desenhar_icone(SDL_Renderer *renderizador, int x, int y, Icone icone, SDL_C
                                     {x + 4, y + 15}, {x + 13, y + 5},
                                     {x + 8, y + 5}, {x + 9, y}};
         SDL_RenderDrawLines(renderizador, pontos, 7);
+    }
+}
+
+void desenhar_inventario(SDL_Renderer *renderizador, const FilaArmas &armas)
+{
+    constexpr int LADO_ATUAL = 64;
+    constexpr int LADO_RESERVA = 48;
+    constexpr int ESPACO = 8;
+    constexpr int MARGEM = 16;
+    constexpr int LARGURA = LADO_ATUAL + (MAX_ARMAS - 1) * (LADO_RESERVA + ESPACO);
+    int x = LARGURA_TELA - MARGEM - LARGURA;
+    for (int i = 0; i < MAX_ARMAS; ++i)
+    {
+        const bool equipada = i == 0;
+        const int lado = equipada ? LADO_ATUAL : LADO_RESERVA;
+        const int y = MARGEM + (LADO_ATUAL - lado) / 2;
+        const SDL_Rect caixa = {x, y, lado, lado};
+        SDL_SetRenderDrawColor(renderizador, 12, 18, 26, equipada ? 210 : 165);
+        SDL_RenderFillRect(renderizador, &caixa);
+        const SDL_Color borda = equipada ? SDL_Color{245, 202, 99, 255} :
+                                          SDL_Color{151, 172, 194, 150};
+        SDL_SetRenderDrawColor(renderizador, borda.r, borda.g, borda.b, borda.a);
+        SDL_RenderDrawRect(renderizador, &caixa);
+        if (equipada)
+        {
+            const SDL_Rect destaque = {x + 1, y + 1, lado - 2, lado - 2};
+            SDL_RenderDrawRect(renderizador, &destaque);
+        }
+        const auto *arma = armas.consultar(i);
+        if (arma != nullptr)
+        {
+            const SDL_FRect area = {static_cast<float>(x + 8), static_cast<float>(y + 8),
+                                   static_cast<float>(lado - 16), static_cast<float>(lado - 16)};
+            IconeArma::desenhar(renderizador, arma->get_tipo(), area);
+        }
+        x += lado + ESPACO;
     }
 }
 
@@ -98,6 +135,8 @@ void Hud::desenhar(SDL_Renderer *renderizador, const Jogador &jogador)
                     {73, 190, 234, 255}, Icone::ESCUDO);
     desenhar_barra(renderizador, 85, "ENERGIA", jogador.get_estamina(), jogador.get_estaminaMax(),
                     {237, 197, 76, 255}, Icone::ENERGIA);
+
+    desenhar_inventario(renderizador, jogador.get_armas());
 
     const auto *arma = jogador.get_armas().frente();
     const int municao = arma ? arma->get_municao() : 0;

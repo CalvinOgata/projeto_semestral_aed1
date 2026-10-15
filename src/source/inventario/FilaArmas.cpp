@@ -40,3 +40,8 @@ bool FilaArmas::alternar()
     armas.retirar(atual);
     return armas.inserir(atual);
 }
+
+const Armas *FilaArmas::consultar(std::size_t indice) const
+{
+    return this->armas.consultar(indice);
+}

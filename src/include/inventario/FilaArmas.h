@@ -4,7 +4,7 @@
 #include "entidades/Armas.h"
 #include "estruturas/Fila.h"
 
-constexpr int MAX_ARMAS = 5;
+constexpr int MAX_ARMAS = 3;
 
 // Adaptador do inventario: a primeira arma da fila e a equipada.
 // As regras de armazenamento FIFO pertencem ao TAD Fila.
@@ -22,6 +22,8 @@ public:
     bool alternar();
     Armas *frente();
     const Armas *frente() const;
+    // Inspecao para o HUD, sem acesso mutavel nem alteracao da ordem FIFO.
+    const Armas *consultar(std::size_t indice) const;
 };
 
 #endif

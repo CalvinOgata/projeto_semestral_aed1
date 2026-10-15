@@ -59,10 +59,12 @@ ser registrada antes de substituir o armazenamento.
 - O vetor circular reutiliza espacos liberados sem deslocar os demais elementos.
 - O template requer valores construiveis por padrao e copiaveis. Os slots
   existem durante toda a vida da fila; retirar nao destroi imediatamente o slot.
-- `FilaArmas` limita a capacidade a cinco e oferece apenas operacoes de
+- `FilaArmas` limita a capacidade a tres e oferece apenas operacoes de
   inventario FIFO. O tiro altera a municao da arma da frente, sem remove-la.
   F coleta no fim, Q alterna retirando a frente e reinserindo no fim em O(1),
   e G solta a frente no chao. Fila cheia recusa a coleta sem perder a arma.
+- `FilaArmas::consultar` oferece somente leitura em ordem logica para os tres
+  espacos do HUD, em O(1), delegando ao TAD sem expor seu armazenamento.
 - Consulte novamente ponteiros apos alterar a estrutura.
 
 ### Lista e combate
@@ -125,7 +127,9 @@ O piso define a area caminhavel. Jogador e inimigos sao limitados ao piso;
 projeteis saindo dele sao desativados, exceto ricochetes e boomerangs. A camera respeita os limites com margem de 12 pixels
 para paredes. `Sala` desenha piso, portas e entidades; `interface/Hud` desenha
 vida, escudo e energia em uma caixa unica e compacta no canto superior esquerdo
-e somente o numero de municao no canto inferior direito, sobre o mundo. `Fase` nao desenha interface. Novos objetos de sala devem ter seu ciclo
+e somente o numero de municao no canto inferior direito, sobre o mundo.
+O inventario aparece no canto superior direito; `IconeArma` desenha sprites
+de bitmap embutidos, sem dependencia grafica em `Armas` ou nos TADs. `Fase` nao desenha interface. Novos objetos de sala devem ter seu ciclo
 de vida associado a `Sala`, evitando listas globais compartilhadas entre salas.
 
 ## Campanha, menus e persistencia

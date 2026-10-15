@@ -138,6 +138,11 @@ operacoes e exemplos de aplicacao das estruturas ao jogo.
 A sala inicial ocupa 936x516 dos 960x540 pixels logicos, com paredes de 12 pixels.
 A camera das salas maiores usa a mesma margem, sem reservar faixas para paineis.
 O HUD e uma sobreposicao e nao bloqueia movimento, mira ou cliques.
+No canto superior direito, o inventario mostra tres espacos na ordem da fila:
+a arma equipada fica a esquerda em um quadrado de 64x64 com borda dourada;
+as duas seguintes ficam em quadrados de 48x48. Cada tipo tem um sprite de
+pixel art embutido; vagas livres ficam vazias. Q atualiza a ordem mostrada,
+e F/G atualizam os espacos ao coletar/soltar armas.
 
 Vida (rosa/vermelho), escudo (azul) e energia (amarelo) aparecem em barras com
 icones, valores e preenchimento proporcional. As tres barras ficam juntas em uma unica caixa de 200x104 pixels no canto
@@ -168,7 +173,7 @@ terminal. Se o PNG estiver ausente ou invalido, o jogo informa o erro ao iniciar
 
 ## Armas e inventario
 
-`Armas` representa cada arma e `FilaArmas` guarda ate cinco: coleta entra no
+`Armas` representa cada arma e `FilaArmas` guarda ate tres: coleta entra no
 fim, a frente fica equipada. Q retira a frente e a reinsere no fim; G retira
 somente a frente e preserva sua municao no chao. F com fila cheia nao coleta
 nem substitui nada. As sete novidades aparecem identificadas no chao de cada
