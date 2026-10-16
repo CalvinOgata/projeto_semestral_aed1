@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 #include "config/Config.h"
-#include "graficos/Desenho.h"
+#include "graficos/IconeArma.h"
 #include "graficos/Sprite.h"
 
 Jogador::Jogador(const DimensoesEntidade &dimensoes)
@@ -296,13 +296,14 @@ void Jogador::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
         SDL_RenderDrawRectF(renderizador, &corpo);
     }
 
-    // A arma continua independente do sprite e acompanha a mira.
-    const SDL_FPoint centro = camera.para_tela(this->get_centroX(), this->get_centroY());
-    const SDL_FPoint direcao = this->get_direcaoMira();
-
-    Desenho::retangulo_rotacionado(renderizador, centro.x - direcao.x * RECUO_ARMA,
-                                   centro.y - direcao.y * RECUO_ARMA, COMPRIMENTO_ARMA,
-                                   ESPESSURA_ARMA, this->anguloMira, COR_ARMA);
+    const auto *arma = this->armas.frente();
+    if (arma != nullptr)
+    {
+        const SDL_FPoint direcao = this->get_direcaoMira();
+        const SDL_FPoint mao = camera.para_tela(this->get_centroX() + direcao.x * 12,
+                                               this->get_centroY() + 6 + direcao.y * 12);
+        IconeArma::desenhar_empunhada(renderizador, arma->get_tipo(), mao, this->anguloMira);
+    }
     if (mostrarHitbox)
     {
         const SDL_FRect hitbox = camera.para_tela(this->get_retangulo());

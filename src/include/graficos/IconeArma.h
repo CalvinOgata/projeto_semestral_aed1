@@ -9,6 +9,8 @@
 namespace IconeArma
 {
 void desenhar(SDL_Renderer *renderizador, TipoArma tipo, const SDL_FRect &area);
+void desenhar_empunhada(SDL_Renderer *renderizador, TipoArma tipo, SDL_FPoint mao,
+                       float anguloGraus);
 }
 
 #endif

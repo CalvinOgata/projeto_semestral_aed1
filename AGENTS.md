@@ -260,6 +260,12 @@ Use the existing `.clang-format` configuration.
   indexing or backing storage is exposed. Collect/drop/rotate update the HUD directly.
 - `graficos/IconeArma` draws distinct embedded 12x12 pixel-art bitmap sprites for
   all eight weapon types, scaled inside slots. No new external asset dependency.
+- The player now holds the equipped weapon's same bitmap icon, drawn at 3x scale
+  near the hand and rotated with mouse aim. Local vertical mirroring keeps grips
+  upright when facing left; sword/bow/boomerang use appropriate grip/orientation
+  adjustments. An empty inventory draws no held weapon. Shooting rules are unchanged.
+- The user chose to retain the existing embedded virus visual. The generated
+  virus-conceito.png is unused concept art, not the active enemy sprite.
 
 ## Phase 1 combat and rewards
 

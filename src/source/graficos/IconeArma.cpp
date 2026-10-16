@@ -1,6 +1,9 @@
 #include "graficos/IconeArma.h"
 
 #include <algorithm>
+#include <cmath>
+
+#include "graficos/Desenho.h"
 
 namespace
 {
@@ -74,6 +77,21 @@ const SpriteArma &obter_sprite(TipoArma tipo)
         return PISTOLA;
     }
 }
+
+SDL_Color cor_do_pixel(const SpriteArma &sprite, char pixel)
+{
+    switch (pixel)
+    {
+    case 'M':
+        return {229, 239, 249, 255};
+    case 'm':
+        return {106, 130, 154, 255};
+    case 'A':
+        return {255, 243, 202, 255};
+    default:
+        return sprite.detalhe;
+    }
+}
 }
 
 void IconeArma::desenhar(SDL_Renderer *renderizador, TipoArma tipo, const SDL_FRect &area)
@@ -95,22 +113,56 @@ void IconeArma::desenhar(SDL_Renderer *renderizador, TipoArma tipo, const SDL_FR
             {
                 continue;
             }
-            SDL_Color cor = sprite.detalhe;
-            if (pixel == 'M')
-            {
-                cor = {229, 239, 249, 255};
-            }
-            else if (pixel == 'm')
-            {
-                cor = {106, 130, 154, 255};
-            }
-            else if (pixel == 'A')
-            {
-                cor = {255, 243, 202, 255};
-            }
+            const SDL_Color cor = cor_do_pixel(sprite, pixel);
             SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, cor.a);
             const SDL_FRect ponto = {inicioX + x * escala, inicioY + y * escala, escala, escala};
             SDL_RenderFillRectF(renderizador, &ponto);
+        }
+    }
+}
+
+void IconeArma::desenhar_empunhada(SDL_Renderer *renderizador, TipoArma tipo, SDL_FPoint mao,
+                                float anguloGraus)
+{
+    const auto &sprite = obter_sprite(tipo);
+    constexpr float ESCALA = 3.0f;
+    SDL_FPoint apoio = {3.5f, 6.5f};
+    float ajuste = 0;
+    if (tipo == TipoArma::ESPADA)
+    {
+        apoio = {3, 8};
+        ajuste = 45;
+    }
+    else if (tipo == TipoArma::BOOMERANG)
+    {
+        apoio = {6, 6};
+        ajuste = 90;
+    }
+    else if (tipo == TipoArma::ARCO || tipo == TipoArma::DUPLA)
+    {
+        apoio = {5.5f, 5.5f};
+    }
+    const float radianos = anguloGraus * static_cast<float>(M_PI) / 180.0f;
+    // Espelha na vertical local ao mirar a esquerda, mantendo o cabo para baixo.
+    const bool espelhar = std::cos(radianos) < 0;
+    const float angulo = anguloGraus + (espelhar ? -ajuste : ajuste);
+    const float rotacao = angulo * static_cast<float>(M_PI) / 180.0f;
+    const float cosseno = std::cos(rotacao), seno = std::sin(rotacao);
+    for (int y = 0; y < 12; ++y)
+    {
+        for (int x = 0; x < 12; ++x)
+        {
+            const char pixel = sprite.linhas[y][x];
+            if (pixel == '.')
+            {
+                continue;
+            }
+            const float localX = (x - apoio.x) * ESCALA;
+            const float localY = (y + 0.5f - apoio.y) * ESCALA * (espelhar ? -1 : 1);
+            Desenho::retangulo_rotacionado(renderizador,
+                mao.x + localX * cosseno - localY * seno,
+                mao.y + localX * seno + localY * cosseno,
+                ESCALA, ESCALA, angulo, cor_do_pixel(sprite, pixel));
         }
     }
 }

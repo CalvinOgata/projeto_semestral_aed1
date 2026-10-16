@@ -202,6 +202,8 @@ novidades aparecem no chao de cada sala, na metade esquerda. Coletas e
 descartes persistem ao revisitar a sala.
 Avancar de fase ou usar Reiniciar na pausa recria armas e inventario. As armas no chao usam os mesmos icones do inventario,
 em quadros de 36x36 pixels com o nome abaixo, incluindo armas dos baus e descartadas.
+Na mao do personagem, a arma equipada usa esse mesmo icone e acompanha a mira.
+Trocar ou soltar a arma atualiza o desenho; sem armas, a mao fica sem icone.
 
 | Arma | Ataque |
 | --- | --- |
