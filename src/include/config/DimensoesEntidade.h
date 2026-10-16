@@ -19,7 +19,7 @@ struct DimensoesEntidade
 
 constexpr DimensoesEntidade DIMENSOES_HEROI = {32, 32, 48, 48};
 constexpr DimensoesEntidade DIMENSOES_INIMIGO_COMUM = {28, 28, 48, 48};
-// Perfis reservados para futuras entidades; nao adicionam novos inimigos as fases.
+// Bruta-montes e boss usam estes perfis com visuais provisorios.
 constexpr DimensoesEntidade DIMENSOES_GUARDA_COSTAS = {44, 44, 64, 64};
 constexpr DimensoesEntidade DIMENSOES_BOSS = {88, 88, 128, 128};
 

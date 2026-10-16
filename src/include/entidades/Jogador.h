@@ -12,6 +12,9 @@ class Sprite;
 class Jogador
 {
 private:
+    float esperaEscudo = 0;
+    float cargaEscudo = 0;
+    float invulnerabilidade = 0;
     int vida;
     int escudo;
     int escudoMax;
@@ -32,6 +35,8 @@ public:
     ~Jogador();
 
     // --- atributos ---
+    void receber_dano(int quantidade);
+    void atualizar_defesa(float dt);
     void rec_vida(int);
     void rec_escudo(int);
     void perder_escudo(int);

@@ -32,36 +32,35 @@ brainstorming examples into approved mechanics, characters, or assets.
 
 ## Verified prototype baseline
 
-As inspected on 2026-10-15:
+As inspected on 2026-10-16:
 
 - The build uses C++17, SDL2, libpng, and a Makefile. Text uses an embedded bitmap font;
   SDL2_ttf is not required.
-- The game starts at a main menu (New game, Continue, Exit). The campaign has
-  five sequential authored phases, each with three bounded rooms.
-  Each `Sala` owns its `Combate` and persists its state when revisited. `Fase`
-  stores rooms in `ListaSequencial<Sala>` and controls navigation.
-- Rooms have configurable name, size, difficulty, enemy count, and release
-  requirements (currently eliminate all enemies, without a timer). Phase 1 rooms:
-  936x516 / difficulty 1 / 4 enemies; 1120x640 / difficulty 2 / 7 enemies;
-  1440x800 / difficulty 3 / 10 enemies. Each subsequent phase adds 1 to
-  difficulty and 2 enemies per room.
-- Doors remain locked until requirements are met. Touching the right/left door
-  automatically advances/returns (no interaction key or proximity radius); the last right door completes the phase. R resets the entire
-  current phase/player without discarding completed phases. Cleared rooms do not respawn enemies; projectiles are discarded
-  on leaving. Only the active room updates. Arrival positions are away from doors to avoid
-  immediate return transitions. The user explicitly removed minimum room timers.
+- The game starts at a main menu. Five phases remain; phase 1 now has seven
+  936x516 rooms in a directional graph: Lobby–A, A–B (south), A–C (east),
+  A–D (north), D–E (east), C–E (north), E–F (north).
+  A has 3 viruses; C/D each have 4 viruses and 2 brutes. B has one chest,
+  E two chests; lobby/B/E have no enemies. F has one boss.
+- Each room owns its combat and persistent state in ListaSequencial<Sala>.
+  Four neighbor indices describe phase 1 connections. Doors require clearing
+  the current room; E–F additionally requires A/C/D cleared. Defeating F's boss
+  creates a central portal; touching it completes the phase. Phases 2–5 retain
+  their original three-room linear layouts and last-door completion.
+- R and player death reset the current phase/player without losing completed
+  phases. Cleared enemies/chests never respawn on revisits. Projectiles are
+  discarded on leaving. Only active combat updates; hearts in inactive rooms
+  still expire. Pause freezes simulation. Arrivals are away from opposite doors.
 - Difficulty increases enemy count (configured per room), health, and speed.
   Walls constrain players/enemies and discard projectiles. The camera is bounded
   with only 12-pixel wall margins. The gameplay HUD shows health, shield,
   energy in one compact translucent top-left box, ammunition as a bare
   number in the bottom-right corner, and three weapon slots at top right; room/difficulty/enemy
   details are available during pause. No permanent footer or save banners during play.
-- This first room system is deterministic, not procedural. Enemy contact damage,
-  bosses, non-weapon pickups, and death rules are still not implemented.
+- Room layouts are authored, not procedural. Enemy contact damage is not implemented.
 - Movement, mouse aiming, sustained shooting, projectiles, enemy pursuit,
   enemy damage, and a pause menu already exist.
 - `Jogador` models health, shield (initial/max 50), and stamina and provides methods to change them.
-  Their presence does not imply a complete damage, stamina-cost, or powers system.
+  Shield absorbs incoming shots and regenerates; stamina costs and powers remain unspecified.
 - `FilaArmas` adapts a reusable circular-array FIFO weapon queue with capacity `MAX_ARMAS`
   (currently three). `Armas` holds ammunition and shooting/damage properties.
 - Rendering uses a logical resolution of 960x540 in a resizable window.
@@ -147,7 +146,7 @@ Use the existing `.clang-format` configuration.
   Replace stale information instead of accumulating contradictory notes.
 - Current open decisions include the final hero/boss/bodyguard rosters, powers,
   further weapon balancing/variety, branching/procedural stages, further progression, and stamina rules.
-  Procedural generation and death/restart rules have not yet been specified.
+  Procedural generation remains unspecified. Death currently restarts the active phase.
 - This document preserves context; it does not authorize implementing the
   entire roadmap without a corresponding user request.
 
@@ -179,16 +178,14 @@ Use the existing `.clang-format` configuration.
   stacked stat bars with custom icons and values. Ammunition is only a number
   at bottom right, without a card or label. `Fase` no longer draws UI. The first room is 936x516 so
   the floor plus 12-pixel walls fills the 960x540 logical viewport.
-- Shield is a real bounded player attribute, initially 50/50, with recovery/loss
-  methods. No damage absorption, regeneration, or contact-damage mechanics were
-  introduced by the HUD change. Energy still reflects existing stamina state.
+- Shield starts at 50/50, absorbs shots before health, and regenerates 10/s after
+  3 seconds without damage. Hits grant 0.5 s invulnerability. Energy reflects stamina.
 
 ## Sprite sizing and hitboxes
 
 - `config/DimensoesEntidade.h` separates per-entity collision width/height from
   visual frame width/height. Defaults: hero 32x32 / 48x48; common enemy 28x28 /
-  48x48; bodyguard 44x44 / 64x64; boss 88x88 / 128x128. Bodyguard/boss profiles
-  are reserved, not spawned or implemented as new gameplay types.
+  48x48; bodyguard 44x44 / 64x64; boss 88x88 / 128x128. Brutes and boss use the larger profiles in phase 1.
 - Positions refer to the hitbox's top-left corner. Visual frames are centered
   on hitboxes, not foot-anchored. World coordinates use logical pixels at 960x540.
   Collision rectangles retain the original player/common-enemy sizes.
@@ -196,7 +193,7 @@ Use the existing `.clang-format` configuration.
   frame contains the hitbox. Enemy separation handles differing rectangle sizes.
   Walls/doors/projectiles use get_retangulo(); rendering uses get_retanguloVisual().
   Aim/fire origins remain at the hitbox center; health bars sit above the visual frame.
-- F2 toggles green hitbox outlines during gameplay. Enemy placeholder rectangles show visual frame sizes; the player now uses
+- F2 toggles green hitbox outlines during gameplay. Viruses use an embedded chip bitmap; brutes/boss retain placeholder rectangles. The player uses
   the Tux PNG. Animation is not implemented.
 - `docs/sprites.md` defines transparent PNG frame sizes, offsets and alignment for
   user-created art. Keep it synchronized with the size profiles. Character selection
@@ -225,7 +222,9 @@ Use the existing `.clang-format` configuration.
   54 pixels into the tail; full inventory leaves it untouched. Q moves the front
   to the tail through FIFO operations; G drops the front with its remaining ammo.
   These supplementary controls and floor distribution are initial implementation choices.
-- Each room initially offers all seven new types on its left side. `Sala` owns floor
+- Only phases 2–5 retain the initial seven-weapon distribution per room.
+  Phase 1 uses proximity-opened chests in B/E, each dropping two random weapons
+  uniformly from all eight types (duplicates allowed), with no inventory insertion. `Sala` owns floor
   items and preserves collections/drops on revisits. Phase reset/advancement recreates
   the player and items. Existing phase checkpoint semantics remain unchanged.
 - Each finite-ammo attack costs one unit, regardless of projectile count. New weapons
@@ -249,3 +248,17 @@ Use the existing `.clang-format` configuration.
   indexing or backing storage is exposed. Collect/drop/rotate update the HUD directly.
 - `graficos/IconeArma` draws distinct embedded 12x12 pixel-art bitmap sprites for
   all eight weapon types, scaled inside slots. No new external asset dependency.
+
+## Phase 1 combat and rewards
+
+- Viruses, brutes and boss have base health 2/12/65 and simple aimed shots dealing
+  8/12/18 damage at 2.4/1.8/0.85-second intervals after an initial 1.5-second delay.
+  They stop pursuing within 180 pixels; hostile shots travel at 230 pixels/s.
+  Brute/boss artwork remains intentionally provisional.
+- Every enemy drops one heart once, including instant-attack deaths. Hearts heal
+  10 health on contact if health is missing and expire after 10 seconds of gameplay,
+  including time in other rooms. They blink in the final two seconds.
+- Chests open automatically within 64 pixels, with gold/wood embedded SDL artwork.
+  Weapons stay on the floor for F collection; full inventory never consumes them.
+- These counts, timings, stats, chest-opening interaction and automatic phase
+  restart on death are initial implementation choices, open to balancing.

@@ -6,9 +6,15 @@
 #include "config/DimensoesEntidade.h"
 #include "graficos/Camera.h"
 
+enum class TipoInimigo { VIRUS, BRUTO, BOSS };
+
 class Inimigo
 {
 private:
+    TipoInimigo tipo = TipoInimigo::VIRUS;
+    float mira = 0;
+    float esperaTiro = 1.5f;
+    bool coracaoSolto = false;
     float x; // canto superior esquerdo, em coordenadas de mundo
     float y;
     DimensoesEntidade dimensoes;
@@ -22,7 +28,11 @@ public:
     Inimigo(float mundoX, float mundoY);
 
     Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial,
-            const DimensoesEntidade &dimensoes = DIMENSOES_INIMIGO_COMUM);
+            const DimensoesEntidade &dimensoes = DIMENSOES_INIMIGO_COMUM,
+            TipoInimigo tipo = TipoInimigo::VIRUS);
+    bool preparar_tiro(float dt);
+    bool soltar_coracao();
+    int get_danoTiro() const;
     void limitar_a(const SDL_FRect &area);
 
     void perseguir(float alvoX, float alvoY, float dt);

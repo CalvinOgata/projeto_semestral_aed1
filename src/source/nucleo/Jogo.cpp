@@ -262,7 +262,13 @@ void Jogo::atualizar(float dt)
         this->esperaTiro = arma ? arma->get_intervalo() : INTERVALO_TIRO;
     }
 
-    this->campanha.get_faseAtual().get_salaAtual().atualizar(dt, this->jogador);
+    this->campanha.get_faseAtual().atualizar(dt, this->jogador);
+    if (this->jogador.morto())
+    {
+        this->campanha.reiniciar_fase(this->jogador);
+        this->preparar_entrada();
+        return;
+    }
     const int concluidasAntes = this->campanha.get_fasesConcluidas();
     if (this->campanha.atualizar_transicao(this->jogador))
     {

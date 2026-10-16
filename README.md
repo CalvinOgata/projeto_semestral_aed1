@@ -35,21 +35,36 @@ O menu tambem responde ao mouse (passar por cima seleciona, clique confirma).
 
 ## Como esta agora
 
-Uma campanha com **cinco fases**, cada uma com tres salas conectadas.
-A tabela mostra a primeira fase; cada fase seguinte acrescenta 1 a dificuldade
-e 2 inimigos por sala.
-Cada sala tem seus proprios inimigos, projeteis e requisitos de liberacao.
+Uma campanha com **cinco fases**. A fase 1 possui sete salas de 936x516:
 
-| Sala | Tamanho | Dificuldade | Inimigos | Requisito para abrir portas |
-| --- | --- | --- | --- | --- |
-| Setor de Boot | 936x516 | 1 | 4 | Eliminar todos |
-| Rede Infectada | 1120x640 | 2 | 7 | Eliminar todos |
-| Nucleo em Quarentena | 1440x800 | 3 | 10 | Eliminar todos |
+```text
+                  F (boss)
+                  |
+          D ----- E (2 baus)
+          |       |
+Lobby --- A ----- C
+          |
+          B (1 bau)
+```
 
-As portas vermelhas estao bloqueadas; verdes estao liberadas. Encoste na
-porta direita para avancar automaticamente. Nas salas seguintes, a porta esquerda
-permite voltar depois de completar o desafio. Salas ja liberadas permanecem
-vazias ao revisitar. A saida direita da ultima sala conclui a fase.
+A tem 3 virus. C e D possuem, cada uma, 4 virus e 2 bruta-montes.
+O lobby e as salas B/E nao possuem inimigos. As portas abrem ao eliminar todos
+os inimigos da sala; encoste nelas para atravessar. A porta E–F so abre depois
+de limpar A, C e D. Derrote o boss de F e toque no portal central para avancar.
+Salas limpas e baus abertos persistem nas revisitas.
+As fases 2–5 mantem as tres salas lineares anteriores, com dificuldade crescente.
+
+Baus abrem automaticamente a menos de 64 pixels e soltam duas armas aleatorias,
+incluindo pistola e todas as sete outras armas; repeticoes sao possiveis.
+Use F para coletar, Q para trocar e G para soltar uma arma se o inventario lotar.
+Na fase 1, armas extras vem dos baus, em vez da distribuicao de teste em cada sala.
+
+Virus tem visual de chip infectado; bruta-montes e boss usam retangulos provisorios.
+Todos miram e disparam uma arma simples. Escudo absorve dano antes da vida e
+regenera 10 pontos/s apos 3 segundos sem dano. Ha 0,5 segundo de protecao apos
+um acerto. Cada inimigo morto deixa um coracao de 10 de vida: coleta automatica
+por contato quando falta vida, expiracao em 10 segundos de jogo (inclusive fora
+da sala; pausa congela o tempo). Morrer reinicia a fase atual sem perder fases concluidas.
 
 A dificuldade aumenta vida e velocidade dos inimigos. Paredes limitam movimento
 e tiros; a camera acompanha o jogador dentro dos limites da sala. O HUD agrupa vida, escudo e energia numa caixa compacta e semitransparente
@@ -57,9 +72,7 @@ no canto superior esquerdo, com barras coloridas e icones. A municao aparece
 apenas como numero no canto inferior direito. Sala, dificuldade e quantidade de
 inimigos aparecem somente na pausa. `Esc` pausa o jogo. `R` permite recomecar, inclusive se acabar a municao.
 
-As configuracoes das salas sao fixas. Dano de contato ao jogador, bosses,
-recompensas e geracao procedural ainda serao adicionados conforme as decisoes
-do projeto.
+As configuracoes das salas sao fixas. Dano de contato e geracao procedural ainda nao estao implementados.
 
 ## Tela inicial e salvamento
 
@@ -148,8 +161,7 @@ Vida (rosa/vermelho), escudo (azul) e energia (amarelo) aparecem em barras com
 icones, valores e preenchimento proporcional. As tres barras ficam juntas em uma unica caixa de 200x104 pixels no canto
 superior esquerdo. A municao aparece somente como numero no canto inferior
 direito, sem caixa ou legenda. O escudo inicia com 50/50; vida e energia com 100/100. Os valores voltam
-ao inicial junto com o jogador ao iniciar/reiniciar uma fase. Ainda nao existem
-dano de contato, absorcao de dano pelo escudo ou consumo de energia no combate.
+ao inicial junto com o jogador ao iniciar/reiniciar uma fase. Nao existem dano de contato ou consumo de energia no combate.
 Os rodapes de ajuda e as mensagens de save ficam ocultos durante a partida;
 mensagens de salvamento podem ser consultadas na pausa ou nos outros menus.
 
@@ -158,7 +170,7 @@ mensagens de salvamento podem ser consultadas na pausa ou nos outros menus.
 Hitbox e imagem agora possuem tamanhos separados e configuraveis por entidade.
 Os padroes sao: heroi 32x32 / sprite 48x48; inimigo comum 28x28 / sprite 48x48;
 guarda-costas 44x44 / sprite 64x64; boss 88x88 / sprite 128x128.
-Os dois ultimos sao perfis preparados para uso futuro, sem novos inimigos nas salas.
+Os dois ultimos sao usados pelos bruta-montes e boss da fase 1, com visuais provisorios.
 Veja o [guia de sprites](docs/sprites.md) para medidas, alinhamento e exportacao.
 `F2` mostra a hitbox verde sobre os retangulos visuais provisórios.
 
@@ -176,8 +188,9 @@ terminal. Se o PNG estiver ausente ou invalido, o jogo informa o erro ao iniciar
 `Armas` representa cada arma e `FilaArmas` guarda ate tres: coleta entra no
 fim, a frente fica equipada. Q retira a frente e a reinsere no fim; G retira
 somente a frente e preserva sua municao no chao. F com fila cheia nao coleta
-nem substitui nada. As sete novidades aparecem identificadas no chao de cada
-sala, na metade esquerda; coletas e descartes persistem ao revisitar a sala.
+nem substitui nada. Na fase 1, os baus soltam as armas. Nas fases 2–5, as sete
+novidades aparecem no chao de cada sala, na metade esquerda. Coletas e
+descartes persistem ao revisitar a sala.
 A fase seguinte e R reiniciam armas e inventario. A pausa mostra arma equipada,
 ocupacao da fila e controles. Os desenhos das armas ainda sao provisorios.
 

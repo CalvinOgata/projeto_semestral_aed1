@@ -337,3 +337,25 @@ int Jogador::get_escudoMax() const
 {
     return this->escudoMax;
 }
+
+void Jogador::receber_dano(int quantidade)
+{
+    if (quantidade <= 0 || morto() || invulnerabilidade > 0) return;
+    const int absorvido = std::min(escudo, quantidade);
+    perder_escudo(absorvido);
+    perder_vida(quantidade - absorvido);
+    esperaEscudo = 3;
+    cargaEscudo = 0;
+    invulnerabilidade = 0.5f;
+}
+void Jogador::atualizar_defesa(float dt)
+{
+    invulnerabilidade = std::max(0.0f, invulnerabilidade - dt);
+    const float recuperacao = std::max(0.0f, dt - esperaEscudo);
+    esperaEscudo = std::max(0.0f, esperaEscudo - dt);
+    if (morto() || escudo == escudoMax) { cargaEscudo = 0; return; }
+    cargaEscudo += recuperacao * 10;
+    const int pontos = static_cast<int>(cargaEscudo);
+    rec_escudo(pontos);
+    cargaEscudo -= pontos;
+}

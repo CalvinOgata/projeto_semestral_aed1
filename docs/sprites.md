@@ -10,8 +10,8 @@ Todas as medidas abaixo sao em pixels logicos, na resolucao de referencia
 | --- | --- | --- | --- | --- |
 | Herois (Tux, Android, etc.) | 32x32 | 48x48 | (8, 8) | Perfil usado pelo jogador atual; personagens ainda genericos |
 | Inimigos comuns (virus, malware) | 28x28 | 48x48 | (10, 10) | Perfil usado pelos inimigos atuais |
-| Guarda-costas | 44x44 | 64x64 | (10, 10) | Perfil preparado; entidade ainda nao adicionada as fases |
-| Bosses | 88x88 | 128x128 | (20, 20) | Perfil preparado; bosses ainda nao implementados |
+| Guarda-costas | 44x44 | 64x64 | (10, 10) | Bruta-montes em C/D; visual provisorio |
+| Bosses | 88x88 | 128x128 | (20, 20) | Boss em F; visual provisorio |
 
 A hitbox e a area solida usada nas colisoes, nao o tamanho minimo do arquivo.
 O quadro e o espaco completo reservado para a figura e a animacao, incluindo
@@ -50,7 +50,7 @@ o canto superior esquerdo da hitbox. `get_retangulo()` retorna a colisao;
 `get_retanguloVisual()` retorna o destino da imagem, ambos no espaco do mundo.
 A camera converte o retangulo visual para a tela ao desenhar.
 
-Exemplo para preparar um guarda-costas (sem mudar a populacao atual das salas):
+Exemplo para preparar um guarda-costas (perfil usado pelos bruta-montes):
 
 ```cpp
 Inimigo guarda(100.0f, 120.0f, 12, 80.0f, DIMENSOES_GUARDA_COSTAS);

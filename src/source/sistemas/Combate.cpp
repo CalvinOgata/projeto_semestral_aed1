@@ -19,12 +19,14 @@ int Combate::get_inimigosVivos() const
     return vivos;
 }
 
-void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade)
+void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos, bool boss)
 {
     this->limites = area;
     this->inimigos.limpar();
+    coracoes.limpar();
     this->limpar_projeteis();
-    quantidade = std::max(0, quantidade);
+    const int virus = std::max(0, quantidade);
+    quantidade = virus + std::max(0, brutos) + (boss ? 1 : 0);
     dificuldade = std::max(1, dificuldade);
     // Distribui os inimigos na metade direita, longe da entrada a esquerda.
     const int colunas = std::max(1, static_cast<int>(std::ceil(std::sqrt(quantidade))));
@@ -33,8 +35,15 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade)
     {
         const float x = area.x + area.w * (0.5f + 0.4f * (i % colunas + 1) / (colunas + 1));
         const float y = area.y + area.h * (i / colunas + 1) / (linhas + 1);
-        Inimigo inimigo(x, y, VIDA_INIMIGO + dificuldade - 1,
-                       VELOCIDADE_INIMIGO * (1.0f + 0.12f * (dificuldade - 1)));
+        const auto tipo = i < virus ? TipoInimigo::VIRUS :
+            (i < virus + brutos ? TipoInimigo::BRUTO : TipoInimigo::BOSS);
+        const auto dimensoes = tipo == TipoInimigo::VIRUS ? DIMENSOES_INIMIGO_COMUM :
+            (tipo == TipoInimigo::BRUTO ? DIMENSOES_GUARDA_COSTAS : DIMENSOES_BOSS);
+        const int vida = tipo == TipoInimigo::VIRUS ? VIDA_INIMIGO :
+            (tipo == TipoInimigo::BRUTO ? 12 : 65);
+        Inimigo inimigo(x, y, vida + dificuldade - 1,
+                       VELOCIDADE_INIMIGO * (tipo == TipoInimigo::VIRUS ? 1.0f : 0.65f) *
+                       (1.0f + 0.12f * (dificuldade - 1)), dimensoes, tipo);
         inimigo.limitar_a(area);
         this->inimigos.inserir(inimigo);
     }
@@ -43,6 +52,7 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade)
 void Combate::limpar_projeteis()
 {
     this->projeteis.limpar();
+    tirosInimigos.limpar();
     this->rastros.limpar();
 }
 
@@ -179,7 +189,7 @@ void Combate::resolver_colisoes()
     }
 }
 
-void Combate::atualizar(float dt, const Jogador &jogador)
+void Combate::atualizar(float dt, Jogador &jogador)
 {
     // Passos pequenos evitam atravessar inimigos ou paredes entre quadros.
     float restante = std::max(0.0f, dt);
@@ -189,6 +199,8 @@ void Combate::atualizar(float dt, const Jogador &jogador)
         atualizar_projeteis(passo, jogador);
         atualizar_inimigos(passo, jogador);
         resolver_colisoes();
+        jogador.atualizar_defesa(passo);
+        atualizar_hostis(passo, jogador);
         restante -= passo;
     }
     for (auto &rastro : rastros)
@@ -196,6 +208,7 @@ void Combate::atualizar(float dt, const Jogador &jogador)
         rastro.tempo -= dt;
     }
     rastros.remover_se([](const Rastro &r) { return r.tempo <= 0; });
+    atualizar_coracoes(dt, jogador);
     this->limpar_inativos();
 }
 
@@ -207,6 +220,27 @@ void Combate::limpar_inativos()
 
 void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mostrarHitboxes) const
 {
+    for (const auto &tiro : tirosInimigos)
+    {
+        const auto pos = camera.para_tela(tiro.x, tiro.y);
+        const SDL_FRect ret{pos.x - 4, pos.y - 4, 8, 8};
+        SDL_SetRenderDrawColor(renderizador, 255, 115, 80, 255);
+        SDL_RenderFillRectF(renderizador, &ret);
+    }
+    for (const auto &coracao : coracoes)
+    {
+        if (coracao.tempo < 2 && static_cast<int>(coracao.tempo * 8) % 2 == 0) continue;
+        const auto pos = camera.para_tela(coracao.x, coracao.y);
+        const char *forma[] = {".XX.XX.", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X..."};
+        for (int y = 0; y < 6; ++y)
+            for (int x = 0; x < 7; ++x)
+                if (forma[y][x] == 'X')
+                {
+                    SDL_SetRenderDrawColor(renderizador, 255, y < 2 ? 135 : 65, 105, 255);
+                    const SDL_FRect ret{pos.x + x * 3 - 10, pos.y + y * 3 - 9, 3, 3};
+                    SDL_RenderFillRectF(renderizador, &ret);
+                }
+    }
     for (const auto &rastro : rastros)
     {
         const auto a = camera.para_tela(rastro.inicio.x, rastro.inicio.y);
@@ -223,4 +257,57 @@ void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
     {
         projetil.desenhar(renderizador, camera);
     }
+}
+
+void Combate::atualizar_hostis(float dt, Jogador &jogador)
+{
+    for (auto &inimigo : inimigos)
+    {
+        if (!inimigo.preparar_tiro(dt)) continue;
+        const float dx = jogador.get_centroX() - inimigo.get_centroX();
+        const float dy = jogador.get_centroY() - inimigo.get_centroY();
+        const float tamanho = std::max(0.001f, std::hypot(dx, dy));
+        tirosInimigos.inserir({inimigo.get_centroX(), inimigo.get_centroY(),
+                              dx / tamanho, dy / tamanho, inimigo.get_danoTiro(), true});
+    }
+    auto corpo = jogador.get_retangulo();
+    for (auto &tiro : tirosInimigos)
+    {
+        tiro.x += tiro.dx * 230 * dt;
+        tiro.y += tiro.dy * 230 * dt;
+        const SDL_FRect ret{tiro.x - 4, tiro.y - 4, 8, 8};
+        if (SDL_HasIntersectionF(&ret, &corpo))
+        {
+            jogador.receber_dano(tiro.dano);
+            tiro.ativo = false;
+        }
+        if (tiro.x < limites.x || tiro.x > limites.x + limites.w ||
+            tiro.y < limites.y || tiro.y > limites.y + limites.h) tiro.ativo = false;
+    }
+    tirosInimigos.remover_se([](const TiroInimigo &tiro) { return !tiro.ativo; });
+}
+void Combate::atualizar_coracoes(float dt, Jogador &jogador)
+{
+    const auto corpo = jogador.get_retangulo();
+    for (auto &coracao : coracoes)
+    {
+        coracao.tempo -= dt;
+        const SDL_FRect area{coracao.x - 10, coracao.y - 9, 21, 18};
+        if (coracao.tempo > 0 && !jogador.morto() &&
+            jogador.get_vida() < jogador.get_vidaMax() && SDL_HasIntersectionF(&corpo, &area))
+        {
+            jogador.rec_vida(10);
+            coracao.tempo = 0;
+        }
+    }
+    coracoes.remover_se([](const Coracao &c) { return c.tempo <= 0; });
+    for (auto &inimigo : inimigos)
+        if (inimigo.soltar_coracao())
+            coracoes.inserir({inimigo.get_centroX(), inimigo.get_centroY(), 10});
+}
+
+void Combate::envelhecer_coracoes(float dt)
+{
+    for (auto &coracao : coracoes) coracao.tempo -= dt;
+    coracoes.remover_se([](const Coracao &c) { return c.tempo <= 0; });
 }

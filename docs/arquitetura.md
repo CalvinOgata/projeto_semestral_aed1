@@ -106,16 +106,18 @@ sem tempo minimo. `eliminarInimigos = false` permite uma sala de passagem livre.
 `Sala` transita de `NAO_VISITADA` para `EM_COMBATE` na primeira entrada e para
 `LIBERADA` quando cumpre os requisitos. Uma revisita preserva os inimigos e o
 estado; apenas a primeira entrada cria entidades. `sair` descarta projeteis.
-Apenas a sala ativa recebe atualizacoes, interrompidas durante a pausa.
+Apenas a sala ativa simula combate; coracoes nas demais salas tambem envelhecem.
+A pausa interrompe todos esses tempos.
 
 `Fase` guarda a sequencia em `ListaSequencial<Sala>` e acessa a atual por indice.
 Avancar/voltar nao remove salas da lista; isso preserva seu estado. A navegacao
-ocorre automaticamente ao tocar o retangulo da porta, inclusive suas bordas,
-e exige liberacao da sala atual. `Jogo` verifica a transicao apos atualizar o
-combate. A posicao de chegada fica afastada da porta para evitar retorno imediato. A porta final marca a fase
-como concluida; `Campanha` avanca para a seguinte e `Jogo` grava o checkpoint.
-`R` recria somente a fase atual e o jogador. Essa lista sequencial serve a uma
-fase linear; ramificacoes futuras poderao justificar um grafo de conexoes.
+ocorre automaticamente ao tocar a porta e exige liberacao da sala atual.
+A fase 1 usa quatro indices de vizinhos por sala (esquerda, direita, cima, baixo),
+formando um pequeno grafo sobre a lista existente. A passagem E–F exige A/C/D
+liberadas; o portal central de F conclui a fase apos derrotar o boss.
+As fases 2–5 mantem navegacao linear e saida pela ultima porta direita.
+A chegada ocorre afastada da porta oposta. `Campanha` avanca e `Jogo` grava
+o checkpoint. R ou morte recriam apenas a fase atual e o jogador.
 
 Para configurar a fase inicial, edite os registros no construtor de `Fase`, em
 `src/source/mundo/Fase.cpp`. As dimensoes minimas sao 400x300, dificuldade pelo
@@ -137,7 +139,7 @@ de vida associado a `Sala`, evitando listas globais compartilhadas entre salas.
 `Campanha` conhece o numero de fases concluidas e a fase atual. Ela controla a
 passagem entre cinco fases e reinicializa o jogador em cada etapa. `Fase(numero)`
 aplica a dificuldade e quantidade de inimigos daquele estagio, mantendo a
-estrutura de tres salas. Nao e preciso armazenar todas as fases simultaneamente.
+estrutura linear de tres salas nas fases 2–5 e sete salas ramificadas na fase 1. Nao e preciso armazenar todas as fases simultaneamente.
 
 `Jogo` coordena os estados `INICIAL`, `JOGANDO`, `PAUSADO`, `VITORIA` e `SAINDO`.
 `Menu` oferece modos inicial e pausa, com teclado e mouse. O menu solicita acoes;
@@ -186,5 +188,20 @@ preservando esses indices. Apenas projeteis inativos e rastros vencidos sao remo
 
 `Sala` possui `ListaSequencial<ArmaChao>` com armas coletaveis e descartadas.
 A busca da arma mais proxima custa O(n); as coletas ficam marcadas para preservar
-o estado local. Revisitar nao recria itens. As sete armas ficam disponiveis em
-cada sala como distribuicao inicial deterministica. Nenhum TAD conhece essas regras.
+o estado local. Revisitar nao recria itens. A fase 1 usa baus aleatorios; as
+fases 2–5 mantem a distribuicao inicial deterministica. Nenhum TAD conhece essas regras.
+
+## Inimigos, recompensas e defesa
+
+`TipoInimigo` distingue virus, bruta-montes e boss com vida base 2/12/65,
+perfis de colisao proprios e tiros simples de dano 8/12/18. `Combate` guarda
+tiros hostis separados dos projeteis do jogador e verifica colisoes em passos
+de ate 1/240 s. Inimigos param a 180 pixels e atiram na direcao do jogador.
+`Jogador` aplica absorcao pelo escudo, protecao de 0,5 s e regeneracao de
+10 pontos/s apos 3 s sem dano.
+
+Cada morte produz exatamente um coracao, inclusive ataques instantaneos.
+`Combate` controla coleta e expiracao; `Fase` envelhece coletas inativas.
+`Sala` possui baus e armas no chao; abrir um bau sorteia duas armas uniformemente
+entre os oito tipos, com reposicao. B/E possuem um/dois baus. Nenhum TAD depende
+dessas regras de jogo; armazenamento permanece encapsulado.

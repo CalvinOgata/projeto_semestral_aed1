@@ -14,6 +14,12 @@ private:
     SDL_FRect limites = {0, 0, 800, 400};
     ListaSequencial<Projetil> projeteis;
     ListaSequencial<Inimigo> inimigos;
+    struct TiroInimigo { float x, y, dx, dy; int dano; bool ativo = true; };
+    struct Coracao { float x, y, tempo = 10; };
+    ListaSequencial<TiroInimigo> tirosInimigos;
+    ListaSequencial<Coracao> coracoes;
+    void atualizar_hostis(float dt, Jogador &jogador);
+    void atualizar_coracoes(float dt, Jogador &jogador);
 
     struct Rastro
     {
@@ -29,10 +35,11 @@ private:
     void limpar_inativos();
 
 public:
-    void reiniciar(const SDL_FRect &area, int quantidade, int dificuldade);
+    void reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos = 0, bool boss = false);
     void limpar_projeteis();
+    void envelhecer_coracoes(float dt);
     void disparar(Jogador &jogador);
-    void atualizar(float dt, const Jogador &jogador);
+    void atualizar(float dt, Jogador &jogador);
     void desenhar(SDL_Renderer *renderizador, const Camera &camera,
                   bool mostrarHitboxes = false) const;
     int get_inimigosVivos() const;

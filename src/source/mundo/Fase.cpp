@@ -11,6 +11,29 @@ Fase::Fase(int numero) : numero(numero)
     {
         throw std::invalid_argument("Numero de fase invalido");
     }
+    if (numero == 1)
+    {
+        const std::array<std::array<int, 4>, 7> conexoes = {{
+            {{-1, 1, -1, -1}}, {{0, 3, 4, 2}}, {{-1, -1, 1, -1}},
+            {{1, -1, 5, -1}}, {{-1, 5, -1, 1}}, {{4, -1, 6, 3}},
+            {{-1, -1, -1, 5}}
+        }};
+        const char *nomes[] = {"LOBBY", "A - VIRUS", "B - TESOURO", "C - QUARENTENA",
+                               "D - FIREWALL", "E - ARSENAL", "F - BOSS"};
+        for (int i = 0; i < 7; ++i)
+        {
+            ConfiguracaoSala config{nomes[i], 936, 516, 1,
+                i == 1 ? 3 : ((i == 3 || i == 4) ? 4 : 0), {true}};
+            config.brutos = (i == 3 || i == 4) ? 2 : 0;
+            config.boss = i == 6;
+            config.baus = i == 2 ? 1 : (i == 5 ? 2 : 0);
+            config.armasIniciais = false;
+            config.vizinhos = conexoes[i];
+            config.mapaRamificado = true;
+            salas.inserir(Sala(config));
+        }
+        return;
+    }
     const int extra = numero - 1;
     // Fase autoral inicial. Cada registro pode ter tamanho, dificuldade e requisito proprios.
     this->salas.inserir(Sala({"SETOR DE BOOT", 936, 516, 1 + extra, 4 + extra * 2, {true}}));
@@ -30,6 +53,30 @@ bool Fase::atualizar_transicao(Jogador &jogador)
     Sala &atual = this->get_salaAtual();
     if (this->concluida || !atual.liberada())
     {
+        return false;
+    }
+    if (numero == 1)
+    {
+        const bool liberar = salas.obter(1).liberada() && salas.obter(3).liberada() &&
+                             salas.obter(4).liberada();
+        for (auto &sala : salas) sala.liberar_boss(liberar);
+        if (indiceAtual == 6 && atual.tocando_portal(jogador))
+        {
+            atual.sair();
+            concluida = true;
+            return true;
+        }
+        for (int d = 0; d < 4; ++d)
+        {
+            const auto direcao = static_cast<Direcao>(d);
+            const int destino = atual.get_configuracao().vizinhos[d];
+            if (destino < 0 || !atual.porta_liberada(direcao) ||
+                !atual.tocando_porta(jogador, direcao)) continue;
+            atual.sair();
+            indiceAtual = static_cast<std::size_t>(destino);
+            get_salaAtual().entrar(jogador, static_cast<Direcao>(d ^ 1));
+            return true;
+        }
         return false;
     }
     const bool direita = atual.tocando_porta(jogador, true);
@@ -74,4 +121,13 @@ std::size_t Fase::get_indiceAtual() const
 bool Fase::get_concluida() const
 {
     return this->concluida;
+}
+
+void Fase::atualizar(float dt, Jogador &jogador)
+{
+    for (std::size_t i = 0; i < salas.get_quantidade(); ++i)
+    {
+        if (i == indiceAtual) salas.obter(i).atualizar(dt, jogador);
+        else salas.obter(i).envelhecer_coletas(dt);
+    }
 }

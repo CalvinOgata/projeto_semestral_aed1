@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <random>
 #include "interface/Texto.h"
 #include <stdexcept>
 
@@ -22,12 +23,15 @@ void Sala::entrar(Jogador &jogador, bool pelaDireita)
     if (this->estado == EstadoSala::NAO_VISITADA)
     {
         this->combate.reiniciar(this->get_limites(), this->configuracao.quantidadeInimigos,
-                               this->configuracao.dificuldade);
+                               this->configuracao.dificuldade, configuracao.brutos, configuracao.boss);
         const TipoArma tipos[] = {TipoArma::SHOTGUN, TipoArma::LASER, TipoArma::DUPLA,
             TipoArma::RICOCHETE, TipoArma::ESPADA, TipoArma::ARCO, TipoArma::BOOMERANG};
-        for (int i = 0; i < 7; ++i)
+        for (int i = 0; configuracao.armasIniciais && i < 7; ++i)
             armasChao.inserir({Armas(tipos[i]), 160.0f + (i % 2) * 130.0f,
                               configuracao.altura * (i / 2 + 1) / 5.0f, false});
+        for (int i = 0; i < configuracao.baus; ++i)
+            baus.inserir({configuracao.largura * (i + 1) / (configuracao.baus + 1),
+                         configuracao.altura / 2, false});
         this->estado = EstadoSala::EM_COMBATE;
     }
     jogador.set_posicao(pelaDireita ? this->configuracao.largura - 90 - jogador.get_largura() : 90,
@@ -42,13 +46,27 @@ void Sala::sair()
     this->combate.limpar_projeteis();
 }
 
-void Sala::atualizar(float dt, const Jogador &jogador)
+void Sala::atualizar(float dt, Jogador &jogador)
 {
     if (this->estado == EstadoSala::NAO_VISITADA)
     {
         return;
     }
     this->combate.atualizar(dt, jogador);
+    static std::mt19937 sorteio(std::random_device{}());
+    const TipoArma tipos[] = {TipoArma::PISTOLA, TipoArma::SHOTGUN, TipoArma::LASER,
+        TipoArma::DUPLA, TipoArma::RICOCHETE, TipoArma::ESPADA, TipoArma::ARCO, TipoArma::BOOMERANG};
+    for (auto &bau : baus)
+    {
+        if (!bau.aberto && std::hypot(jogador.get_centroX() - bau.x,
+                                     jogador.get_centroY() - bau.y) < 64)
+        {
+            bau.aberto = true;
+            for (int i = 0; i < 2; ++i)
+                armasChao.inserir({Armas(tipos[std::uniform_int_distribution<int>(0, 7)(sorteio)]),
+                                  bau.x + (i == 0 ? -40 : 40), bau.y + 48, false});
+        }
+    }
     if (this->estado == EstadoSala::EM_COMBATE)
     {
         const bool eliminados = !this->configuracao.requisito.eliminarInimigos ||
@@ -137,14 +155,56 @@ void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAn
     {
         SDL_RenderFillRectF(renderizador, &parede);
     }
-    SDL_SetRenderDrawColor(renderizador, this->liberada() ? 70 : 190,
-                           this->liberada() ? 210 : 60, 85, 255);
-    const SDL_FRect direita = camera.para_tela(this->get_porta(true));
-    SDL_RenderFillRectF(renderizador, &direita);
-    if (temAnterior)
+    for (int d = 0; d < 4; ++d)
     {
-        const SDL_FRect esquerda = camera.para_tela(this->get_porta(false));
-        SDL_RenderFillRectF(renderizador, &esquerda);
+        const auto direcao = static_cast<Direcao>(d);
+        if (configuracao.mapaRamificado ? configuracao.vizinhos[d] < 0 :
+            (d > 1 || (d == 0 && !temAnterior))) continue;
+        const bool aberta = porta_liberada(direcao);
+        SDL_SetRenderDrawColor(renderizador, aberta ? 70 : 190, aberta ? 210 : 60, 85, 255);
+        const auto porta = camera.para_tela(get_porta(direcao));
+        SDL_RenderFillRectF(renderizador, &porta);
+        if (configuracao.mapaRamificado)
+        {
+            const char *nomes[] = {"LOBBY", "A", "B", "C", "D", "E", "F"};
+            Texto::desenhar_centralizado(renderizador, nomes[configuracao.vizinhos[d]],
+                porta.x + porta.w / 2, porta.y + porta.h / 2 - 4, 1, {255,255,255,255});
+        }
+    }
+    if (configuracao.boss && liberada())
+    {
+        auto centro = camera.para_tela(configuracao.largura / 2, configuracao.altura / 2);
+        for (int r = 42; r > 0; --r)
+        {
+            SDL_SetRenderDrawColor(renderizador, 70 + r * 3, 50 + r * 3, 240, 255);
+            for (int a = 0; a < 90; ++a)
+            {
+                float angulo = a * 6.2831853f / 90;
+                SDL_RenderDrawPointF(renderizador, centro.x + std::cos(angulo) * r,
+                                    centro.y + std::sin(angulo) * r * 0.65f);
+            }
+        }
+        Texto::desenhar_centralizado(renderizador, "PROXIMA FASE", centro.x, centro.y + 38, 1, {220,240,255,255});
+    }
+    for (const auto &bau : baus)
+    {
+        const auto pos = camera.para_tela(bau.x, bau.y);
+        auto bloco = [&](float x, float y, float w, float h, SDL_Color cor) {
+            SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, cor.a);
+            const SDL_FRect ret = {pos.x + x, pos.y + y, w, h};
+            SDL_RenderFillRectF(renderizador, &ret);
+        };
+        bloco(-32, 18, 64, 8, {40,38,48,255});
+        bloco(-30, -16, 60, 40, {48,27,30,255});
+        bloco(-26, -12, 52, 32, {139,65,40,255});
+        bloco(-24, 2, 48, 3, {78,35,30,255});
+        bloco(-30, bau.aberto ? -30 : -20, 60, 18, {202,117,51,255});
+        bloco(-26, bau.aberto ? -27 : -17, 52, 4, {246,183,84,255});
+        if (bau.aberto) bloco(-23, -12, 46, 10, {28,23,34,255});
+        bloco(-22, -16, 6, 38, {235,181,72,255});
+        bloco(16, -16, 6, 38, {235,181,72,255});
+        bloco(-7, -5, 14, 14, {255,218,107,255});
+        bloco(-2, -1, 4, 7, {66,43,35,255});
     }
     for (const auto &item : armasChao)
     {
@@ -188,3 +248,38 @@ void Sala::soltar_arma(Jogador &jogador)
     if (jogador.get_armas().retirar(arma))
         armasChao.inserir({arma, jogador.get_centroX(), jogador.get_centroY(), false});
 }
+
+void Sala::entrar(Jogador &jogador, Direcao entrada)
+{
+    entrar(jogador, entrada == Direcao::DIREITA);
+    if (entrada == Direcao::CIMA || entrada == Direcao::BAIXO)
+        jogador.set_posicao((configuracao.largura - jogador.get_largura()) / 2,
+            entrada == Direcao::CIMA ? 90 : configuracao.altura - 90 - jogador.get_altura());
+}
+void Sala::liberar_boss(bool liberar) { bossLiberado = liberar; }
+bool Sala::porta_liberada(Direcao direcao) const
+{
+    const int destino = configuracao.vizinhos[static_cast<int>(direcao)];
+    return liberada() && (!configuracao.mapaRamificado ||
+                          (destino >= 0 && (destino != 6 || bossLiberado)));
+}
+SDL_FRect Sala::get_porta(Direcao direcao) const
+{
+    if (direcao == Direcao::ESQUERDA || direcao == Direcao::DIREITA)
+        return get_porta(direcao == Direcao::DIREITA);
+    return {configuracao.largura / 2 - 48,
+            direcao == Direcao::CIMA ? 0 : configuracao.altura - 18, 96, 18};
+}
+bool Sala::tocando_porta(const Jogador &jogador, Direcao direcao) const
+{
+    const auto porta = get_porta(direcao), corpo = jogador.get_retangulo();
+    return SDL_HasIntersectionF(&porta, &corpo);
+}
+bool Sala::tocando_portal(const Jogador &jogador) const
+{
+    return configuracao.boss && liberada() &&
+        std::hypot(jogador.get_centroX() - configuracao.largura / 2,
+                   jogador.get_centroY() - configuracao.altura / 2) < 35;
+}
+
+void Sala::envelhecer_coletas(float dt) { combate.envelhecer_coracoes(dt); }

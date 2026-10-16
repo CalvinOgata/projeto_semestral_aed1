@@ -4,7 +4,7 @@
 #include "estruturas/ListaSequencial.h"
 #include "mundo/Sala.h"
 
-// Ordem de progressao e sala ativa. A lista armazena; Fase decide a navegacao.
+// Salas e conexoes direcionais. A lista armazena; Fase decide a navegacao.
 class Fase
 {
 private:
@@ -16,6 +16,7 @@ private:
 public:
     explicit Fase(int numero = 1);
     void reiniciar(Jogador &jogador);
+    void atualizar(float dt, Jogador &jogador);
     // Verifica contato com portas liberadas uma vez por atualizacao.
     bool atualizar_transicao(Jogador &jogador);
     Sala &get_salaAtual();
