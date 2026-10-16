@@ -117,7 +117,8 @@ formando um pequeno grafo sobre a lista existente. A passagem E–F exige A/C/D
 liberadas; o portal central de F conclui a fase apos derrotar o boss.
 As fases 2–5 mantem navegacao linear e saida pela ultima porta direita.
 A chegada ocorre afastada da porta oposta. `Campanha` avanca e `Jogo` grava
-o checkpoint. R ou morte recriam apenas a fase atual e o jogador.
+o checkpoint. Reiniciar no menu de pausa ou morte recriam apenas a fase atual e o jogador.
+A tecla R nao reinicia mais. O reinicio pelo menu retoma a partida.
 
 Para configurar a fase inicial, edite os registros no construtor de `Fase`, em
 `src/source/mundo/Fase.cpp`. As dimensoes minimas sao 400x300, dificuldade pelo
@@ -135,6 +136,13 @@ de bitmap embutidos, sem dependencia grafica em `Armas` ou nos TADs. `Fase` nao 
 de vida associado a `Sala`, evitando listas globais compartilhadas entre salas.
 
 ## Campanha, menus e persistencia
+
+`interface/Minimapa` consulta salas e vizinhos por acesso somente leitura em `Fase`.
+Um percurso das conexoes posiciona os blocos conforme as quatro direcoes, sem copiar
+o mapa autoral para a interface. Fases lineares fornecem vizinhos esquerdo/direito.
+`Jogo` controla a sobreposicao com M, bloqueia a simulacao e as acoes enquanto ela
+esta aberta e restaura a partida ou pausa ao fechar com M/Esc. O minimapa mostra
+todas as salas, estados e um marcador da posicao do jogador na sala atual.
 
 `Campanha` conhece o numero de fases concluidas e a fase atual. Ela controla a
 passagem entre cinco fases e reinicializa o jogador em cada etapa. `Fase(numero)`
@@ -205,3 +213,7 @@ Cada morte produz exatamente um coracao, inclusive ataques instantaneos.
 `Sala` possui baus e armas no chao; abrir um bau sorteia duas armas uniformemente
 entre os oito tipos, com reposicao. B/E possuem um/dois baus. Nenhum TAD depende
 dessas regras de jogo; armazenamento permanece encapsulado.
+
+A pausa apresenta somente o titulo PAUSADO, fase/nome da sala e quatro opcoes:
+Continuar, Reiniciar, Menu inicial e Sair. O menu inicial mantem tres opcoes.
+A quantidade de opcoes usada para desenho, teclado e mouse depende do modo.

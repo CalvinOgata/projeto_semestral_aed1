@@ -23,6 +23,9 @@ public:
     const Sala &get_salaAtual() const;
     std::size_t get_indiceAtual() const;
     bool get_concluida() const;
+    std::size_t get_quantidadeSalas() const;
+    const Sala &get_sala(std::size_t indice) const;
+    int get_vizinho(std::size_t indice, Direcao direcao) const;
 };
 
 #endif

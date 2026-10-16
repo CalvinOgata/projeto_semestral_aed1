@@ -6,6 +6,7 @@
 #include "graficos/Desenho.h"
 #include "interface/Texto.h"
 #include "interface/Hud.h"
+#include "interface/Minimapa.h"
 
 namespace
 {
@@ -181,12 +182,35 @@ void Jogo::tratar_eventos()
             this->mouseTelaY = static_cast<float>(evento.motion.y);
         }
 
+        if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
+            evento.key.keysym.sym == SDLK_m)
+        {
+            this->mostrarMinimapa = !this->mostrarMinimapa;
+            this->atirando = false;
+            continue;
+        }
+        if (this->mostrarMinimapa)
+        {
+            if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
+                evento.key.keysym.sym == SDLK_ESCAPE)
+            {
+                this->mostrarMinimapa = false;
+            }
+            continue;
+        }
+
         if (this->estado == EstadoJogo::PAUSADO)
         {
             const AcaoMenu acao = this->menu.tratar_evento(evento);
 
             if (acao == AcaoMenu::CONTINUAR)
             {
+                this->retomar();
+            }
+            else if (acao == AcaoMenu::REINICIAR)
+            {
+                this->campanha.reiniciar_fase(this->jogador);
+                this->preparar_entrada();
                 this->retomar();
             }
             else if (acao == AcaoMenu::MENU_INICIAL)
@@ -220,14 +244,6 @@ void Jogo::tratar_eventos()
             {
                 this->campanha.get_faseAtual().get_salaAtual().soltar_arma(this->jogador);
             }
-            else if (evento.key.keysym.sym == SDLK_r)
-            {
-                this->campanha.reiniciar_fase(this->jogador);
-                this->atirando = false;
-                this->esperaTiro = 0.0f;
-                this->atualizar_camera();
-                this->atualizar_mira();
-            }
         }
         else if (evento.type == SDL_MOUSEBUTTONDOWN && evento.button.button == SDL_BUTTON_LEFT)
         {
@@ -242,7 +258,7 @@ void Jogo::tratar_eventos()
 
 void Jogo::atualizar(float dt)
 {
-    if (this->campanha.concluida())
+    if (this->campanha.concluida() || this->mostrarMinimapa)
     {
         return;
     }
@@ -333,26 +349,14 @@ void Jogo::desenhar()
 
         this->jogador.desenhar(this->renderizador, this->camera, this->mostrarHitboxes,
                                &this->spriteJogador);
-        Hud::desenhar(this->renderizador, this->jogador);
+        if (this->estado != EstadoJogo::PAUSADO)
+        {
+            Hud::desenhar(this->renderizador, this->jogador);
+        }
 
         if (this->estado == EstadoJogo::PAUSADO)
         {
             this->menu.desenhar(this->renderizador);
-            const auto &fase = this->campanha.get_faseAtual();
-            const auto &sala = fase.get_salaAtual();
-            const std::string resumo = "FASE " +
-                std::to_string(this->campanha.get_fasesConcluidas() + 1) + "/5 - SALA " +
-                std::to_string(fase.get_indiceAtual() + 1) + " - DIFICULDADE " +
-                std::to_string(sala.get_configuracao().dificuldade) + " - INIMIGOS " +
-                std::to_string(sala.get_inimigosVivos());
-            Texto::desenhar_centralizado(this->renderizador, resumo, LARGURA_TELA / 2,
-                                         36, 2, COR_TEXTO);
-            const auto *arma = this->jogador.get_armaEquipada();
-            const std::string inventario = std::string(arma ? arma->get_nome() : "SEM ARMA") +
-                " - INVENTARIO " + std::to_string(this->jogador.get_armas().get_quantidade()) +
-                "/" + std::to_string(MAX_ARMAS);
-            Texto::desenhar_centralizado(this->renderizador, inventario, 480, 64, 2, COR_TEXTO);
-            Texto::desenhar_centralizado(this->renderizador, "F: COLETAR   Q: PROXIMA   G: SOLTAR", 480, 90, 2, COR_TEXTO);
         }
     }
     if (this->estado != EstadoJogo::JOGANDO && !this->mensagemSave.empty())
@@ -364,6 +368,12 @@ void Jogo::desenhar()
                                      ALTURA_TELA - 56, 2, COR_TEXTO);
     }
 
+    if (this->mostrarMinimapa &&
+        (this->estado == EstadoJogo::JOGANDO || this->estado == EstadoJogo::PAUSADO))
+    {
+        Minimapa::desenhar(this->renderizador, this->campanha.get_faseAtual(),
+                          this->campanha.get_fasesConcluidas() + 1, this->jogador);
+    }
     SDL_RenderPresent(this->renderizador);
 }
 
@@ -381,7 +391,11 @@ void Jogo::atualizar_camera()
 
 void Jogo::pausar()
 {
-    this->menu.configurar_pausa();
+    const auto &sala = this->campanha.get_faseAtual().get_salaAtual();
+    const std::string resumo = "FASE " +
+        std::to_string(this->campanha.get_fasesConcluidas() + 1) + " - " +
+        sala.get_configuracao().nome;
+    this->menu.configurar_pausa(resumo);
     this->estado = EstadoJogo::PAUSADO;
     this->atirando = false; // solta o gatilho para nao voltar atirando sozinho
 }
@@ -459,6 +473,7 @@ void Jogo::salvar_progresso()
 
 void Jogo::preparar_entrada()
 {
+    this->mostrarMinimapa = false;
     this->atirando = false;
     this->esperaTiro = 0.0f;
     this->atualizar_camera();

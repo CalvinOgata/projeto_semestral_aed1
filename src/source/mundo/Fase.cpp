@@ -123,6 +123,34 @@ bool Fase::get_concluida() const
     return this->concluida;
 }
 
+std::size_t Fase::get_quantidadeSalas() const
+{
+    return salas.get_quantidade();
+}
+
+const Sala &Fase::get_sala(std::size_t indice) const
+{
+    return salas.obter(indice);
+}
+
+int Fase::get_vizinho(std::size_t indice, Direcao direcao) const
+{
+    const auto &config = get_sala(indice).get_configuracao();
+    if (config.mapaRamificado)
+    {
+        return config.vizinhos[static_cast<int>(direcao)];
+    }
+    if (direcao == Direcao::ESQUERDA && indice > 0)
+    {
+        return static_cast<int>(indice) - 1;
+    }
+    if (direcao == Direcao::DIREITA && indice + 1 < get_quantidadeSalas())
+    {
+        return static_cast<int>(indice) + 1;
+    }
+    return -1;
+}
+
 void Fase::atualizar(float dt, Jogador &jogador)
 {
     for (std::size_t i = 0; i < salas.get_quantidade(); ++i)

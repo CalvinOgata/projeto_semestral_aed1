@@ -5,8 +5,8 @@
 
 namespace
 {
-const char *OPCOES_PAUSA[Menu::NUM_OPCOES] = {"CONTINUAR", "MENU INICIAL", "SAIR"};
-const char *OPCOES_INICIAIS[Menu::NUM_OPCOES] = {"NOVO JOGO", "CONTINUAR", "SAIR"};
+const char *OPCOES_PAUSA[Menu::NUM_OPCOES_PAUSA] = {"CONTINUAR", "REINICIAR", "MENU INICIAL", "SAIR"};
+const char *OPCOES_INICIAIS[Menu::NUM_OPCOES_INICIAIS] = {"NOVO JOGO", "CONTINUAR", "SAIR"};
 
 constexpr int LARGURA_PAINEL = 700;
 constexpr int ALTURA_PAINEL = 370;
@@ -38,8 +38,13 @@ int Menu::get_selecionado() const
 
 void Menu::mover_selecao(int passo)
 {
-    // Soma NUM_OPCOES antes do resto para o indice nunca ficar negativo.
-    this->selecionado = (this->selecionado + passo + NUM_OPCOES) % NUM_OPCOES;
+    const int quantidade = this->get_quantidadeOpcoes();
+    this->selecionado = ((this->selecionado + passo) % quantidade + quantidade) % quantidade;
+}
+
+int Menu::get_quantidadeOpcoes() const
+{
+    return this->inicial ? NUM_OPCOES_INICIAIS : NUM_OPCOES_PAUSA;
 }
 
 AcaoMenu Menu::acao_da_opcao(int indice) const
@@ -62,6 +67,10 @@ AcaoMenu Menu::acao_da_opcao(int indice) const
             return AcaoMenu::CONTINUAR;
         }
         if (indice == 1)
+        {
+            return AcaoMenu::REINICIAR;
+        }
+        if (indice == 2)
         {
             return AcaoMenu::MENU_INICIAL;
         }
@@ -87,7 +96,7 @@ SDL_Rect Menu::retangulo_opcao(int indice) const
     opcao.w = painel.w - 60;
     opcao.h = ALTURA_OPCAO;
     opcao.x = painel.x + 30;
-    opcao.y = painel.y + TOPO_OPCOES + indice * (ALTURA_OPCAO + 10);
+    opcao.y = painel.y + (this->inicial ? TOPO_OPCOES : 132) + indice * (ALTURA_OPCAO + 10);
     return opcao;
 }
 
@@ -122,7 +131,7 @@ AcaoMenu Menu::tratar_evento(const SDL_Event &evento)
     else if (evento.type == SDL_MOUSEMOTION)
     {
         const SDL_Point cursor = {evento.motion.x, evento.motion.y};
-        for (int i = 0; i < NUM_OPCOES; i++)
+        for (int i = 0; i < this->get_quantidadeOpcoes(); i++)
         {
             SDL_Rect opcao = this->retangulo_opcao(i);
             if (SDL_PointInRect(&cursor, &opcao))
@@ -134,7 +143,7 @@ AcaoMenu Menu::tratar_evento(const SDL_Event &evento)
     else if (evento.type == SDL_MOUSEBUTTONDOWN && evento.button.button == SDL_BUTTON_LEFT)
     {
         const SDL_Point cursor = {evento.button.x, evento.button.y};
-        for (int i = 0; i < NUM_OPCOES; i++)
+        for (int i = 0; i < this->get_quantidadeOpcoes(); i++)
         {
             SDL_Rect opcao = this->retangulo_opcao(i);
             if (SDL_PointInRect(&cursor, &opcao))
@@ -177,7 +186,13 @@ void Menu::desenhar(SDL_Renderer *renderizador) const
                                  centroX, painel.y + 36, this->inicial ? 4 : ESCALA_TITULO,
                                  COR_TEXTO);
 
-    for (int i = 0; i < NUM_OPCOES; i++)
+    if (!this->inicial)
+    {
+        Texto::desenhar_centralizado(renderizador, this->detalhe, centroX,
+                                     painel.y + 90, 2, COR_TEXTO_APAGADO);
+    }
+
+    for (int i = 0; i < this->get_quantidadeOpcoes(); i++)
     {
         const SDL_Rect area = this->retangulo_opcao(i);
         const bool ativa = (i == this->selecionado);
@@ -210,14 +225,11 @@ void Menu::desenhar(SDL_Renderer *renderizador) const
         Texto::desenhar_centralizado(renderizador, "NOVO JOGO SUBSTITUI O PROGRESSO SALVO", centroX,
                                      painel.y + 308, 2, COR_TEXTO_APAGADO);
     }
-    else
+    if (this->inicial)
     {
-        Texto::desenhar_centralizado(renderizador, "MENU INICIAL: RETORNO PELO CHECKPOINT", centroX,
-                                     painel.y + 290, 2, COR_TEXTO_APAGADO);
+        Texto::desenhar_centralizado(renderizador, "SETAS NAVEGAR - ENTER CONFIRMAR", centroX,
+                                     painel.y + painel.h - 32, ESCALA_DICA, COR_TEXTO_APAGADO);
     }
-
-    Texto::desenhar_centralizado(renderizador, "SETAS NAVEGAR - ENTER CONFIRMAR", centroX,
-                                 painel.y + painel.h - 32, ESCALA_DICA, COR_TEXTO_APAGADO);
 }
 
 void Menu::configurar_inicial(bool podeContinuar, const std::string &detalhe)
@@ -228,8 +240,9 @@ void Menu::configurar_inicial(bool podeContinuar, const std::string &detalhe)
     this->selecionado = podeContinuar ? 1 : 0;
 }
 
-void Menu::configurar_pausa()
+void Menu::configurar_pausa(const std::string &detalhe)
 {
     this->inicial = false;
+    this->detalhe = detalhe;
     this->reiniciar();
 }

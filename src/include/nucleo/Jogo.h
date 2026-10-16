@@ -39,6 +39,7 @@ private:
     Uint64 tempoAnterior;
     float esperaTiro; // segundos que faltam para o proximo disparo
     bool mostrarHitboxes = false;
+    bool mostrarMinimapa = false;
     bool atirando;    // botao esquerdo do mouse segurado
     float mouseTelaX; // posicao do mouse em coordenadas de tela
     float mouseTelaY;

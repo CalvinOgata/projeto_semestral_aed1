@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 #include "config/Config.h"
+#include "graficos/IconeArma.h"
 
 Sala::Sala(const ConfiguracaoSala &configuracao) : configuracao(configuracao)
 {
@@ -213,10 +214,10 @@ void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAn
             continue;
         }
         const auto pos = camera.para_tela(item.x, item.y);
-        SDL_SetRenderDrawColor(renderizador, 245, 210, 90, 255);
-        const SDL_FRect caixa = {pos.x - 12, pos.y - 6, 24, 12};
-        SDL_RenderDrawRectF(renderizador, &caixa);
-        Texto::desenhar_centralizado(renderizador, item.arma.get_nome(), pos.x, pos.y + 12, 1, {255, 240, 180, 255});
+        const SDL_FRect area = {pos.x - 18, pos.y - 18, 36, 36};
+        IconeArma::desenhar(renderizador, item.arma.get_tipo(), area);
+        Texto::desenhar_centralizado(renderizador, item.arma.get_nome(), pos.x, pos.y + 22,
+                                    1, {255, 240, 180, 255});
     }
     this->combate.desenhar(renderizador, camera, mostrarHitboxes);
 }

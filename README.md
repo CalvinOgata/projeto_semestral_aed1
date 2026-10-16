@@ -25,7 +25,7 @@ Arch: `sudo pacman -S sdl2 libpng` · Debian/Ubuntu: `sudo apt install libsdl2-d
 | `Q` | passar a arma equipada para o fim da fila |
 | `G` | soltar a arma equipada no chao |
 | `F2` | mostrar/esconder hitboxes para conferir sprites |
-| `R` | reiniciar a fase atual e o jogador, mantendo fases ja concluidas |
+| `M` | abrir/fechar minimapa da fase; congela o jogo enquanto aberto |
 | `F5` | tentar salvar novamente se houver falha de gravacao |
 | `Esc` | abrir o menu de pausa (e voltar ao jogo) |
 | setas / `W` `S` | navegar no menu |
@@ -69,12 +69,21 @@ da sala; pausa congela o tempo). Morrer reinicia a fase atual sem perder fases c
 A dificuldade aumenta vida e velocidade dos inimigos. Paredes limitam movimento
 e tiros; a camera acompanha o jogador dentro dos limites da sala. O HUD agrupa vida, escudo e energia numa caixa compacta e semitransparente
 no canto superior esquerdo, com barras coloridas e icones. A municao aparece
-apenas como numero no canto inferior direito. Sala, dificuldade e quantidade de
-inimigos aparecem somente na pausa. `Esc` pausa o jogo. `R` permite recomecar, inclusive se acabar a municao.
+apenas como numero no canto inferior direito. Na pausa aparecem apenas a fase e o nome da sala,
+com o titulo PAUSADO e as opcoes Continuar, Reiniciar, Menu inicial e Sair.
+Reiniciar recomeca a fase atual e o jogador, preservando fases concluidas.
+O reinicio manual fica exclusivamente nesse menu; a tecla R nao executa nenhuma acao.
 
 As configuracoes das salas sao fixas. Dano de contato e geracao procedural ainda nao estao implementados.
 
 ## Tela inicial e salvamento
+
+O minimapa mostra todas as salas e suas conexoes na fase atual, inclusive as nao
+visitadas. A sala atual recebe uma borda amarela e um ponto indica a posicao do
+jogador dentro dela. Verde indica sala concluida, cinza nao visitada e vermelho
+em combate; salas de baus e boss possuem identificacao. Funciona nas cinco fases,
+inclusive pelo menu de pausa. M ou Esc fecham o mapa e retornam ao estado anterior.
+Movimento, tiros e temporizadores ficam congelados durante a consulta.
 
 - **Novo jogo** inicia a fase 1 e substitui o progresso salvo.
 - **Continuar** retoma o inicio da proxima fase ainda nao concluida.
@@ -191,8 +200,8 @@ somente a frente e preserva sua municao no chao. F com fila cheia nao coleta
 nem substitui nada. Na fase 1, os baus soltam as armas. Nas fases 2–5, as sete
 novidades aparecem no chao de cada sala, na metade esquerda. Coletas e
 descartes persistem ao revisitar a sala.
-A fase seguinte e R reiniciam armas e inventario. A pausa mostra arma equipada,
-ocupacao da fila e controles. Os desenhos das armas ainda sao provisorios.
+Avancar de fase ou usar Reiniciar na pausa recria armas e inventario. As armas no chao usam os mesmos icones do inventario,
+em quadros de 36x36 pixels com o nome abaixo, incluindo armas dos baus e descartadas.
 
 | Arma | Ataque |
 | --- | --- |

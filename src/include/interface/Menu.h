@@ -10,6 +10,7 @@ enum class AcaoMenu
     NENHUMA,
     CONTINUAR,
     NOVO_JOGO,
+    REINICIAR,
     MENU_INICIAL,
     SAIR
 };
@@ -17,7 +18,8 @@ enum class AcaoMenu
 class Menu
 {
 public:
-    static constexpr int NUM_OPCOES = 3;
+    static constexpr int NUM_OPCOES_INICIAIS = 3;
+    static constexpr int NUM_OPCOES_PAUSA = 4;
 
 private:
     int selecionado;
@@ -31,7 +33,7 @@ public:
 
     void reiniciar();
     void configurar_inicial(bool podeContinuar, const std::string &detalhe);
-    void configurar_pausa();
+    void configurar_pausa(const std::string &detalhe = "");
 
     int get_selecionado() const;
     void mover_selecao(int);
@@ -40,6 +42,7 @@ public:
     void desenhar(SDL_Renderer *) const;
 
 private:
+    int get_quantidadeOpcoes() const;
     AcaoMenu acao_da_opcao(int) const;
     SDL_Rect retangulo_painel() const;
     SDL_Rect retangulo_opcao(int) const;

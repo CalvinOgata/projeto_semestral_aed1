@@ -46,7 +46,7 @@ As inspected on 2026-10-16:
   the current room; E–F additionally requires A/C/D cleared. Defeating F's boss
   creates a central portal; touching it completes the phase. Phases 2–5 retain
   their original three-room linear layouts and last-door completion.
-- R and player death reset the current phase/player without losing completed
+- Pause-menu Restart and player death reset the current phase/player without losing completed
   phases. Cleared enemies/chests never respawn on revisits. Projectiles are
   discarded on leaving. Only active combat updates; hearts in inactive rooms
   still expire. Pause freezes simulation. Arrivals are away from opposite doors.
@@ -54,8 +54,8 @@ As inspected on 2026-10-16:
   Walls constrain players/enemies and discard projectiles. The camera is bounded
   with only 12-pixel wall margins. The gameplay HUD shows health, shield,
   energy in one compact translucent top-left box, ammunition as a bare
-  number in the bottom-right corner, and three weapon slots at top right; room/difficulty/enemy
-  details are available during pause. No permanent footer or save banners during play.
+  number in the bottom-right corner, and three weapon slots at top right; phase and room name
+  are available during pause. No permanent footer or save banners during play.
 - Room layouts are authored, not procedural. Enemy contact damage is not implemented.
 - Movement, mouse aiming, sustained shooting, projectiles, enemy pursuit,
   enemy damage, and a pause menu already exist.
@@ -121,7 +121,7 @@ Use the existing `.clang-format` configuration.
 - Save at new-game start and after each completed phase. Continue resumes at the
   beginning of the next unfinished phase, not the exact room/position.
 - Every phase starts with a fresh player (health, stamina, starting weapon/ammo),
-  consistently for advancement, restart, and loading. R restarts only the current
+  consistently for advancement, restart, and loading. Pause-menu Restart resets only the current
   phase. Completing phase five shows victory and records campaign completion.
 - `saves/progresso.json` is relative to the executable directory, resolved via
   SDL_GetBasePath. Schema v1: `versao` = 1, `fases_concluidas` = integer 0..5.
@@ -133,7 +133,10 @@ Use the existing `.clang-format` configuration.
 - Saves use a temporary file in the same directory followed by rename; failed
   writes preserve the previous checkpoint. Show failures in menus/pause (hidden during gameplay); F5 retries
   pending writes. Saves are ignored by Git and preserved by make clean.
-- Pause offers Resume, Main menu, and Exit. Main-menu Continue uses the disk
+- Pause shows PAUSADO, phase number and room name, followed by Continue, Restart,
+  Main menu and Exit. Restart resets the current phase/player and resumes gameplay;
+  R has no action. Gameplay HUD, inventory details and navigation/checkpoint hints
+  are hidden during pause. Keyboard/mouse navigation remains available. Main-menu Continue uses the disk
   checkpoint; returning there abandons unsaved progress within the current phase.
 
 ## Maintaining context
@@ -173,7 +176,7 @@ Use the existing `.clang-format` configuration.
 
 - The user wants nearly the whole window usable for gameplay, health,
   shield, energy, ammunition, and the three-slot weapon inventory visible while playing. Hide tutorial footers,
-  room status, and save messages during gameplay; keep details accessible in pause.
+  room status, and save messages during gameplay; pause shows only phase and room name.
 - `interface/Hud` owns drawing of one translucent 200x104 top-left box containing three
   stacked stat bars with custom icons and values. Ammunition is only a number
   at bottom right, without a card or label. `Fase` no longer draws UI. The first room is 936x516 so
@@ -234,10 +237,19 @@ Use the existing `.clang-format` configuration.
   steps no longer than 1/240 second. Boomerangs return toward the player, damage once
   per enemy per outbound/return leg, and expire if unable to return. Dead enemies
   remain inactive in the room list to preserve hit indices until room reset.
-- Floor weapons have provisional labeled drawings. Equipped weapon and inventory
-  count/controls are shown in pause; weapon icons also appear in the gameplay HUD.
+- Floor weapons reuse the inventory's IconeArma sprites in centered 36x36 frames,
+  with names below, including chest drops and weapons dropped by the player.
+  Weapon icons appear in the gameplay HUD; pause omits inventory details.
 
 ## Inventory HUD
+
+- M toggles a phase minimap during gameplay or pause; M/Esc closes it and preserves
+  the prior gameplay/pause state. While open, simulation and gameplay actions stop,
+  held fire is cleared, and repeated keydown events do not toggle it. Entry resets it.
+- interface/Minimapa draws all rooms and actual directional connections using
+  read-only Fase room/neighbor queries, supporting both branching and linear phases.
+  Current room has a gold border and a position marker; cleared/unvisited/combat
+  rooms are green/gray/red, with chest/boss labels. No exploration fog is applied.
 
 - The user limited inventory to three weapons. `MAX_ARMAS` controls capacity,
   HUD slot count and the pause counter. Full inventory still refuses collection.
