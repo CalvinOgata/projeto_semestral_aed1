@@ -208,7 +208,7 @@ Trocar ou soltar a arma atualiza o desenho; sem armas, a mao fica sem icone.
 | Arma | Ataque |
 | --- | --- |
 | Pistola inicial | Um projetil reto |
-| Shotgun | Exatamente tres projeteis: reto e diagonais a -45 e +45 graus |
+| Shotgun | Exatamente tres projeteis: reto e laterais a -15 e +15 graus |
 | Laser | Raio instantaneo que atravessa inimigos ate a parede ou 1600 pixels |
 | Dupla | Um projetil para frente e outro para tras |
 | Ricochete | Projetil que rebate ate quatro vezes nas paredes |

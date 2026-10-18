@@ -78,7 +78,7 @@ void Combate::disparar(Jogador &jogador)
         float desvio = 0;
         if (arma->get_tipo() == TipoArma::SHOTGUN)
         {
-            desvio = (i - 1) * static_cast<float>(M_PI) / 4;
+            desvio = (i - 1) * static_cast<float>(M_PI) / 12;
         }
         if (arma->get_tipo() == TipoArma::DUPLA)
         {

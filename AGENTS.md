@@ -218,7 +218,7 @@ Use the existing `.clang-format` configuration.
 ## Weapon inventory and combat
 
 - Seven weapon types now extend the existing `Armas` class (the repository name,
-  retained instead of renaming to singular): shotgun (three pellets at 0/+45/-45
+  retained instead of renaming to singular): shotgun (three pellets at 0/+15/-15
   degrees), piercing instant laser, forward/backward double shot, wall ricochet
   (up to four bounces), 80-pixel/90-degree sword fan, bow/arrow, and returning boomerang.
 - `FilaArmas` holds three weapons. F collects the nearest floor weapon within
