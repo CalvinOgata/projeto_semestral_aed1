@@ -12,9 +12,13 @@ private:
     ListaSequencial<Sala> salas;
     std::size_t indiceAtual = 0;
     bool concluida = false;
+    ListaSequencial<SDL_FPoint> origens;
+    void preparar_adjacentes();
 
 public:
     explicit Fase(int numero = 1);
+    void desenhar(SDL_Renderer *renderizador, const Camera &camera, bool hitboxes) const;
+    SDL_FRect get_limitesVisuais() const;
     void reiniciar(Jogador &jogador);
     void atualizar(float dt, Jogador &jogador);
     // Verifica contato com portas liberadas uma vez por atualizacao.

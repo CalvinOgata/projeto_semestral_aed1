@@ -18,7 +18,7 @@ Arch: `sudo pacman -S sdl2 libpng` · Debian/Ubuntu: `sudo apt install libsdl2-d
 
 | Entrada | Acao |
 | --- | --- |
-| `W` `A` `S` `D` ou setas | mover dentro da sala |
+| `W` `A` `S` `D` ou setas | mover pelas salas e corredores |
 | mouse | mirar: a arma gira acompanhando o cursor |
 | botao esquerdo | atirar (segurar mantem o tiro na cadencia) |
 | `F` | coletar a arma mais proxima (ate 54 pixels), se houver vaga |
@@ -49,10 +49,13 @@ Lobby --- A ----- C
 
 A tem 3 virus. C e D possuem, cada uma, 4 virus e 2 bruta-montes.
 O lobby e as salas B/E nao possuem inimigos. As portas abrem ao eliminar todos
-os inimigos da sala; encoste nelas para atravessar. A porta E–F so abre depois
-de limpar A, C e D. Derrote o boss de F e toque no portal central para avancar.
+os inimigos da sala; atravesse o corredor estreito para chegar a sala seguinte.
+Salas vazias ou limpas ficam abertas, permitindo voltar pelo corredor, inclusive em E–F.
+Derrote o boss de F e toque no portal central para avancar.
+Ao limpar uma sala, os inimigos das salas adjacentes ja ficam visiveis; eles so
+comecam a agir quando o jogador entra.
 Salas limpas e baus abertos persistem nas revisitas.
-As fases 2–5 mantem as tres salas lineares anteriores, com dificuldade crescente.
+As fases 2–5 mantem tres salas lineares, com dificuldade crescente e um portal central apos limpar a ultima sala.
 
 Baus abrem automaticamente a menos de 64 pixels e soltam duas armas aleatorias,
 incluindo pistola e todas as sete outras armas; repeticoes sao possiveis.
@@ -67,7 +70,7 @@ por contato quando falta vida, expiracao em 10 segundos de jogo (inclusive fora
 da sala; pausa congela o tempo). Morrer reinicia a fase atual sem perder fases concluidas.
 
 A dificuldade aumenta vida e velocidade dos inimigos. Paredes limitam movimento
-e tiros; a camera acompanha o jogador dentro dos limites da sala. O HUD agrupa vida, escudo e energia numa caixa compacta e semitransparente
+e tiros; a camera acompanha continuamente o jogador pelas salas e corredores de 96 pixels de largura, sem inimigos. O HUD agrupa vida, escudo e energia numa caixa compacta e semitransparente
 no canto superior esquerdo, com barras coloridas e icones. A municao aparece
 apenas como numero no canto inferior direito. Na pausa aparecem apenas a fase e o nome da sala,
 com o titulo PAUSADO e as opcoes Continuar, Reiniciar, Menu inicial e Sair.
@@ -221,3 +224,5 @@ As novas armas com municao iniciam com 40 unidades. Espada e boomerang sao
 reutilizaveis e mostram `--` no contador. Cada tipo tem sua cadencia; trocar
 arma nao cancela o intervalo do ultimo ataque. Projeteis e efeitos sao
 removidos ao sair da sala, inclusive boomerangs em voo.
+
+O cenario usa placas texturizadas com circuitos discretos, paredes segmentadas e portais escuros com bordas violetas nas saidas de fase, desenhados em SDL sem novos arquivos de textura.

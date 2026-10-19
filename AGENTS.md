@@ -32,7 +32,7 @@ brainstorming examples into approved mechanics, characters, or assets.
 
 ## Verified prototype baseline
 
-As inspected on 2026-10-16:
+As updated on 2026-10-19:
 
 - The build uses C++17, SDL2, libpng, and a Makefile. Text uses an embedded bitmap font;
   SDL2_ttf is not required.
@@ -42,17 +42,16 @@ As inspected on 2026-10-16:
   A has 3 viruses; C/D each have 4 viruses and 2 brutes. B has one chest,
   E two chests; lobby/B/E have no enemies. F has one boss.
 - Each room owns its combat and persistent state in ListaSequencial<Sala>.
-  Four neighbor indices describe phase 1 connections. Doors require clearing
-  the current room; E–F additionally requires A/C/D cleared. Defeating F's boss
+  Four neighbor indices describe phase 1 connections. Doors lock only while their own room is in active combat; empty/cleared rooms
+  stay open, including E–F (the previous A/C/D prerequisite was removed). Defeating F's boss
   creates a central portal; touching it completes the phase. Phases 2–5 retain
-  their original three-room linear layouts and last-door completion.
+  their three-room linear layouts, with a central exit portal after clearing the last room.
 - Pause-menu Restart and player death reset the current phase/player without losing completed
   phases. Cleared enemies/chests never respawn on revisits. Projectiles are
   discarded on leaving. Only active combat updates; hearts in inactive rooms
-  still expire. Pause freezes simulation. Arrivals are away from opposite doors.
+  still expire. Pause freezes simulation. Room arrivals preserve position across the connecting corridor.
 - Difficulty increases enemy count (configured per room), health, and speed.
-  Walls constrain players/enemies and discard projectiles. The camera is bounded
-  with only 12-pixel wall margins. The gameplay HUD shows health, shield,
+  Walls constrain players/enemies and discard projectiles. The camera follows the player continuously within phase bounds, with 12-pixel outer wall margins. The gameplay HUD shows health, shield,
   energy in one compact translucent top-left box, ammunition as a bare
   number in the bottom-right corner, and three weapon slots at top right; phase and room name
   are available during pause. No permanent footer or save banners during play.
@@ -280,3 +279,27 @@ Use the existing `.clang-format` configuration.
   Weapons stay on the floor for F collection; full inventory never consumes them.
 - These counts, timings, stats, chest-opening interaction and automatic phase
   restart on death are initial implementation choices, open to balancing.
+
+## Continuous corridors and environment
+
+- All room connections are walkable, enemy-free corridors, 96 logical pixels wide
+  and 240 long. Doors lock only during combat in their own room; room
+  ownership changes only at the far end, preserving world position. Enemies remain
+  confined to room floors. Corridors do not add rooms to the minimap or storage TAD.
+- Fase stores room origins and renders the connected environment using translated
+  cameras while gameplay entities retain room-local coordinates. Only the active
+  room simulates combat; neighboring rooms are visible during traversal.
+- graficos/Ambiente draws deterministic plate floors with subtle circuit details,
+  segmented relief walls, gate lights/grilles, and a dark violet floor portal with
+  a stone rim. No external texture dependency was added.
+- All five phases finish through a central portal after clearing their final room;
+  phase 1 still requires its boss. Checkpoint and phase-reset semantics are unchanged.
+
+- Room/corridor collision uses overlapping valid hitbox-position rectangles, so
+  both outward travel and reversal preserve movement through the doorway. The
+  last movement step is preserved when switching room-local coordinates; ordinary
+  room changes also preserve held fire and the firing cooldown.
+- Clearing the current room prepares its adjacent rooms' enemies, chests and floor
+  items once, before the player reaches them. The initial cleared lobby does this
+  too. Preparation keeps rooms unvisited and enemies idle; entering activates
+  combat without recreating entities or temporarily relocating the player.

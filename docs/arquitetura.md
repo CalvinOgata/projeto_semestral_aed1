@@ -111,12 +111,13 @@ A pausa interrompe todos esses tempos.
 
 `Fase` guarda a sequencia em `ListaSequencial<Sala>` e acessa a atual por indice.
 Avancar/voltar nao remove salas da lista; isso preserva seu estado. A navegacao
-ocorre automaticamente ao tocar a porta e exige liberacao da sala atual.
+ocorre ao terminar de atravessar o corredor e exige liberacao da sala atual.
 A fase 1 usa quatro indices de vizinhos por sala (esquerda, direita, cima, baixo),
-formando um pequeno grafo sobre a lista existente. A passagem E–F exige A/C/D
-liberadas; o portal central de F conclui a fase apos derrotar o boss.
-As fases 2–5 mantem navegacao linear e saida pela ultima porta direita.
-A chegada ocorre afastada da porta oposta. `Campanha` avanca e `Jogo` grava
+formando um pequeno grafo sobre a lista existente. Portas travam apenas durante
+o combate da propria sala; E–F nao tem trava adicional. O portal central de F
+conclui a fase apos derrotar o boss.
+As fases 2–5 mantem navegacao linear e portal central na ultima sala liberada.
+A chegada preserva a posicao no mundo ao mudar as coordenadas locais da sala. `Campanha` avanca e `Jogo` grava
 o checkpoint. Reiniciar no menu de pausa ou morte recriam apenas a fase atual e o jogador.
 A tecla R nao reinicia mais. O reinicio pelo menu retoma a partida.
 
@@ -126,8 +127,8 @@ menos 1, quantidade de inimigos nao negativa. Os inimigos nascem na
 metade direita, afastados da entrada inicial. Dificuldade `d` aplica vida
 `VIDA_INIMIGO + d - 1` e velocidade `VELOCIDADE_INIMIGO * (1 + 0.12 * (d - 1))`.
 
-O piso define a area caminhavel. Jogador e inimigos sao limitados ao piso;
-projeteis saindo dele sao desativados, exceto ricochetes e boomerangs. A camera respeita os limites com margem de 12 pixels
+O jogador caminha pelo piso e pelos corredores liberados; inimigos ficam no piso da sala;
+projeteis saindo dele sao desativados, exceto ricochetes e boomerangs. A camera respeita os limites da fase com margem de 12 pixels
 para paredes. `Sala` desenha piso, portas e entidades; `interface/Hud` desenha
 vida, escudo e energia em uma caixa unica e compacta no canto superior esquerdo
 e somente o numero de municao no canto inferior direito, sobre o mundo.
@@ -217,3 +218,19 @@ dessas regras de jogo; armazenamento permanece encapsulado.
 A pausa apresenta somente o titulo PAUSADO, fase/nome da sala e quatro opcoes:
 Continuar, Reiniciar, Menu inicial e Sair. O menu inicial mantem tres opcoes.
 A quantidade de opcoes usada para desenho, teclado e mouse depende do modo.
+
+### Corredores e continuidade visual
+
+`Fase` armazena as origens das salas e desenha primeiro os corredores, depois as
+salas, com cameras traduzidas. A camera principal segue o jogador nos limites da
+fase. Cada conexao tem 240 pixels de comprimento e 96 de largura; nao cria uma
+nova sala no TAD. `Sala::limitar_jogador` restringe o movimento a uniao do piso e
+das passagens liberadas. Combate e inimigos continuam restritos ao piso da sala.
+`graficos/Ambiente` concentra pisos, paredes, grades e portais geometricos.
+
+`Sala::preparar` cria as entidades uma unica vez, sem marcar visita ou simular
+combate. `Fase::preparar_adjacentes` chama essa preparacao quando a sala atual
+esta liberada, incluindo o lobby inicial. `Sala::ativar` inicia a visita e o
+combate na chegada, preservando as entidades ja visiveis. A colisao considera
+retangulos sobrepostos de posicoes validas da hitbox na juncao sala/corredor,
+permitindo retorno e conservando o ultimo passo na mudanca de coordenadas.

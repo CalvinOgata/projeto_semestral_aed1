@@ -27,6 +27,7 @@ struct ConfiguracaoSala
     bool armasIniciais = true;
     std::array<int, 4> vizinhos = {{-1, -1, -1, -1}};
     bool mapaRamificado = false;
+    bool portalSaida = false;
 };
 
 enum class EstadoSala
@@ -51,15 +52,19 @@ private:
     ListaSequencial<ArmaChao> armasChao;
     struct Bau { float x, y; bool aberto = false; };
     ListaSequencial<Bau> baus;
-    bool bossLiberado = false;
+    bool preparada = false;
     EstadoSala estado = EstadoSala::NAO_VISITADA;
 
 public:
     explicit Sala(const ConfiguracaoSala &configuracao);
     void entrar(Jogador &jogador, bool pelaDireita = false);
     void entrar(Jogador &jogador, Direcao entrada);
-    void liberar_boss(bool liberar);
+    // Preparar cria entidades sem visitar a sala nem iniciar sua simulacao.
+    void preparar();
+    void ativar();
     bool porta_liberada(Direcao direcao) const;
+    static constexpr float COMPRIMENTO_CORREDOR = 240;
+    SDL_FRect get_corredor(Direcao direcao) const;
     SDL_FRect get_porta(Direcao direcao) const;
     bool tocando_porta(const Jogador &jogador, Direcao direcao) const;
     bool tocando_portal(const Jogador &jogador) const;
@@ -77,6 +82,7 @@ public:
     const ConfiguracaoSala &get_configuracao() const;
     SDL_FRect get_limites() const;
     SDL_FRect get_porta(bool direita) const;
+    void desenhar_corredores(SDL_Renderer *renderizador, const Camera &camera) const;
     void desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAnterior,
                   bool mostrarHitboxes = false) const;
 };

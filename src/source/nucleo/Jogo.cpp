@@ -288,10 +288,16 @@ void Jogo::atualizar(float dt)
     const int concluidasAntes = this->campanha.get_fasesConcluidas();
     if (this->campanha.atualizar_transicao(this->jogador))
     {
-        this->preparar_entrada();
         if (this->campanha.get_fasesConcluidas() != concluidasAntes)
         {
+            this->preparar_entrada();
             this->salvar_progresso();
+        }
+        else
+        {
+            // Uma passagem continua nao interrompe o tiro nem reinicia a cadencia.
+            this->atualizar_camera();
+            this->atualizar_mira();
         }
         if (this->campanha.concluida())
         {
@@ -343,9 +349,8 @@ void Jogo::desenhar()
     }
     else
     {
-        this->campanha.get_faseAtual().get_salaAtual().desenhar(this->renderizador, this->camera,
-                                           this->campanha.get_faseAtual().get_indiceAtual() > 0,
-                                           this->mostrarHitboxes);
+        this->campanha.get_faseAtual().desenhar(this->renderizador, this->camera,
+                                               this->mostrarHitboxes);
 
         this->jogador.desenhar(this->renderizador, this->camera, this->mostrarHitboxes,
                                &this->spriteJogador);
@@ -380,12 +385,7 @@ void Jogo::desenhar()
 void Jogo::atualizar_camera()
 {
     this->camera.centralizar_em(this->jogador.get_centroX(), this->jogador.get_centroY());
-    // Somente a espessura das paredes; o HUD e sobreposto ao mundo.
-    SDL_FRect vista = this->campanha.get_faseAtual().get_salaAtual().get_limites();
-    vista.x -= 12;
-    vista.y -= 12;
-    vista.w += 24;
-    vista.h += 24;
+    const auto vista = this->campanha.get_faseAtual().get_limitesVisuais();
     this->camera.limitar_a(vista);
 }
 

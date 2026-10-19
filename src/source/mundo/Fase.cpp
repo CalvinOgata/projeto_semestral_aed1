@@ -1,6 +1,8 @@
 #include "mundo/Fase.h"
 
 #include <string>
+#include <algorithm>
+#include "config/Config.h"
 #include <stdexcept>
 
 #include "config/CampanhaConfig.h"
@@ -26,19 +28,34 @@ Fase::Fase(int numero) : numero(numero)
                 i == 1 ? 3 : ((i == 3 || i == 4) ? 4 : 0), {true}};
             config.brutos = (i == 3 || i == 4) ? 2 : 0;
             config.boss = i == 6;
+            config.portalSaida = i == 6;
             config.baus = i == 2 ? 1 : (i == 5 ? 2 : 0);
             config.armasIniciais = false;
             config.vizinhos = conexoes[i];
             config.mapaRamificado = true;
             salas.inserir(Sala(config));
+            const int colunas[] = {0, 1, 1, 2, 1, 2, 2};
+            const int linhas[] = {0, 0, 1, 0, -1, -1, -2};
+            origens.inserir({colunas[i] * (936 + Sala::COMPRIMENTO_CORREDOR),
+                            linhas[i] * (516 + Sala::COMPRIMENTO_CORREDOR)});
         }
         return;
     }
     const int extra = numero - 1;
-    // Fase autoral inicial. Cada registro pode ter tamanho, dificuldade e requisito proprios.
-    this->salas.inserir(Sala({"SETOR DE BOOT", 936, 516, 1 + extra, 4 + extra * 2, {true}}));
-    this->salas.inserir(Sala({"REDE INFECTADA", 1120, 640, 2 + extra, 7 + extra * 2, {true}}));
-    this->salas.inserir(Sala({"NUCLEO EM QUARENTENA", 1440, 800, 3 + extra, 10 + extra * 2, {true}}));
+    const char *nomes[] = {"SETOR DE BOOT", "REDE INFECTADA", "NUCLEO EM QUARENTENA"};
+    const float larguras[] = {936, 1120, 1440}, alturas[] = {516, 640, 800};
+    float x = 0;
+    for (int i = 0; i < 3; ++i)
+    {
+        ConfiguracaoSala config{nomes[i], larguras[i], alturas[i], 1 + extra + i,
+                               4 + i * 3 + extra * 2, {true}};
+        config.mapaRamificado = true;
+        config.vizinhos = {{i - 1, i == 2 ? -1 : i + 1, -1, -1}};
+        config.portalSaida = i == 2;
+        salas.inserir(Sala(config));
+        origens.inserir({x, (516 - alturas[i]) / 2});
+        x += larguras[i] + Sala::COMPRIMENTO_CORREDOR;
+    }
 }
 
 void Fase::reiniciar(Jogador &jogador)
@@ -46,6 +63,7 @@ void Fase::reiniciar(Jogador &jogador)
     *this = Fase(this->numero);
     jogador = Jogador();
     this->get_salaAtual().entrar(jogador);
+    preparar_adjacentes();
 }
 
 bool Fase::atualizar_transicao(Jogador &jogador)
@@ -55,52 +73,76 @@ bool Fase::atualizar_transicao(Jogador &jogador)
     {
         return false;
     }
-    if (numero == 1)
+    preparar_adjacentes();
+    if (atual.tocando_portal(jogador))
     {
-        const bool liberar = salas.obter(1).liberada() && salas.obter(3).liberada() &&
-                             salas.obter(4).liberada();
-        for (auto &sala : salas) sala.liberar_boss(liberar);
-        if (indiceAtual == 6 && atual.tocando_portal(jogador))
-        {
-            atual.sair();
-            concluida = true;
-            return true;
-        }
-        for (int d = 0; d < 4; ++d)
-        {
-            const auto direcao = static_cast<Direcao>(d);
-            const int destino = atual.get_configuracao().vizinhos[d];
-            if (destino < 0 || !atual.porta_liberada(direcao) ||
-                !atual.tocando_porta(jogador, direcao)) continue;
-            atual.sair();
-            indiceAtual = static_cast<std::size_t>(destino);
-            get_salaAtual().entrar(jogador, static_cast<Direcao>(d ^ 1));
-            return true;
-        }
-        return false;
-    }
-    const bool direita = atual.tocando_porta(jogador, true);
-    const bool esquerda = this->indiceAtual > 0 && atual.tocando_porta(jogador, false);
-    if (!direita && !esquerda)
-    {
-        return false;
-    }
-    atual.sair();
-    if (direita && this->indiceAtual + 1 == this->salas.get_quantidade())
-    {
-        this->concluida = true;
+        atual.sair();
+        concluida = true;
         return true;
     }
-    if (direita)
+    for (int d = 0; d < 4; ++d)
     {
-        ++this->indiceAtual;
+        const auto direcao = static_cast<Direcao>(d);
+        const int destino = get_vizinho(indiceAtual, direcao);
+        if (destino < 0 || !atual.porta_liberada(direcao)) continue;
+        const auto &config = atual.get_configuracao();
+        const float comprimento = Sala::COMPRIMENTO_CORREDOR;
+        const bool chegou = d == 0 ? jogador.get_x() <= -comprimento - jogador.get_largura() :
+                            d == 1 ? jogador.get_x() >= config.largura + comprimento :
+                            d == 2 ? jogador.get_y() <= -comprimento - jogador.get_altura() :
+                                     jogador.get_y() >= config.altura + comprimento;
+        if (!chegou) continue;
+        const auto origem = origens.obter(indiceAtual), alvo = origens.obter(destino);
+        const float x = jogador.get_x() + origem.x - alvo.x;
+        const float y = jogador.get_y() + origem.y - alvo.y;
+        atual.sair();
+        indiceAtual = static_cast<std::size_t>(destino);
+        get_salaAtual().ativar();
+        jogador.set_posicao(x, y);
+        get_salaAtual().limitar_jogador(jogador);
+        preparar_adjacentes();
+        return true;
     }
-    else
+    return false;
+}
+
+void Fase::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool hitboxes) const
+{
+    const auto origem = origens.obter(indiceAtual);
+    for (int camada = 0; camada < 2; ++camada)
     {
-        --this->indiceAtual;
+        for (std::size_t i = 0; i < salas.get_quantidade(); ++i)
+        {
+            const auto pos = origens.obter(i);
+            Camera local;
+            local.centralizar_em(camera.get_x() + origem.x - pos.x + LARGURA_TELA / 2.0f,
+                                 camera.get_y() + origem.y - pos.y + ALTURA_TELA / 2.0f);
+            if (camada == 0)
+            {
+                salas.obter(i).desenhar_corredores(renderizador, local);
+            }
+            else
+            {
+                salas.obter(i).desenhar(renderizador, local, i > 0, hitboxes);
+            }
+        }
     }
-    this->get_salaAtual().entrar(jogador, esquerda);
-    return true;
+}
+
+SDL_FRect Fase::get_limitesVisuais() const
+{
+    const auto origem = origens.obter(indiceAtual);
+    float esquerda = 0, cima = 0, direita = 0, baixo = 0;
+    for (std::size_t i = 0; i < salas.get_quantidade(); ++i)
+    {
+        const auto pos = origens.obter(i);
+        const auto &config = salas.obter(i).get_configuracao();
+        esquerda = std::min(esquerda, pos.x - 12);
+        cima = std::min(cima, pos.y - 12);
+        direita = std::max(direita, pos.x + config.largura + 12);
+        baixo = std::max(baixo, pos.y + config.altura + 12);
+    }
+    return {esquerda - origem.x, cima - origem.y, direita - esquerda, baixo - cima};
 }
 
 Sala &Fase::get_salaAtual()
@@ -157,5 +199,16 @@ void Fase::atualizar(float dt, Jogador &jogador)
     {
         if (i == indiceAtual) salas.obter(i).atualizar(dt, jogador);
         else salas.obter(i).envelhecer_coletas(dt);
+    }
+    preparar_adjacentes();
+}
+
+void Fase::preparar_adjacentes()
+{
+    if (!get_salaAtual().liberada()) return;
+    for (int d = 0; d < 4; ++d)
+    {
+        const int vizinho = get_vizinho(indiceAtual, static_cast<Direcao>(d));
+        if (vizinho >= 0) salas.obter(static_cast<std::size_t>(vizinho)).preparar();
     }
 }
