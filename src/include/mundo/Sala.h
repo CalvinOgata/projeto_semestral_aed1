@@ -72,6 +72,7 @@ public:
     void envelhecer_coletas(float dt);
     void atualizar(float dt, Jogador &jogador);
     void disparar(Jogador &jogador);
+    bool buscar_alvoMaisProximo(const Jogador &jogador, SDL_FPoint &alvo) const;
     bool coletar_arma(Jogador &jogador);
     void soltar_arma(Jogador &jogador);
     void limitar_jogador(Jogador &jogador) const;

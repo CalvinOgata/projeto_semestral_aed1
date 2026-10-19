@@ -37,6 +37,11 @@ janela e o renderizador SDL e os libera no destrutor.
 
 ## Estruturas implementadas
 
+A mira consulta `Sala::buscar_alvoMaisProximo`, que delega a `Combate` uma busca
+O(n) pelo inimigo vivo de menor distancia entre centros, sem expor a lista.
+`Jogo` atualiza a direcao antes de disparar a cada quadro; sem alvo na sala atual,
+usa o mouse. A arma desenhada e os ataques compartilham essa direcao.
+
 | TAD | Implementacao | Uso atual | Custos |
 | --- | --- | --- | --- |
 | `Fila<T, Capacidade>` | Vetor circular com `std::array`, inicio e quantidade | Armas do jogador | Inserir, retirar, frente e consultar: O(1); memoria O(capacidade) |

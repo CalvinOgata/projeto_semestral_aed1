@@ -328,7 +328,11 @@ void Jogo::mover_jogador(float dt)
 
 void Jogo::atualizar_mira()
 {
-    const SDL_FPoint alvo = this->camera.para_mundo(this->mouseTelaX, this->mouseTelaY);
+    SDL_FPoint alvo;
+    if (!this->campanha.get_faseAtual().get_salaAtual().buscar_alvoMaisProximo(this->jogador, alvo))
+    {
+        alvo = this->camera.para_mundo(this->mouseTelaX, this->mouseTelaY);
+    }
     this->jogador.mirar_em(alvo.x, alvo.y);
 }
 

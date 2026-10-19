@@ -5,6 +5,28 @@
 
 #include "config/Config.h"
 
+bool Combate::buscar_alvoMaisProximo(const Jogador &jogador, SDL_FPoint &alvo) const
+{
+    bool encontrado = false;
+    float menorDistancia = 0.0f;
+    for (const Inimigo &inimigo : this->inimigos)
+    {
+        if (!inimigo.get_vivo())
+            continue;
+
+        const float dx = inimigo.get_centroX() - jogador.get_centroX();
+        const float dy = inimigo.get_centroY() - jogador.get_centroY();
+        const float distancia = dx * dx + dy * dy;
+        if (!encontrado || distancia < menorDistancia)
+        {
+            menorDistancia = distancia;
+            alvo = {inimigo.get_centroX(), inimigo.get_centroY()};
+            encontrado = true;
+        }
+    }
+    return encontrado;
+}
+
 int Combate::get_inimigosVivos() const
 {
     int vivos = 0;

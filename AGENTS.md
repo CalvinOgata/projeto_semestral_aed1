@@ -56,7 +56,7 @@ As updated on 2026-10-19:
   number in the bottom-right corner, and three weapon slots at top right; phase and room name
   are available during pause. No permanent footer or save banners during play.
 - Room layouts are authored, not procedural. Enemy contact damage is not implemented.
-- Movement, mouse aiming, sustained shooting, projectiles, enemy pursuit,
+- Movement, automatic nearest-enemy aiming (mouse fallback in empty rooms), sustained shooting, projectiles, enemy pursuit,
   enemy damage, and a pause menu already exist.
 - `Jogador` models health, shield (initial/max 50), and stamina and provides methods to change them.
   Shield absorbs incoming shots and regenerates; stamina costs and powers remain unspecified.
@@ -260,7 +260,7 @@ Use the existing `.clang-format` configuration.
 - `graficos/IconeArma` draws distinct embedded 12x12 pixel-art bitmap sprites for
   all eight weapon types, scaled inside slots. No new external asset dependency.
 - The player now holds the equipped weapon's same bitmap icon, drawn at 3x scale
-  near the hand and rotated with mouse aim. Local vertical mirroring keeps grips
+  near the hand and rotated with the current aim. Local vertical mirroring keeps grips
   upright when facing left; sword/bow/boomerang use appropriate grip/orientation
   adjustments. An empty inventory draws no held weapon. Shooting rules are unchanged.
 - The user chose to retain the existing embedded virus visual. The generated

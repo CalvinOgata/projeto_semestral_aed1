@@ -19,7 +19,7 @@ Arch: `sudo pacman -S sdl2 libpng` · Debian/Ubuntu: `sudo apt install libsdl2-d
 | Entrada | Acao |
 | --- | --- |
 | `W` `A` `S` `D` ou setas | mover pelas salas e corredores |
-| mouse | mirar: a arma gira acompanhando o cursor |
+| mouse | mirar quando nao ha inimigos vivos na sala; em combate, a mira acompanha automaticamente o adversario mais proximo |
 | botao esquerdo | atirar (segurar mantem o tiro na cadencia) |
 | `F` | coletar a arma mais proxima (ate 54 pixels), se houver vaga |
 | `Q` | passar a arma equipada para o fim da fila |

@@ -95,6 +95,11 @@ void Sala::atualizar(float dt, Jogador &jogador)
     }
 }
 
+bool Sala::buscar_alvoMaisProximo(const Jogador &jogador, SDL_FPoint &alvo) const
+{
+    return this->combate.buscar_alvoMaisProximo(jogador, alvo);
+}
+
 void Sala::disparar(Jogador &jogador)
 {
     this->combate.disparar(jogador);
