@@ -188,8 +188,15 @@ void Menu::desenhar(SDL_Renderer *renderizador) const
 
     if (!this->inicial)
     {
-        Texto::desenhar_centralizado(renderizador, this->detalhe, centroX,
-                                     painel.y + 90, 2, COR_TEXTO_APAGADO);
+        // Primeira linha: nome da fase; segunda, apos '\n': sala atual.
+        const auto quebra = this->detalhe.find('\n');
+        Texto::desenhar_centralizado(renderizador, this->detalhe.substr(0, quebra), centroX,
+                                     painel.y + 84, 2, COR_TEXTO);
+        if (quebra != std::string::npos)
+        {
+            Texto::desenhar_centralizado(renderizador, this->detalhe.substr(quebra + 1), centroX,
+                                         painel.y + 106, 2, COR_TEXTO_APAGADO);
+        }
     }
 
     for (int i = 0; i < this->get_quantidadeOpcoes(); i++)

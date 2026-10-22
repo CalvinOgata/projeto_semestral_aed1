@@ -19,12 +19,15 @@ public:
     explicit Fase(int numero = 1);
     void desenhar(SDL_Renderer *renderizador, const Camera &camera, bool hitboxes) const;
     SDL_FRect get_limitesVisuais() const;
-    void reiniciar(Jogador &jogador);
+    // Recria a fase e o jogador, que recebe o inventario informado.
+    void reiniciar(Jogador &jogador, const FilaArmas &armas);
     void atualizar(float dt, Jogador &jogador);
     // Verifica contato com portas liberadas uma vez por atualizacao.
     bool atualizar_transicao(Jogador &jogador);
     Sala &get_salaAtual();
     const Sala &get_salaAtual() const;
+    const char *get_nome() const;
+    const char *get_subtitulo() const;
     std::size_t get_indiceAtual() const;
     bool get_concluida() const;
     std::size_t get_quantidadeSalas() const;

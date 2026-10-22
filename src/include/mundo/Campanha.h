@@ -12,6 +12,8 @@ public:
 private:
     int fasesConcluidas = 0;
     Fase fase;
+    // Armas com que a fase atual comecou; Reiniciar e morte voltam a elas.
+    FilaArmas armasInicioFase;
 
 public:
     void iniciar(int concluidas, Jogador &jogador);

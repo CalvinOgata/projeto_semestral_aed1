@@ -9,10 +9,11 @@ void Campanha::iniciar(int concluidas, Jogador &jogador)
         throw std::invalid_argument("Progresso de campanha invalido");
     }
     this->fasesConcluidas = concluidas;
+    this->armasInicioFase = Jogador().get_armas();
     if (!this->concluida())
     {
         this->fase = Fase(concluidas + 1);
-        this->fase.reiniciar(jogador);
+        this->fase.reiniciar(jogador, this->armasInicioFase);
     }
 }
 
@@ -27,8 +28,10 @@ bool Campanha::atualizar_transicao(Jogador &jogador)
         ++this->fasesConcluidas;
         if (!this->concluida())
         {
+            // O inventario acompanha o jogador para a proxima fase.
+            this->armasInicioFase = jogador.get_armas();
             this->fase = Fase(this->fasesConcluidas + 1);
-            this->fase.reiniciar(jogador);
+            this->fase.reiniciar(jogador, this->armasInicioFase);
         }
     }
     return true;
@@ -38,7 +41,7 @@ void Campanha::reiniciar_fase(Jogador &jogador)
 {
     if (!this->concluida())
     {
-        this->fase.reiniciar(jogador);
+        this->fase.reiniciar(jogador, this->armasInicioFase);
     }
 }
 

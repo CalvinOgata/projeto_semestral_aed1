@@ -7,7 +7,7 @@
 #include "config/Config.h"
 #include "interface/Texto.h"
 
-void Minimapa::desenhar(SDL_Renderer *renderizador, const Fase &fase, int numero,
+void Minimapa::desenhar(SDL_Renderer *renderizador, const Fase &fase,
                        const Jogador &jogador)
 {
     if (renderizador == nullptr || fase.get_quantidadeSalas() == 0)
@@ -24,7 +24,7 @@ void Minimapa::desenhar(SDL_Renderer *renderizador, const Fase &fase, int numero
     SDL_RenderFillRect(renderizador, &painel);
     SDL_SetRenderDrawColor(renderizador, 86, 124, 154, 255);
     SDL_RenderDrawRect(renderizador, &painel);
-    Texto::desenhar_centralizado(renderizador, "MAPA - FASE " + std::to_string(numero),
+    Texto::desenhar_centralizado(renderizador, std::string("MAPA - ") + fase.get_nome(),
                                 LARGURA_TELA / 2, 56, 2, {235, 244, 255, 255});
 
     // Percorre as conexoes reais para posicionar as salas, inclusive nas fases lineares.

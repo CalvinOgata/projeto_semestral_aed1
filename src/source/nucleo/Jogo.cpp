@@ -1,5 +1,6 @@
 #include "nucleo/Jogo.h"
 
+#include <algorithm>
 #include <cstdio>
 
 #include "config/Config.h"
@@ -270,6 +271,7 @@ void Jogo::atualizar(float dt)
     this->atualizar_mira();
 
     this->esperaTiro -= dt;
+    this->tempoTituloFase = std::max(0.0f, this->tempoTituloFase - dt);
 
     if (this->atirando && this->esperaTiro <= 0.0f)
     {
@@ -362,6 +364,16 @@ void Jogo::desenhar()
         {
             Hud::desenhar(this->renderizador, this->jogador);
         }
+        if (this->estado == EstadoJogo::JOGANDO && this->tempoTituloFase > 0.0f)
+        {
+            // Titulo temporario da fase, que some gradualmente no ultimo segundo.
+            const auto alfa = static_cast<Uint8>(255 * std::min(1.0f, this->tempoTituloFase));
+            const auto &fase = this->campanha.get_faseAtual();
+            Texto::desenhar_centralizado(this->renderizador, fase.get_nome(), 480, 150, 3,
+                                         {255, 236, 170, alfa});
+            Texto::desenhar_centralizado(this->renderizador, fase.get_subtitulo(), 480, 186, 2,
+                                         {220, 204, 240, alfa});
+        }
 
         if (this->estado == EstadoJogo::PAUSADO)
         {
@@ -380,8 +392,7 @@ void Jogo::desenhar()
     if (this->mostrarMinimapa &&
         (this->estado == EstadoJogo::JOGANDO || this->estado == EstadoJogo::PAUSADO))
     {
-        Minimapa::desenhar(this->renderizador, this->campanha.get_faseAtual(),
-                          this->campanha.get_fasesConcluidas() + 1, this->jogador);
+        Minimapa::desenhar(this->renderizador, this->campanha.get_faseAtual(), this->jogador);
     }
     SDL_RenderPresent(this->renderizador);
 }
@@ -396,8 +407,7 @@ void Jogo::atualizar_camera()
 void Jogo::pausar()
 {
     const auto &sala = this->campanha.get_faseAtual().get_salaAtual();
-    const std::string resumo = "FASE " +
-        std::to_string(this->campanha.get_fasesConcluidas() + 1) + " - " +
+    const std::string resumo = std::string(this->campanha.get_faseAtual().get_nome()) + "\n" +
         sala.get_configuracao().nome;
     this->menu.configurar_pausa(resumo);
     this->estado = EstadoJogo::PAUSADO;
@@ -478,6 +488,7 @@ void Jogo::salvar_progresso()
 void Jogo::preparar_entrada()
 {
     this->mostrarMinimapa = false;
+    this->tempoTituloFase = DURACAO_TITULO_FASE;
     this->atirando = false;
     this->esperaTiro = 0.0f;
     this->atualizar_camera();

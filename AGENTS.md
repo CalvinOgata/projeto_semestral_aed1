@@ -50,6 +50,16 @@ As updated on 2026-10-22:
   Phase 3 (11 rooms, difficulty 3) climbs north from the lobby: Lobby–A, A–B/C (west/east),
   B–D, C–E, C–F (1 chest), D–G, G–E, E–H (2 chests), G–I, I–J (boss + 2 viruses).
   Layouts are constant tables (`PlantaSala`) in Fase.cpp; per-room counts are initial balancing choices.
+
+## Phase themes
+
+Each phase combines a computing theme with a game reference (names chosen by Claude
+on user request; open to change). Inimigo carries the phase number as `tema`.
+- 1 FASE DOS COMPILADORES / SPEEDRUN DO BUILD: bodyguard SEGFAULT, boss COMPILADOR FECHADO.
+- 2 FASE DA REDE / MULTIPLAYER COM LAG: bodyguard SPAMBOT, boss REDE ANTISSOCIAL.
+- 3 FASE DO KERNEL / GAME OVER EM TELA AZUL: bodyguard PROCESSO ZUMBI, boss TELA AZUL DA MORTE.
+Rooms have themed names; boss room names equal the boss name. The phase name and
+subtitle appear for 3 s (fading) on phase entry/restart; pause and minimap show the name.
 - Pause-menu Restart and player death reset the current phase/player without losing completed
   phases. Cleared enemies/chests never respawn on revisits. Projectiles are
   discarded on leaving. Only active combat updates; hearts in inactive rooms
@@ -123,8 +133,11 @@ Use the existing `.clang-format` configuration.
 
 - Save at new-game start and after each completed phase. Continue resumes at the
   beginning of the next unfinished phase, not the exact room/position.
-- Every phase starts with a fresh player (health, stamina, starting weapon/ammo),
-  consistently for advancement, restart, and loading. Pause-menu Restart resets only the current
+- Every phase starts with fresh health, shield and stamina. Weapons and ammo carry
+  over when advancing (user request, 2026-10-22); Campanha snapshots the FilaArmas at
+  phase start, and Restart/death restore that snapshot. An empty carried inventory
+  receives the starting pistol. Loading a checkpoint starts with the pistol because the
+  v1 save does not store weapons (open question whether to persist them). Pause-menu Restart resets only the current
   phase. Completing phase three shows victory and records campaign completion.
 - `saves/progresso.json` is relative to the executable directory, resolved via
   SDL_GetBasePath. Schema v1: `versao` = 1, `fases_concluidas` = integer 0..3. Old saves above 3 are rejected as invalid.
@@ -136,7 +149,7 @@ Use the existing `.clang-format` configuration.
 - Saves use a temporary file in the same directory followed by rename; failed
   writes preserve the previous checkpoint. Show failures in menus/pause (hidden during gameplay); F5 retries
   pending writes. Saves are ignored by Git and preserved by make clean.
-- Pause shows PAUSADO, phase number and room name, followed by Continue, Restart,
+- Pause shows PAUSADO, phase name and room name (two lines), followed by Continue, Restart,
   Main menu and Exit. Restart resets the current phase/player and resumes gameplay;
   R has no action. Gameplay HUD, inventory details and navigation/checkpoint hints
   are hidden during pause. Keyboard/mouse navigation remains available. Main-menu Continue uses the disk
@@ -199,7 +212,8 @@ Use the existing `.clang-format` configuration.
   frame contains the hitbox. Enemy separation handles differing rectangle sizes.
   Walls/doors/projectiles use get_retangulo(); rendering uses get_retanguloVisual().
   Aim/fire origins remain at the hitbox center; health bars sit above the visual frame.
-- F2 toggles green hitbox outlines during gameplay. Viruses use an embedded chip bitmap; brutes/boss retain placeholder rectangles. The player uses
+- F2 toggles green hitbox outlines during gameplay. Viruses use an embedded chip bitmap; bodyguards (brutes) and bosses use
+  per-phase embedded pixel art in `graficos/SpriteInimigo` (16x16 and 24x24 bitmaps). The player uses
   the Tux PNG. Animation is not implemented.
 - `docs/sprites.md` defines transparent PNG frame sizes, offsets and alignment for
   user-created art. Keep it synchronized with the size profiles. Character selection
@@ -274,7 +288,7 @@ Use the existing `.clang-format` configuration.
 - Viruses, brutes and boss have base health 2/12/65 and simple aimed shots dealing
   8/12/18 damage at 2.4/1.8/0.85-second intervals after an initial 1.5-second delay.
   They stop pursuing within 180 pixels; hostile shots travel at 230 pixels/s.
-  Brute/boss artwork remains intentionally provisional.
+  Bodyguard/boss artwork follows the phase theme (see Phase themes).
 - Every enemy drops one heart once, including instant-attack deaths. Hearts heal
   10 health on contact if health is missing and expire after 10 seconds of gameplay,
   including time in other rooms. They blink in the final two seconds.

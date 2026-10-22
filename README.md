@@ -36,7 +36,17 @@ O menu tambem responde ao mouse (passar por cima seleciona, clique confirma).
 ## Como esta agora
 
 Uma campanha com **tres fases** ramificadas, todas com salas de 936x516,
-lobby, salas de bau e boss. A fase 1 possui sete salas:
+lobby, salas de bau e boss. Cada fase une um tema de computacao a uma referencia
+de jogos, e seu nome aparece por 3 segundos ao entrar nela:
+
+| Fase | Nome | Guardiao (bruta-monte) | Boss |
+|------|------|------------------------|------|
+| 1 | FASE DOS COMPILADORES - SPEEDRUN DO BUILD | SEGFAULT, bloco de erro rachado | COMPILADOR FECHADO, maquina trancada com chaves `{ }` |
+| 2 | FASE DA REDE - MULTIPLAYER COM LAG | SPAMBOT, envelope com antena | REDE ANTISSOCIAL, icone de app com olho e notificacao |
+| 3 | FASE DO KERNEL - GAME OVER EM TELA AZUL | PROCESSO ZUMBI | TELA AZUL DA MORTE, monitor CRT com rosto `:(` |
+
+A fase 1 possui sete salas (Pre-processador, Cache de build, Analise lexica,
+Parser, Linker e Compilador fechado):
 
 ```text
                   F (boss)
@@ -56,7 +66,8 @@ Derrote o boss de F e toque no portal central para avancar.
 Ao limpar uma sala, os inimigos das salas adjacentes ja ficam visiveis; eles so
 comecam a agir quando o jogador entra.
 Salas limpas e baus abertos persistem nas revisitas.
-A fase 2 (dificuldade 2) possui nove salas:
+A fase 2 (dificuldade 2) possui nove salas (Roteador, Cache DNS, Caixa de spam,
+Proxy, Botnet, Ping 999, Loot drop e Rede antissocial):
 
 ```text
           B (1 bau)        H (boss)
@@ -68,7 +79,9 @@ Lobby --- A ----- D ------ F
 
 A tem 4 virus; C, 5 virus e 1 bruta-monte; D, 4 e 2; E, 6 e 2; F, 5 e 3.
 
-A fase 3 (dificuldade 3) possui onze salas, subindo a partir do lobby:
+A fase 3 (dificuldade 3) possui onze salas, subindo a partir do lobby (Kernel panic,
+Rootkit, Ransomware, Spyware, Worm, Cofre de memoria, Deadlock, Save point,
+Processos zumbis e Tela azul da morte):
 
 ```text
                   J (boss + 2 virus)
@@ -90,7 +103,8 @@ incluindo pistola e todas as sete outras armas; repeticoes sao possiveis.
 Use F para coletar, Q para trocar e G para soltar uma arma se o inventario lotar.
 Na fase 1, armas extras vem dos baus, em vez da distribuicao de teste em cada sala.
 
-Virus tem visual de chip infectado; bruta-montes e boss usam retangulos provisorios.
+Virus tem visual de chip infectado; guardioes e boss usam pixel art embutida
+(`graficos/SpriteInimigo`) que muda conforme a fase.
 Todos miram e disparam uma arma simples. Escudo absorve dano antes da vida e
 regenera 10 pontos/s apos 3 segundos sem dano. Ha 0,5 segundo de protecao apos
 um acerto. Cada inimigo morto deixa um coracao de 10 de vida: coleta automatica
@@ -210,9 +224,9 @@ mensagens de salvamento podem ser consultadas na pausa ou nos outros menus.
 Hitbox e imagem agora possuem tamanhos separados e configuraveis por entidade.
 Os padroes sao: heroi 32x32 / sprite 48x48; inimigo comum 28x28 / sprite 48x48;
 guarda-costas 44x44 / sprite 64x64; boss 88x88 / sprite 128x128.
-Os dois ultimos sao usados pelos bruta-montes e boss da fase 1, com visuais provisorios.
+Os dois ultimos sao usados pelos guardioes e bosses, com pixel art por fase.
 Veja o [guia de sprites](docs/sprites.md) para medidas, alinhamento e exportacao.
-`F2` mostra a hitbox verde sobre os retangulos visuais provisórios.
+`F2` mostra a hitbox verde sobre os sprites.
 
 O jogador agora usa `assets/sprites/personagens/tux.png`. A imagem original de
 48x61 e encaixada proporcionalmente no quadro de 48x48, sem recorte ou distorcao,
@@ -230,7 +244,10 @@ fim, a frente fica equipada. Q retira a frente e a reinsere no fim; G retira
 somente a frente e preserva sua municao no chao. F com fila cheia nao coleta
 nem substitui nada. Em todas as fases, as armas vem dos baus. Coletas e
 descartes persistem ao revisitar a sala.
-Avancar de fase ou usar Reiniciar na pausa recria armas e inventario. As armas no chao usam os mesmos icones do inventario,
+As armas e a municao acompanham o jogador ao avancar de fase; vida, escudo e
+estamina recomecam cheios. Reiniciar ou morrer devolve as armas com que a fase
+comecou. Se o inventario chegar vazio, a pistola inicial e entregue.
+Carregar o save comeca com a pistola, pois o checkpoint nao guarda armas. As armas no chao usam os mesmos icones do inventario,
 em quadros de 36x36 pixels com o nome abaixo, incluindo armas dos baus e descartadas.
 Na mao do personagem, a arma equipada usa esse mesmo icone e acompanha a mira.
 Trocar ou soltar a arma atualiza o desenho; sem armas, a mao fica sem icone.

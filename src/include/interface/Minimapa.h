@@ -5,7 +5,7 @@
 
 namespace Minimapa
 {
-void desenhar(SDL_Renderer *renderizador, const Fase &fase, int numero, const Jogador &jogador);
+void desenhar(SDL_Renderer *renderizador, const Fase &fase, const Jogador &jogador);
 }
 
 #endif

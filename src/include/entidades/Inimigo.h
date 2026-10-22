@@ -12,6 +12,7 @@ class Inimigo
 {
 private:
     TipoInimigo tipo = TipoInimigo::VIRUS;
+    int tema = 1; // fase que define o visual de guardioes e boss
     float mira = 0;
     float esperaTiro = 1.5f;
     bool coracaoSolto = false;
@@ -29,7 +30,7 @@ public:
 
     Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial,
             const DimensoesEntidade &dimensoes = DIMENSOES_INIMIGO_COMUM,
-            TipoInimigo tipo = TipoInimigo::VIRUS);
+            TipoInimigo tipo = TipoInimigo::VIRUS, int tema = 1);
     bool preparar_tiro(float dt);
     bool soltar_coracao();
     int get_danoTiro() const;

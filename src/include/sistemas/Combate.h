@@ -36,7 +36,8 @@ private:
 
 public:
     bool buscar_alvoMaisProximo(const Jogador &jogador, SDL_FPoint &alvo) const;
-    void reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos = 0, bool boss = false);
+    void reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos = 0,
+                   bool boss = false, int tema = 1);
     void limpar_projeteis();
     void envelhecer_coracoes(float dt);
     void disparar(Jogador &jogador);

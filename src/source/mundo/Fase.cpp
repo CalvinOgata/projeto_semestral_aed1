@@ -21,31 +21,31 @@ struct PlantaSala
     std::array<int, 4> vizinhos;
 };
 
-// Fase 1: lobby, combate inicial, tesouro, dois ramos e boss ao norte.
+// Fase 1, dos compiladores: lobby, combate inicial, tesouro, dois ramos e boss ao norte.
 const PlantaSala PLANTA_FASE_1[] = {
     {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}},
-    {"A - VIRUS", 1, 0, 3, 0, 0, false, {{0, 3, 4, 2}}},
-    {"B - TESOURO", 1, 1, 0, 0, 1, false, {{-1, -1, 1, -1}}},
-    {"C - QUARENTENA", 2, 0, 4, 2, 0, false, {{1, -1, 5, -1}}},
-    {"D - FIREWALL", 1, -1, 4, 2, 0, false, {{-1, 5, -1, 1}}},
-    {"E - ARSENAL", 2, -1, 0, 0, 2, false, {{4, -1, 6, 3}}},
-    {"F - BOSS", 2, -2, 0, 0, 0, true, {{-1, -1, -1, 5}}},
+    {"A - PRE-PROCESSADOR", 1, 0, 3, 0, 0, false, {{0, 3, 4, 2}}},
+    {"B - CACHE DE BUILD", 1, 1, 0, 0, 1, false, {{-1, -1, 1, -1}}},
+    {"C - ANALISE LEXICA", 2, 0, 4, 2, 0, false, {{1, -1, 5, -1}}},
+    {"D - PARSER", 1, -1, 4, 2, 0, false, {{-1, 5, -1, 1}}},
+    {"E - LINKER", 2, -1, 0, 0, 2, false, {{4, -1, 6, 3}}},
+    {"F - COMPILADOR FECHADO", 2, -2, 0, 0, 0, true, {{-1, -1, -1, 5}}},
 };
 
-// Fase 2: corredor principal para leste com desvios ao norte e ao sul.
+// Fase 2, da rede: corredor principal para leste com desvios ao norte e ao sul.
 const PlantaSala PLANTA_FASE_2[] = {
     {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}},
     {"A - ROTEADOR", 1, 0, 4, 0, 0, false, {{0, 4, 2, 3}}},
-    {"B - CACHE", 1, -1, 0, 0, 1, false, {{-1, -1, -1, 1}}},
-    {"C - SPAM", 1, 1, 5, 1, 0, false, {{-1, 5, 1, -1}}},
+    {"B - CACHE DNS", 1, -1, 0, 0, 1, false, {{-1, -1, -1, 1}}},
+    {"C - CAIXA DE SPAM", 1, 1, 5, 1, 0, false, {{-1, 5, 1, -1}}},
     {"D - PROXY", 2, 0, 4, 2, 0, false, {{1, 6, -1, -1}}},
     {"E - BOTNET", 2, 1, 6, 2, 0, false, {{3, 7, -1, -1}}},
-    {"F - TROJAN", 3, 0, 5, 3, 0, false, {{4, -1, 8, 7}}},
-    {"G - ARSENAL", 3, 1, 0, 0, 2, false, {{5, -1, 6, -1}}},
-    {"H - BOSS", 3, -1, 0, 0, 0, true, {{-1, -1, -1, 6}}},
+    {"F - PING 999", 3, 0, 5, 3, 0, false, {{4, -1, 8, 7}}},
+    {"G - LOOT DROP", 3, 1, 0, 0, 2, false, {{5, -1, 6, -1}}},
+    {"H - REDE ANTISSOCIAL", 3, -1, 0, 0, 0, true, {{-1, -1, -1, 6}}},
 };
 
-// Fase 3: subida vertical a partir do lobby, com alas laterais e boss no topo.
+// Fase 3, do kernel: subida vertical a partir do lobby, com alas laterais e boss no topo.
 const PlantaSala PLANTA_FASE_3[] = {
     {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, -1, 1, -1}}},
     {"A - KERNEL PANIC", 0, -1, 5, 1, 0, false, {{2, 3, -1, 0}}},
@@ -53,12 +53,28 @@ const PlantaSala PLANTA_FASE_3[] = {
     {"C - RANSOMWARE", 1, -1, 6, 2, 0, false, {{1, 6, 5, -1}}},
     {"D - SPYWARE", -1, -2, 7, 2, 0, false, {{-1, 7, -1, 2}}},
     {"E - WORM", 1, -2, 7, 2, 0, false, {{7, 8, -1, 3}}},
-    {"F - COFRE", 2, -1, 0, 0, 1, false, {{3, -1, -1, -1}}},
-    {"G - BACKDOOR", 0, -2, 6, 3, 0, false, {{4, 5, 9, -1}}},
-    {"H - ARSENAL", 2, -2, 0, 0, 2, false, {{5, -1, -1, -1}}},
-    {"I - SENTINELA", 0, -3, 6, 4, 0, false, {{-1, -1, 10, 7}}},
-    {"J - BOSS", 0, -4, 2, 0, 0, true, {{-1, -1, -1, 9}}},
+    {"F - COFRE DE MEMORIA", 2, -1, 0, 0, 1, false, {{3, -1, -1, -1}}},
+    {"G - DEADLOCK", 0, -2, 6, 3, 0, false, {{4, 5, 9, -1}}},
+    {"H - SAVE POINT", 2, -2, 0, 0, 2, false, {{5, -1, -1, -1}}},
+    {"I - PROCESSOS ZUMBIS", 0, -3, 6, 4, 0, false, {{-1, -1, 10, 7}}},
+    {"J - TELA AZUL DA MORTE", 0, -4, 2, 0, 0, true, {{-1, -1, -1, 9}}},
 };
+
+// Cada fase mistura um tema de computacao com uma referencia de jogos.
+struct PlantaFase
+{
+    const char *nome;
+    const char *subtitulo;
+    const PlantaSala *salas;
+    std::size_t quantidade;
+};
+
+const PlantaFase PLANTAS[] = {
+    {"FASE DOS COMPILADORES", "SPEEDRUN DO BUILD", PLANTA_FASE_1, std::size(PLANTA_FASE_1)},
+    {"FASE DA REDE", "MULTIPLAYER COM LAG", PLANTA_FASE_2, std::size(PLANTA_FASE_2)},
+    {"FASE DO KERNEL", "GAME OVER EM TELA AZUL", PLANTA_FASE_3, std::size(PLANTA_FASE_3)},
+};
+static_assert(std::size(PLANTAS) == QUANTIDADE_FASES, "Cada fase precisa de uma planta");
 }
 
 Fase::Fase(int numero) : numero(numero)
@@ -67,14 +83,11 @@ Fase::Fase(int numero) : numero(numero)
     {
         throw std::invalid_argument("Numero de fase invalido");
     }
-    const PlantaSala *planta = numero == 1 ? PLANTA_FASE_1 :
-                               (numero == 2 ? PLANTA_FASE_2 : PLANTA_FASE_3);
-    const std::size_t quantidade = numero == 1 ? std::size(PLANTA_FASE_1) :
-        (numero == 2 ? std::size(PLANTA_FASE_2) : std::size(PLANTA_FASE_3));
+    const PlantaFase &planta = PLANTAS[numero - 1];
     const float largura = 936, altura = 516;
-    for (std::size_t i = 0; i < quantidade; ++i)
+    for (std::size_t i = 0; i < planta.quantidade; ++i)
     {
-        const PlantaSala &sala = planta[i];
+        const PlantaSala &sala = planta.salas[i];
         ConfiguracaoSala config{sala.nome, largura, altura, numero, sala.virus, {true}};
         config.brutos = sala.brutos;
         config.boss = sala.boss;
@@ -83,16 +96,22 @@ Fase::Fase(int numero) : numero(numero)
         config.armasIniciais = false;
         config.vizinhos = sala.vizinhos;
         config.mapaRamificado = true;
+        config.tema = numero;
         salas.inserir(Sala(config));
         origens.inserir({sala.coluna * (largura + Sala::COMPRIMENTO_CORREDOR),
                         sala.linha * (altura + Sala::COMPRIMENTO_CORREDOR)});
     }
 }
 
-void Fase::reiniciar(Jogador &jogador)
+void Fase::reiniciar(Jogador &jogador, const FilaArmas &armas)
 {
     *this = Fase(this->numero);
     jogador = Jogador();
+    // Inventario vazio receberia uma fase sem como lutar; mantem a arma inicial.
+    if (!armas.vazio())
+    {
+        jogador.get_armas() = armas;
+    }
     this->get_salaAtual().entrar(jogador);
     preparar_adjacentes();
 }
@@ -184,6 +203,16 @@ Sala &Fase::get_salaAtual()
 const Sala &Fase::get_salaAtual() const
 {
     return this->salas.obter(this->indiceAtual);
+}
+
+const char *Fase::get_nome() const
+{
+    return PLANTAS[numero - 1].nome;
+}
+
+const char *Fase::get_subtitulo() const
+{
+    return PLANTAS[numero - 1].subtitulo;
 }
 
 std::size_t Fase::get_indiceAtual() const

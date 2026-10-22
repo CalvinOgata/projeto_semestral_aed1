@@ -124,6 +124,9 @@ apos derrota-lo. As plantas das tres fases (7, 9 e 11 salas) ficam em tabelas
 constantes em `Fase.cpp`, com posicao na grade, inimigos, baus e vizinhos.
 A chegada preserva a posicao no mundo ao mudar as coordenadas locais da sala. `Campanha` avanca e `Jogo` grava
 o checkpoint. Reiniciar no menu de pausa ou morte recriam apenas a fase atual e o jogador.
+`Campanha` guarda uma copia de `FilaArmas` do inicio da fase: avancar copia o
+inventario atual para a proxima fase, e reiniciar devolve essa copia ao jogador.
+O checkpoint em disco nao guarda armas.
 A tecla R nao reinicia mais. O reinicio pelo menu retoma a partida.
 
 Para configurar a fase inicial, edite os registros no construtor de `Fase`, em

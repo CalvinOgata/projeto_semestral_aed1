@@ -40,6 +40,7 @@ private:
     float esperaTiro; // segundos que faltam para o proximo disparo
     bool mostrarHitboxes = false;
     bool mostrarMinimapa = false;
+    float tempoTituloFase = 0.0f; // segundos restantes do titulo ao entrar na fase
     bool atirando;    // botao esquerdo do mouse segurado
     float mouseTelaX; // posicao do mouse em coordenadas de tela
     float mouseTelaY;

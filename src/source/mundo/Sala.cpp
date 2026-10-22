@@ -25,7 +25,8 @@ void Sala::preparar()
     if (!preparada)
     {
         this->combate.reiniciar(this->get_limites(), this->configuracao.quantidadeInimigos,
-                               this->configuracao.dificuldade, configuracao.brutos, configuracao.boss);
+                               this->configuracao.dificuldade, configuracao.brutos, configuracao.boss,
+                               configuracao.tema);
         const TipoArma tipos[] = {TipoArma::SHOTGUN, TipoArma::LASER, TipoArma::DUPLA,
             TipoArma::RICOCHETE, TipoArma::ESPADA, TipoArma::ARCO, TipoArma::BOOMERANG};
         for (int i = 0; configuracao.armasIniciais && i < 7; ++i)

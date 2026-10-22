@@ -41,7 +41,8 @@ int Combate::get_inimigosVivos() const
     return vivos;
 }
 
-void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos, bool boss)
+void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos, bool boss,
+                        int tema)
 {
     this->limites = area;
     this->inimigos.limpar();
@@ -65,7 +66,7 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, 
             (tipo == TipoInimigo::BRUTO ? 12 : 65);
         Inimigo inimigo(x, y, vida + dificuldade - 1,
                        VELOCIDADE_INIMIGO * (tipo == TipoInimigo::VIRUS ? 1.0f : 0.65f) *
-                       (1.0f + 0.12f * (dificuldade - 1)), dimensoes, tipo);
+                       (1.0f + 0.12f * (dificuldade - 1)), dimensoes, tipo, tema);
         inimigo.limitar_a(area);
         this->inimigos.inserir(inimigo);
     }

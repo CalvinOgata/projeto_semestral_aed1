@@ -21,6 +21,7 @@ constexpr float COMPRIMENTO_ARMA = 34.0f;
 constexpr float ESPESSURA_ARMA = 10.0f;
 constexpr float RECUO_ARMA = 2.0f;      // quanto o pivo fica atras do centro
 constexpr float INTERVALO_TIRO = 0.14f; // segundos entre disparos
+constexpr float DURACAO_TITULO_FASE = 3.0f; // segundos do nome da fase ao entrar nela
 constexpr int MUNICAO_INICIAL = 400;
 
 // Projetil

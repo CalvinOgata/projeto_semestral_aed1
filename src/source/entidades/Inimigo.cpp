@@ -6,6 +6,7 @@
 
 #include "config/Config.h"
 #include "graficos/Desenho.h"
+#include "graficos/SpriteInimigo.h"
 
 Inimigo::Inimigo() : Inimigo(0.0f, 0.0f)
 {
@@ -136,35 +137,7 @@ void Inimigo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
 
     const SDL_FRect naTela = camera.para_tela(this->get_retanguloVisual());
 
-    if (tipo == TipoInimigo::VIRUS)
-    {
-        // Bitmap embutido: chip infectado, trilhas e olhos luminosos.
-        const char *pixels[] = {
-            "..g..g..g..g", "..g..g..g..g", "ggGGGGGGGGgg",
-            "..GggggggG..", "ggGgWggWgGgg", "..GgWggWgG..",
-            "..GggggggG..", "ggGgRRRRgGgg", "..GggRRggG..",
-            "ggGGGGGGGGgg", "..g..g..g..g", "..g..g..g..g"};
-        for (int y = 0; y < 12; ++y)
-            for (int x = 0; x < 12; ++x)
-            {
-                char c = pixels[y][x];
-                if (c == '.') continue;
-                SDL_Color cor = c == 'G' ? SDL_Color{19,58,53,255} :
-                    c == 'g' ? SDL_Color{61,204,113,255} :
-                    c == 'W' ? SDL_Color{220,255,164,255} : SDL_Color{52,28,64,255};
-                SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, 255);
-                SDL_FRect pixel{naTela.x + x * naTela.w / 12, naTela.y + y * naTela.h / 12,
-                                naTela.w / 12, naTela.h / 12};
-                SDL_RenderFillRectF(renderizador, &pixel);
-            }
-    }
-    else
-    {
-        SDL_SetRenderDrawColor(renderizador, tipo == TipoInimigo::BOSS ? 160 : 120, 75, 150, 255);
-        SDL_RenderFillRectF(renderizador, &naTela);
-        SDL_SetRenderDrawColor(renderizador, 220, 170, 220, 255);
-        SDL_RenderDrawRectF(renderizador, &naTela);
-    }
+    SpriteInimigo::desenhar(renderizador, tipo, tema, naTela);
     const auto centro = camera.para_tela(get_centroX(), get_centroY());
     Desenho::retangulo_rotacionado(renderizador, centro.x, centro.y, 30, 8, mira, {38,40,52,255});
     Desenho::retangulo_rotacionado(renderizador, centro.x, centro.y - 1, 23, 3, mira, {166,177,190,255});
@@ -188,8 +161,8 @@ void Inimigo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
 }
 
 Inimigo::Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial,
-                 const DimensoesEntidade &dimensoes, TipoInimigo tipo)
-    : tipo(tipo), x(mundoX), y(mundoY), dimensoes(dimensoes), velocidade(std::max(0.0f, velocidadeInicial)),
+                 const DimensoesEntidade &dimensoes, TipoInimigo tipo, int tema)
+    : tipo(tipo), tema(tema), x(mundoX), y(mundoY), dimensoes(dimensoes), velocidade(std::max(0.0f, velocidadeInicial)),
       vida(std::max(1, vidaInicial)), vidaMax(std::max(1, vidaInicial)), vivo(true)
 {
     if (!dimensoes.valida())

@@ -28,6 +28,7 @@ struct ConfiguracaoSala
     std::array<int, 4> vizinhos = {{-1, -1, -1, -1}};
     bool mapaRamificado = false;
     bool portalSaida = false;
+    int tema = 1; // numero da fase, usado nos sprites tematicos
 };
 
 enum class EstadoSala
