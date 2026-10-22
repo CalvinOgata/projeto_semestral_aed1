@@ -15,6 +15,14 @@ private:
     int tema = 1; // fase que define o visual de guardioes e boss
     float mira = 0;
     float esperaTiro = 1.5f;
+    int dificuldade = 1;
+    int ataques = 0; // contador usado pelos padroes de tiro do boss
+    // Movimento tatico: gira em volta do alvo e troca de sentido ao ficar preso.
+    float sentidoGiro = 1;
+    float tempoGiro = 2;
+    float tempoProgresso = 0;
+    SDL_FPoint marcoProgresso = {0, 0};
+    bool visaoLivre = true; // linha ate o jogador sem cobertura no caminho
     bool coracaoSolto = false;
     float x; // canto superior esquerdo, em coordenadas de mundo
     float y;
@@ -30,8 +38,14 @@ public:
 
     Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial,
             const DimensoesEntidade &dimensoes = DIMENSOES_INIMIGO_COMUM,
-            TipoInimigo tipo = TipoInimigo::VIRUS, int tema = 1);
+            TipoInimigo tipo = TipoInimigo::VIRUS, int tema = 1, int dificuldade = 1);
+    // Segura o disparo pronto enquanto nao houver linha livre ate o jogador.
     bool preparar_tiro(float dt);
+    int registrar_ataque(); // devolve o numero do ataque, a partir de zero
+    void set_visaoLivre(bool livre);
+    TipoInimigo get_tipo() const;
+    int get_tema() const;
+    int get_vidaMax() const;
     bool soltar_coracao();
     int get_danoTiro() const;
     void limitar_a(const SDL_FRect &area);

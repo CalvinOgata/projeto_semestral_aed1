@@ -2,11 +2,21 @@
 
 #include <algorithm>
 #include <cmath>
+#include <random>
 #include <stdexcept>
 
 #include "config/Config.h"
 #include "graficos/Desenho.h"
 #include "graficos/SpriteInimigo.h"
+
+namespace
+{
+std::mt19937 &sorteio_inimigos()
+{
+    static std::mt19937 sorteio(std::random_device{}());
+    return sorteio;
+}
+}
 
 Inimigo::Inimigo() : Inimigo(0.0f, 0.0f)
 {
@@ -26,20 +36,60 @@ void Inimigo::perseguir(float alvoX, float alvoY, float dt)
 
     float dx = alvoX - this->get_centroX();
     float dy = alvoY - this->get_centroY();
-
-    const float distancia = std::sqrt(dx * dx + dy * dy);
-
+    const float distancia = std::max(0.001f, std::sqrt(dx * dx + dy * dy));
     mira = std::atan2(dy, dx) * 180.0f / static_cast<float>(M_PI);
-    if (distancia <= 180.0f)
-    {
-        return; // ja esta em cima do alvo
-    }
-
     dx /= distancia;
     dy /= distancia;
 
-    this->x += dx * this->velocidade * dt;
-    this->y += dy * this->velocidade * dt;
+    // Troca de sentido de tempos em tempos e quando quase nao saiu do lugar.
+    // Atras de cobertura mantem o sentido, para completar o contorno.
+    if (visaoLivre)
+    {
+        tempoGiro -= dt;
+    }
+    tempoProgresso += dt;
+    if (tempoGiro <= 0)
+    {
+        sentidoGiro = -sentidoGiro;
+        tempoGiro = 1.5f + std::uniform_real_distribution<float>(0, 2)(sorteio_inimigos());
+    }
+    if (tempoProgresso >= 0.5f)
+    {
+        const float andado = std::hypot(x - marcoProgresso.x, y - marcoProgresso.y);
+        if (andado < velocidade * 0.06f)
+        {
+            sentidoGiro = -sentidoGiro;
+        }
+        marcoProgresso = {x, y};
+        tempoProgresso = 0;
+    }
+
+    // Distancia preferida: virus cercam, bruta-montes avancam, boss mantem espaco.
+    const float ideal = tipo == TipoInimigo::VIRUS ? 150.0f : (tipo == TipoInimigo::BRUTO ? 110.0f : 230.0f);
+    float avanco = 0;
+    if (!visaoLivre)
+    {
+        avanco = 0.6f; // contorna a cobertura enquanto se aproxima
+    }
+    else if (distancia > ideal + 25)
+    {
+        avanco = 1;
+    }
+    else if (distancia < ideal - 40 && tipo != TipoInimigo::BRUTO)
+    {
+        avanco = -0.7f;
+    }
+    const float giro = !visaoLivre ? 1.0f :
+        (tipo == TipoInimigo::VIRUS ? 0.75f : (tipo == TipoInimigo::BOSS ? 0.55f : 0.35f));
+    const float mx = dx * avanco - dy * giro * sentidoGiro;
+    const float my = dy * avanco + dx * giro * sentidoGiro;
+    const float tamanho = std::hypot(mx, my);
+    if (tamanho < 0.01f)
+    {
+        return;
+    }
+    this->x += mx / tamanho * this->velocidade * dt;
+    this->y += my / tamanho * this->velocidade * dt;
 }
 
 void Inimigo::afastar_de(Inimigo &outro)
@@ -161,10 +211,18 @@ void Inimigo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
 }
 
 Inimigo::Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial,
-                 const DimensoesEntidade &dimensoes, TipoInimigo tipo, int tema)
-    : tipo(tipo), tema(tema), x(mundoX), y(mundoY), dimensoes(dimensoes), velocidade(std::max(0.0f, velocidadeInicial)),
+                 const DimensoesEntidade &dimensoes, TipoInimigo tipo, int tema,
+                 int dificuldade)
+    : tipo(tipo), tema(tema), dificuldade(std::max(1, dificuldade)), x(mundoX), y(mundoY),
+      dimensoes(dimensoes), velocidade(std::max(0.0f, velocidadeInicial)),
       vida(std::max(1, vidaInicial)), vidaMax(std::max(1, vidaInicial)), vivo(true)
 {
+    // Inicios diferentes evitam que a sala inteira dispare e gire em sincronia.
+    auto &sorteio = sorteio_inimigos();
+    esperaTiro = std::uniform_real_distribution<float>(1.1f, 2.1f)(sorteio);
+    sentidoGiro = std::uniform_int_distribution<int>(0, 1)(sorteio) ? 1.0f : -1.0f;
+    tempoGiro = std::uniform_real_distribution<float>(1.5f, 3.5f)(sorteio);
+    marcoProgresso = {mundoX, mundoY};
     if (!dimensoes.valida())
     {
         throw std::invalid_argument("Dimensoes de inimigo invalidas");
@@ -194,11 +252,41 @@ void Inimigo::deslocar(float dx, float dy)
 bool Inimigo::preparar_tiro(float dt)
 {
     if (!vivo) return false;
-    esperaTiro -= dt;
-    if (esperaTiro > 0) return false;
-    esperaTiro = tipo == TipoInimigo::BOSS ? 0.85f : (tipo == TipoInimigo::BRUTO ? 1.8f : 2.4f);
+    if (esperaTiro > 0) esperaTiro -= dt;
+    if (esperaTiro > 0 || !visaoLivre) return false;
+    // Cadencia cresce com a dificuldade; o boss acelera abaixo de metade da vida.
+    float intervalo = tipo == TipoInimigo::BOSS ? (vida * 2 < vidaMax ? 0.62f : 0.85f) :
+        (tipo == TipoInimigo::BRUTO ? 1.8f : 2.4f);
+    intervalo /= 1.0f + 0.12f * (dificuldade - 1);
+    esperaTiro = intervalo * std::uniform_real_distribution<float>(0.85f, 1.15f)(sorteio_inimigos());
     return true;
 }
+
+int Inimigo::registrar_ataque()
+{
+    return ataques++;
+}
+
+void Inimigo::set_visaoLivre(bool livre)
+{
+    visaoLivre = livre;
+}
+
+TipoInimigo Inimigo::get_tipo() const
+{
+    return tipo;
+}
+
+int Inimigo::get_tema() const
+{
+    return tema;
+}
+
+int Inimigo::get_vidaMax() const
+{
+    return vidaMax;
+}
+
 bool Inimigo::soltar_coracao()
 {
     if (vivo || coracaoSolto) return false;

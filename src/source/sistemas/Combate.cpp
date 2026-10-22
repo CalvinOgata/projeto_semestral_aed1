@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <random>
+#include <vector>
 
 #include "config/Config.h"
 
@@ -42,16 +44,24 @@ int Combate::get_inimigosVivos() const
 }
 
 void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos, bool boss,
-                        int tema)
+                        int tema, int ondasExtras)
 {
     this->limites = area;
     this->inimigos.limpar();
     this->obstaculos.limpar();
+    this->avisos.limpar();
     coracoes.limpar();
     this->limpar_projeteis();
+    this->dificuldade = std::max(1, dificuldade);
+    this->tema = tema;
+    this->temPosicaoAnterior = false;
     const int virus = std::max(0, quantidade);
-    quantidade = virus + std::max(0, brutos) + (boss ? 1 : 0);
-    dificuldade = std::max(1, dificuldade);
+    brutos = std::max(0, brutos);
+    // Reforcos menores que a primeira onda, mas com pelo menos dois virus.
+    this->ondasRestantes = std::max(0, ondasExtras);
+    this->reforcoVirus = std::max(2, (virus * 2 + 2) / 3);
+    this->reforcoBrutos = (brutos + 1) / 2;
+    quantidade = virus + brutos + (boss ? 1 : 0);
     // Distribui os inimigos na metade direita, longe da entrada a esquerda.
     const int colunas = std::max(1, static_cast<int>(std::ceil(std::sqrt(quantidade))));
     const int linhas = std::max(1, (quantidade + colunas - 1) / colunas);
@@ -61,16 +71,155 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, 
         const float y = area.y + area.h * (i / colunas + 1) / (linhas + 1);
         const auto tipo = i < virus ? TipoInimigo::VIRUS :
             (i < virus + brutos ? TipoInimigo::BRUTO : TipoInimigo::BOSS);
-        const auto dimensoes = tipo == TipoInimigo::VIRUS ? DIMENSOES_INIMIGO_COMUM :
+        // Mantem a posicao historica: (x, y) era o canto da hitbox.
+        const auto &dimensoes = tipo == TipoInimigo::VIRUS ? DIMENSOES_INIMIGO_COMUM :
             (tipo == TipoInimigo::BRUTO ? DIMENSOES_GUARDA_COSTAS : DIMENSOES_BOSS);
-        const int vida = tipo == TipoInimigo::VIRUS ? VIDA_INIMIGO :
-            (tipo == TipoInimigo::BRUTO ? 12 : 65);
-        Inimigo inimigo(x, y, vida + dificuldade - 1,
-                       VELOCIDADE_INIMIGO * (tipo == TipoInimigo::VIRUS ? 1.0f : 0.65f) *
-                       (1.0f + 0.12f * (dificuldade - 1)), dimensoes, tipo, tema);
-        inimigo.limitar_a(area);
-        this->inimigos.inserir(inimigo);
+        this->criar_inimigo(tipo, x + dimensoes.larguraHitbox / 2.0f, y + dimensoes.alturaHitbox / 2.0f);
     }
+}
+
+void Combate::criar_inimigo(TipoInimigo tipo, float centroX, float centroY)
+{
+    const auto dimensoes = tipo == TipoInimigo::VIRUS ? DIMENSOES_INIMIGO_COMUM :
+        (tipo == TipoInimigo::BRUTO ? DIMENSOES_GUARDA_COSTAS : DIMENSOES_BOSS);
+    // Vida cresce mais nos inimigos fortes para as fases finais exigirem mais.
+    const float fator = static_cast<float>(dificuldade - 1);
+    const int vida = tipo == TipoInimigo::VIRUS ? VIDA_INIMIGO + dificuldade - 1 :
+        static_cast<int>(std::lround(tipo == TipoInimigo::BRUTO ? 12 * (1 + 0.25f * fator) :
+                                                                  65 * (1 + 0.3f * fator)));
+    Inimigo inimigo(centroX - dimensoes.larguraHitbox / 2.0f, centroY - dimensoes.alturaHitbox / 2.0f,
+                   vida, VELOCIDADE_INIMIGO * (tipo == TipoInimigo::VIRUS ? 1.0f : 0.65f) *
+                   (1.0f + 0.12f * fator), dimensoes, tipo, tema, dificuldade);
+    inimigo.limitar_a(limites);
+    this->inimigos.inserir(inimigo);
+}
+
+bool Combate::concluido() const
+{
+    return this->get_inimigosVivos() == 0 && this->ondasRestantes == 0 && this->avisos.vazio();
+}
+
+void Combate::agendar_onda(const Jogador &jogador)
+{
+    static std::mt19937 sorteio(std::random_device{}());
+    // Pontos candidatos longe do jogador e sem cobertura em cima.
+    std::vector<SDL_FPoint> pontos;
+    for (int coluna = 0; coluna < 7; ++coluna)
+    {
+        for (int linha = 0; linha < 4; ++linha)
+        {
+            const SDL_FPoint p = {limites.x + 90 + coluna * (limites.w - 180) / 6,
+                                  limites.y + 80 + linha * (limites.h - 160) / 3};
+            const SDL_FRect area = {p.x - 32, p.y - 32, 64, 64};
+            if (std::hypot(p.x - jogador.get_centroX(), p.y - jogador.get_centroY()) >= 260 &&
+                !this->tiro_bloqueado(area))
+            {
+                pontos.push_back(p);
+            }
+        }
+    }
+    if (pontos.empty())
+    {
+        pontos.push_back({limites.x + limites.w - 90, limites.y + limites.h / 2});
+    }
+    std::shuffle(pontos.begin(), pontos.end(), sorteio);
+    const int total = reforcoVirus + reforcoBrutos;
+    for (int i = 0; i < total; ++i)
+    {
+        // Se faltarem pontos, repete com um pequeno desvio.
+        const SDL_FPoint p = pontos[i % pontos.size()];
+        const float desvio = static_cast<float>(i / pontos.size()) * 36;
+        avisos.inserir({p.x + desvio, p.y, 1.0f, 1.0f,
+                        i < reforcoVirus ? TipoInimigo::VIRUS : TipoInimigo::BRUTO});
+    }
+}
+
+void Combate::atualizar_avisos(float dt)
+{
+    for (auto &aviso : avisos)
+    {
+        aviso.tempo -= dt;
+        if (aviso.tempo > 0)
+        {
+            continue;
+        }
+        this->criar_inimigo(aviso.tipo, aviso.x, aviso.y);
+        Inimigo &novo = this->inimigos.obter(this->inimigos.get_quantidade() - 1);
+        for (const Obstaculo &obstaculo : this->obstaculos)
+        {
+            const SDL_FPoint deslocamento = obstaculo.separar(novo.get_retanguloVisual());
+            novo.deslocar(deslocamento.x, deslocamento.y);
+        }
+        novo.limitar_a(this->limites);
+    }
+    avisos.remover_se([](const Aviso &aviso) { return aviso.tempo <= 0; });
+}
+
+int Combate::get_lacaiosVivos() const
+{
+    int vivos = 0;
+    for (const Inimigo &inimigo : this->inimigos)
+    {
+        vivos += inimigo.get_vivo() && inimigo.get_tipo() == TipoInimigo::VIRUS;
+    }
+    return vivos + static_cast<int>(this->avisos.get_quantidade());
+}
+
+void Combate::invocar_lacaios(const Inimigo &boss)
+{
+    // Dois virus surgem aos lados do boss, dentro da sala.
+    for (int lado = -1; lado <= 1; lado += 2)
+    {
+        const float x = std::clamp(boss.get_centroX() + lado * 100.0f, limites.x + 40,
+                                   limites.x + limites.w - 40);
+        const float y = std::clamp(boss.get_centroY(), limites.y + 40, limites.y + limites.h - 40);
+        avisos.inserir({x, y, 0.8f, 0.8f, TipoInimigo::VIRUS});
+    }
+}
+
+bool Combate::linha_livre(SDL_FPoint origem, SDL_FPoint destino) const
+{
+    for (const Obstaculo &obstaculo : this->obstaculos)
+    {
+        if (!obstaculo.get_intacto())
+        {
+            continue;
+        }
+        // Peca ampliada pela metade do tiro (8x8): a linha so e livre se o tiro passa.
+        SDL_FRect area = obstaculo.get_retangulo();
+        area = {area.x - 4, area.y - 4, area.w + 8, area.h + 8};
+        float x1 = origem.x, y1 = origem.y, x2 = destino.x, y2 = destino.y;
+        if (SDL_IntersectFRectAndLine(&area, &x1, &y1, &x2, &y2))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void Combate::disparar_hostil(SDL_FPoint origem, float angulo, float velocidade, int dano)
+{
+    tirosInimigos.inserir({origem.x, origem.y, std::cos(angulo), std::sin(angulo), dano, true,
+                           velocidade});
+}
+
+void Combate::estimar_velocidadeJogador(float dt, const Jogador &jogador)
+{
+    const SDL_FPoint atual = {jogador.get_centroX(), jogador.get_centroY()};
+    if (temPosicaoAnterior && dt > 0)
+    {
+        SDL_FPoint medida = {(atual.x - posicaoJogadorAnterior.x) / dt,
+                             (atual.y - posicaoJogadorAnterior.y) / dt};
+        // Saltos (troca de sala ou reinicio) nao contam como movimento.
+        if (std::hypot(medida.x, medida.y) > 600)
+        {
+            medida = {0, 0};
+        }
+        velocidadeJogador = {velocidadeJogador.x * 0.6f + medida.x * 0.4f,
+                             velocidadeJogador.y * 0.6f + medida.y * 0.4f};
+    }
+    posicaoJogadorAnterior = atual;
+    temPosicaoAnterior = true;
 }
 
 void Combate::adicionar_obstaculo(const Obstaculo &obstaculo)
@@ -307,6 +456,16 @@ void Combate::resolver_colisoes()
 
 void Combate::atualizar(float dt, Jogador &jogador)
 {
+    this->estimar_velocidadeJogador(dt, jogador);
+    // A visao e recalculada por quadro; inimigos sem linha livre contornam a cobertura.
+    const SDL_FPoint alvo = {jogador.get_centroX(), jogador.get_centroY()};
+    for (Inimigo &inimigo : this->inimigos)
+    {
+        if (inimigo.get_vivo())
+        {
+            inimigo.set_visaoLivre(this->linha_livre({inimigo.get_centroX(), inimigo.get_centroY()}, alvo));
+        }
+    }
     // Passos pequenos evitam atravessar inimigos ou paredes entre quadros.
     float restante = std::max(0.0f, dt);
     while (restante > 0)
@@ -325,6 +484,12 @@ void Combate::atualizar(float dt, Jogador &jogador)
     }
     rastros.remover_se([](const Rastro &r) { return r.tempo <= 0; });
     atualizar_coracoes(dt, jogador);
+    if (this->ondasRestantes > 0 && this->avisos.vazio() && this->get_inimigosVivos() <= 1)
+    {
+        this->agendar_onda(jogador);
+        --this->ondasRestantes;
+    }
+    this->atualizar_avisos(dt);
     this->limpar_inativos();
 }
 
@@ -339,6 +504,26 @@ void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
     for (const Obstaculo &obstaculo : this->obstaculos)
     {
         obstaculo.desenhar(renderizador, camera, mostrarHitboxes);
+    }
+    for (const auto &aviso : avisos)
+    {
+        // Moldura que se fecha sobre o ponto ate o inimigo aparecer.
+        const float progresso = 1 - aviso.tempo / aviso.duracao;
+        const auto pos = camera.para_tela(aviso.x, aviso.y);
+        const float meio = (aviso.tipo == TipoInimigo::VIRUS ? 24.0f : 32.0f) * (1.6f - 0.6f * progresso);
+        const Uint8 alfa = static_cast<Uint8>(170 + 85 * (static_cast<int>(progresso * 10) % 2));
+        const SDL_FRect fundo = {pos.x - meio, pos.y - meio, 2 * meio, 2 * meio};
+        SDL_SetRenderDrawColor(renderizador, 255, 40, 100, static_cast<Uint8>(40 + 50 * progresso));
+        SDL_RenderFillRectF(renderizador, &fundo);
+        SDL_SetRenderDrawColor(renderizador, 255, 90, 140, alfa);
+        for (int borda = 0; borda < 3; ++borda)
+        {
+            const SDL_FRect moldura = {pos.x - meio + borda, pos.y - meio + borda,
+                                       2 * (meio - borda), 2 * (meio - borda)};
+            SDL_RenderDrawRectF(renderizador, &moldura);
+        }
+        SDL_RenderDrawLineF(renderizador, pos.x - 8, pos.y - 8, pos.x + 8, pos.y + 8);
+        SDL_RenderDrawLineF(renderizador, pos.x - 8, pos.y + 8, pos.x + 8, pos.y - 8);
     }
     for (const auto &tiro : tirosInimigos)
     {
@@ -381,20 +566,57 @@ void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
 
 void Combate::atualizar_hostis(float dt, Jogador &jogador)
 {
+    const float velocidadeTiro = 230 * (1 + 0.08f * (dificuldade - 1));
     for (auto &inimigo : inimigos)
     {
         if (!inimigo.preparar_tiro(dt)) continue;
-        const float dx = jogador.get_centroX() - inimigo.get_centroX();
-        const float dy = jogador.get_centroY() - inimigo.get_centroY();
-        const float tamanho = std::max(0.001f, std::hypot(dx, dy));
-        tirosInimigos.inserir({inimigo.get_centroX(), inimigo.get_centroY(),
-                              dx / tamanho, dy / tamanho, inimigo.get_danoTiro(), true});
+        const int ataque = inimigo.registrar_ataque();
+        const auto tipo = inimigo.get_tipo();
+        const SDL_FPoint origem = {inimigo.get_centroX(), inimigo.get_centroY()};
+        // Mira antecipada: preve onde o jogador estara quando o tiro chegar.
+        const float antecipacao = tipo == TipoInimigo::VIRUS ? 0.3f :
+            (tipo == TipoInimigo::BRUTO ? 0.6f : 0.75f);
+        const float tempo = std::hypot(jogador.get_centroX() - origem.x,
+                                       jogador.get_centroY() - origem.y) / velocidadeTiro;
+        const float alvoX = jogador.get_centroX() + velocidadeJogador.x * tempo * antecipacao;
+        const float alvoY = jogador.get_centroY() + velocidadeJogador.y * tempo * antecipacao;
+        const float angulo = std::atan2(alvoY - origem.y, alvoX - origem.x);
+        const int dano = inimigo.get_danoTiro();
+        if (tipo == TipoInimigo::BOSS)
+        {
+            // Padrao do boss: invoca lacaios, anel giratorio ou leque mirado.
+            if (ataque % 5 == 4 && this->get_lacaiosVivos() < 4)
+            {
+                this->invocar_lacaios(inimigo);
+            }
+            else if (ataque % 4 == 3)
+            {
+                for (int i = 0; i < 12; ++i)
+                    disparar_hostil(origem, i * static_cast<float>(M_PI) / 6 + ataque * 0.13f,
+                                    velocidadeTiro * 0.75f, dano);
+            }
+            else
+            {
+                for (int i = -1; i <= 1; ++i)
+                    disparar_hostil(origem, angulo + i * 0.21f, velocidadeTiro, dano);
+            }
+        }
+        else if (tipo == TipoInimigo::BRUTO && ataque % 3 == 2)
+        {
+            // A cada tres ataques o bruta-monte abre um leque para cortar a fuga.
+            for (int i = -1; i <= 1; ++i)
+                disparar_hostil(origem, angulo + i * 0.3f, velocidadeTiro, dano);
+        }
+        else
+        {
+            disparar_hostil(origem, angulo, velocidadeTiro, dano);
+        }
     }
     auto corpo = jogador.get_retangulo();
     for (auto &tiro : tirosInimigos)
     {
-        tiro.x += tiro.dx * 230 * dt;
-        tiro.y += tiro.dy * 230 * dt;
+        tiro.x += tiro.dx * tiro.velocidade * dt;
+        tiro.y += tiro.dy * tiro.velocidade * dt;
         const SDL_FRect ret{tiro.x - 4, tiro.y - 4, 8, 8};
         if (this->tiro_bloqueado(ret))
         {

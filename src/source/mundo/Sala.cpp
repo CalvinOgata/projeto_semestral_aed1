@@ -84,7 +84,7 @@ void Sala::preparar()
     {
         this->combate.reiniciar(this->get_limites(), this->configuracao.quantidadeInimigos,
                                this->configuracao.dificuldade, configuracao.brutos, configuracao.boss,
-                               configuracao.tema);
+                               configuracao.tema, configuracao.ondasExtras);
         const float escalaX = configuracao.largura / 936, escalaY = configuracao.altura / 516;
         switch (configuracao.cobertura)
         {
@@ -156,7 +156,7 @@ void Sala::atualizar(float dt, Jogador &jogador)
     if (this->estado == EstadoSala::EM_COMBATE)
     {
         const bool eliminados = !this->configuracao.requisito.eliminarInimigos ||
-                                this->combate.get_inimigosVivos() == 0;
+                                this->combate.concluido();
         if (eliminados)
         {
             this->estado = EstadoSala::LIBERADA;

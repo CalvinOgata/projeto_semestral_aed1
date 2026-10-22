@@ -30,6 +30,7 @@ struct ConfiguracaoSala
     bool portalSaida = false;
     int tema = 1; // numero da fase, usado nos sprites tematicos
     int cobertura = 0; // modelo de caixotes/barreiras; 0 deixa a sala livre
+    int ondasExtras = 0; // ondas de reforco apos a primeira
 };
 
 enum class EstadoSala

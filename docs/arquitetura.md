@@ -224,9 +224,13 @@ expande cada barreira em blocos independentes de 24x24, que quebram um a um.
 ## Inimigos, recompensas e defesa
 
 `TipoInimigo` distingue virus, bruta-montes e boss com vida base 2/12/65,
-perfis de colisao proprios e tiros simples de dano 8/12/18. `Combate` guarda
+perfis de colisao proprios e tiros de dano 8/12/18. `Combate` guarda
 tiros hostis separados dos projeteis do jogador e verifica colisoes em passos
-de ate 1/240 s. Inimigos param a 180 pixels e atiram na direcao do jogador.
+de ate 1/240 s. `Inimigo` decide o proprio movimento (distancia preferida, giro
+e contorno) a partir da linha de visao que `Combate` calcula por quadro; `Combate`
+decide os padroes de tiro, a mira antecipada e as ondas de reforco, mantidas
+como contadores e uma `ListaSequencial` de avisos de surgimento. Inimigos novos
+sao inseridos no fim da lista, preservando os indices usados pelo bumerangue.
 `Jogador` aplica absorcao pelo escudo, protecao de 0,5 s e regeneracao de
 10 pontos/s apos 3 s sem dano.
 

@@ -58,7 +58,8 @@ Lobby --- A ----- C
           B (1 bau)
 ```
 
-A tem 3 virus. C e D possuem, cada uma, 4 virus e 2 bruta-montes.
+A tem 4 virus. C e D possuem, cada uma, 5 virus e 2 bruta-montes. A, C e D recebem
+uma onda de reforco.
 O lobby e as salas B/E nao possuem inimigos. As portas abrem ao eliminar todos
 os inimigos da sala; atravesse o corredor estreito para chegar a sala seguinte.
 Salas vazias ou limpas ficam abertas, permitindo voltar pelo corredor, inclusive em E–F.
@@ -77,7 +78,8 @@ Lobby --- A ----- D ------ F
           C ----- E ------ G (2 baus)
 ```
 
-A tem 4 virus; C, 5 virus e 1 bruta-monte; D, 4 e 2; E, 6 e 2; F, 5 e 3.
+A tem 5 virus e 1 bruta-monte; C, 6 e 2; D, 5 e 2; E, 7 e 2; F, 6 e 3. D e F
+recebem duas ondas de reforco; as demais salas de combate, uma.
 
 A fase 3 (dificuldade 3) possui onze salas, subindo a partir do lobby (Kernel panic,
 Rootkit, Ransomware, Spyware, Worm, Cofre de memoria, Deadlock, Save point,
@@ -95,7 +97,8 @@ Processos zumbis e Tela azul da morte):
                 Lobby
 ```
 
-A tem 5 virus e 1 bruta-monte; B e C, 6 e 2; D e E, 7 e 2; G, 6 e 3; I, 6 e 4.
+A tem 6 virus e 2 bruta-montes; B e C, 7 e 2; D, 8 e 2; E, 8 e 3; G, 7 e 3; I, 7 e 4.
+A recebe uma onda de reforco, I recebe tres e as demais, duas.
 Nas tres fases, o boss da ultima sala libera o portal central de saida.
 
 Baus abrem automaticamente a menos de 64 pixels e soltam duas armas aleatorias,
@@ -105,7 +108,14 @@ Na fase 1, armas extras vem dos baus, em vez da distribuicao de teste em cada sa
 
 Virus tem visual de chip infectado; guardioes e boss usam pixel art embutida
 (`graficos/SpriteInimigo`) que muda conforme a fase.
-Todos miram e disparam uma arma simples. Escudo absorve dano antes da vida e
+Quando resta no maximo um inimigo, a proxima onda de reforco e anunciada por
+molduras rosas piscando durante 1 segundo, longe do jogador; a sala so libera
+depois de todas as ondas. Os inimigos mantem distancia, circulam o jogador,
+contornam a cobertura quando ela bloqueia a mira (sem desperdicar tiros) e
+antecipam o movimento do jogador. Bruta-montes abrem um leque de tres tiros a
+cada tres ataques. O boss alterna leque mirado, anel giratorio de 12 tiros e a
+invocacao de dois virus, e atira mais rapido abaixo de metade da vida. Cada fase
+aumenta vida, velocidade, cadencia e velocidade dos tiros inimigos. Escudo absorve dano antes da vida e
 regenera 10 pontos/s apos 3 segundos sem dano. Ha 0,5 segundo de protecao apos
 um acerto. Cada inimigo morto deixa um coracao de 10 de vida: coleta automatica
 por contato quando falta vida, expiracao em 10 segundos de jogo (inclusive fora

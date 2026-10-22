@@ -40,7 +40,7 @@ As updated on 2026-10-22:
   branching graphs of 936x516 rooms with lobby, chest rooms and a final boss. Phase 1 has seven
   936x516 rooms in a directional graph: Lobby–A, A–B (south), A–C (east),
   A–D (north), D–E (east), C–E (north), E–F (north).
-  A has 3 viruses; C/D each have 4 viruses and 2 brutes. B has one chest,
+  A has 4 viruses; C/D each have 5 viruses and 2 brutes; A/C/D each get one reinforcement wave. B has one chest,
   E two chests; lobby/B/E have no enemies. F has one boss.
 - Each room owns its combat and persistent state in ListaSequencial<Sala>.
   Four neighbor indices describe phase 1 connections. Doors lock only while their own room is in active combat; empty/cleared rooms
@@ -49,7 +49,8 @@ As updated on 2026-10-22:
   Lobby–A, A–B (north, 1 chest), A–C (south), A–D, C–E, D–F, E–G (2 chests), F–G, F–H (north, boss).
   Phase 3 (11 rooms, difficulty 3) climbs north from the lobby: Lobby–A, A–B/C (west/east),
   B–D, C–E, C–F (1 chest), D–G, G–E, E–H (2 chests), G–I, I–J (boss + 2 viruses).
-  Layouts are constant tables (`PlantaSala`) in Fase.cpp; per-room counts are initial balancing choices.
+  Layouts are constant tables (`PlantaSala`) in Fase.cpp; per-room counts
+  (viruses, brutes, extra waves) are initial balancing choices, raised on 2026-10-22.
 
 ## Room cover (obstacles)
 
@@ -83,7 +84,8 @@ subtitle appear for 3 s (fading) on phase entry/restart; pause and minimap show 
   phases. Cleared enemies/chests never respawn on revisits. Projectiles are
   discarded on leaving. Only active combat updates; hearts in inactive rooms
   still expire. Pause freezes simulation. Room arrivals preserve position across the connecting corridor.
-- Difficulty increases enemy count (configured per room), health, and speed.
+- Difficulty (= phase number) increases enemy health (virus +1, brute +25%, boss +30% per
+  level), speed (+12%), fire rate (+12%) and hostile shot speed (+8%); counts are per room.
   Walls constrain players/enemies and discard projectiles. The camera follows the player continuously within phase bounds, with 12-pixel outer wall margins. The gameplay HUD shows health, shield,
   energy in one compact translucent top-left box, ammunition as a bare
   number in the bottom-right corner, and three weapon slots at top right; phase and room name
@@ -306,11 +308,22 @@ Use the existing `.clang-format` configuration.
 - The user chose to retain the existing embedded virus visual. The generated
   virus-conceito.png is unused concept art, not the active enemy sprite.
 
-## Phase 1 combat and rewards
+## Combat, enemy AI and rewards
 
-- Viruses, brutes and boss have base health 2/12/65 and simple aimed shots dealing
-  8/12/18 damage at 2.4/1.8/0.85-second intervals after an initial 1.5-second delay.
-  They stop pursuing within 180 pixels; hostile shots travel at 230 pixels/s.
+- Viruses, brutes and boss have base health 2/12/65 and shots dealing 8/12/18 damage at
+  2.4/1.8/0.85-second base intervals (+-15% jitter; random 1.1-2.1 s first delay); the
+  boss speeds up to 0.62 s below half health. Hostile shots travel at 230 px/s (base).
+- AI (user request 2026-10-22): enemies keep preferred distances (virus 150, brute 110,
+  boss 230), strafe around the player, flip direction when stuck, and when cover blocks
+  the line of sight (checked per frame, widened by the shot size) they hold fire and
+  circle around it. Shots lead the player's estimated velocity (virus 30%, brute 60%,
+  boss 75%). Brutes fire a 3-shot fan every third attack. The boss cycles an aimed
+  3-shot fan, a rotating 12-shot ring every fourth attack, and summons two telegraphed
+  viruses every fifth attack while fewer than four minions exist.
+- Reinforcement waves (`ondasExtras` per room): when at most one enemy remains, the next
+  wave (2/3 of the viruses, min 2, and half the brutes) is announced by pink frames for
+  1 s at points >= 260 px from the player and clear of cover. A room clears only when
+  `Combate::concluido()` (no living enemies, pending waves or announcements).
   Bodyguard/boss artwork follows the phase theme (see Phase themes).
 - Every enemy drops one heart once, including instant-attack deaths. Hearts heal
   10 health on contact if health is missing and expire after 10 seconds of gameplay,
