@@ -51,6 +51,22 @@ As updated on 2026-10-22:
   B–D, C–E, C–F (1 chest), D–G, G–E, E–H (2 chests), G–I, I–J (boss + 2 viruses).
   Layouts are constant tables (`PlantaSala`) in Fase.cpp; per-room counts are initial balancing choices.
 
+## Room cover (obstacles)
+
+- User request (2026-10-22): crates/barriers inside rooms for cover; only player attacks
+  break them. Interpreted as: enemy shots are absorbed without damage.
+- `entidades/Obstaculo`: CAIXOTE 40x40 (VIDA_CAIXOTE 5) and BARREIRA "firewall" 120x28,
+  optionally vertical (VIDA_BARREIRA 12). Procedural SDL drawing; cracks at half health.
+- Each room's `Combate` owns `ListaSequencial<Obstaculo>`; broken pieces stay inactive in
+  the list and persist on revisits until the phase is recreated.
+- Pieces block player and enemy bodies (minimum-axis push-out; initial placement pushes
+  enemies by visual frame). Player projectiles damage and stop; ricochet bounces (uses a
+  bounce); boomerang turns back on its outbound leg and passes through returning. Laser
+  and sword rays stop at and damage the first piece (once per attack).
+- Authored patterns in Sala.cpp (`cobertura` in PlantaSala): 1 quadrants, 2 trench,
+  3 fortress (boss rooms; right side kept clear for the boss), 4 maze, 5 depot (chest
+  rooms, corners only). Lobbies have none. Patterns avoid the central door cross.
+
 ## Phase themes
 
 Each phase combines a computing theme with a game reference (names chosen by Claude
@@ -136,14 +152,18 @@ Use the existing `.clang-format` configuration.
 - Every phase starts with fresh health, shield and stamina. Weapons and ammo carry
   over when advancing (user request, 2026-10-22); Campanha snapshots the FilaArmas at
   phase start, and Restart/death restore that snapshot. An empty carried inventory
-  receives the starting pistol. Loading a checkpoint starts with the pistol because the
-  v1 save does not store weapons (open question whether to persist them). Pause-menu Restart resets only the current
+  receives the starting pistol. The checkpoint stores that snapshot, so Continue restores
+  the weapons/ammo the next phase starts with. Pause-menu Restart resets only the current
   phase. Completing phase three shows victory and records campaign completion.
 - `saves/progresso.json` is relative to the executable directory, resolved via
-  SDL_GetBasePath. Schema v1: `versao` = 1, `fases_concluidas` = integer 0..3. Old saves above 3 are rejected as invalid.
+  SDL_GetBasePath. Schema v2 (written): `versao` = 2, `fases_concluidas` = integer 0..3, `armas` = array of
+  0..3 `{"tipo": TipoArma index 0..7, "municao": int >= 0}` in FIFO order. v1 (no `armas`)
+  is still accepted and starts with the pistol. Saves above phase 3 are rejected.
   A completed campaign disables Continue. New game replaces the old checkpoint.
 - Persistence is SDL-independent and accepts an explicit file path. Its narrow
-  JSON reader validates the entire two-integer schema, version, and range.
+  JSON reader validates the entire v1/v2 schema, version, and ranges. Persistence uses the
+  neutral `ArmaSalva`/`ProgressoSalvo` structs; Jogo converts FilaArmas, and
+  CampanhaConfig limits are static_asserted against TipoArma/MAX_ARMAS.
   Unknown/duplicate fields and malformed data are rejected. No external JSON
   dependency has been added; extend/replace the parser if the schema grows.
 - Saves use a temporary file in the same directory followed by rename; failed

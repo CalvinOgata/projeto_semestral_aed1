@@ -46,6 +46,7 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, 
 {
     this->limites = area;
     this->inimigos.limpar();
+    this->obstaculos.limpar();
     coracoes.limpar();
     this->limpar_projeteis();
     const int virus = std::max(0, quantidade);
@@ -70,6 +71,51 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, 
         inimigo.limitar_a(area);
         this->inimigos.inserir(inimigo);
     }
+}
+
+void Combate::adicionar_obstaculo(const Obstaculo &obstaculo)
+{
+    this->obstaculos.inserir(obstaculo);
+    this->afastar_inimigos_de_obstaculos(true);
+}
+
+void Combate::afastar_inimigos_de_obstaculos(bool pelaArte)
+{
+    for (Inimigo &inimigo : this->inimigos)
+    {
+        for (const Obstaculo &obstaculo : this->obstaculos)
+        {
+            const SDL_FPoint deslocamento = obstaculo.separar(
+                pelaArte ? inimigo.get_retanguloVisual() : inimigo.get_retangulo());
+            inimigo.deslocar(deslocamento.x, deslocamento.y);
+        }
+        inimigo.limitar_a(this->limites);
+    }
+}
+
+void Combate::afastar_jogador(Jogador &jogador) const
+{
+    for (const Obstaculo &obstaculo : this->obstaculos)
+    {
+        const SDL_FPoint deslocamento = obstaculo.separar(jogador.get_retangulo());
+        if (deslocamento.x != 0 || deslocamento.y != 0)
+        {
+            jogador.set_posicao(jogador.get_x() + deslocamento.x, jogador.get_y() + deslocamento.y);
+        }
+    }
+}
+
+bool Combate::tiro_bloqueado(const SDL_FRect &area) const
+{
+    for (const Obstaculo &obstaculo : this->obstaculos)
+    {
+        const SDL_FRect peca = obstaculo.get_retangulo();
+        if (obstaculo.get_intacto() && SDL_HasIntersectionF(&area, &peca))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Combate::limpar_projeteis()
@@ -123,6 +169,7 @@ void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
     // Nove segmentos formam o leque de 90 graus da espada.
     const int raios = espada ? 9 : 1;
     std::vector<bool> atingidos(inimigos.get_quantidade(), false);
+    std::vector<bool> pecasAtingidas(obstaculos.get_quantidade(), false);
     for (int i = 0; i < raios; ++i)
     {
         const float a = angulo + (espada ? (i - 4) * static_cast<float>(M_PI) / 16 : 0);
@@ -130,6 +177,35 @@ void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
         float x2 = x1 + std::cos(a) * (espada ? 80 : 1600);
         float y2 = y1 + std::sin(a) * (espada ? 80 : 1600);
         SDL_IntersectFRectAndLine(&limites, &x1, &y1, &x2, &y2);
+        // O primeiro obstaculo no caminho leva o dano e interrompe o raio.
+        int pecaMaisProxima = -1;
+        float menorDistancia = 0;
+        for (std::size_t j = 0; j < obstaculos.get_quantidade(); ++j)
+        {
+            if (!obstaculos.obter(j).get_intacto())
+            {
+                continue;
+            }
+            auto area = obstaculos.obter(j).get_retangulo();
+            float ax = x1, ay = y1, bx = x2, by = y2;
+            if (!SDL_IntersectFRectAndLine(&area, &ax, &ay, &bx, &by))
+            {
+                continue;
+            }
+            const float distancia = std::hypot(ax - x1, ay - y1);
+            if (pecaMaisProxima < 0 || distancia < menorDistancia)
+            {
+                pecaMaisProxima = static_cast<int>(j);
+                menorDistancia = distancia;
+                x2 = ax;
+                y2 = ay;
+            }
+        }
+        if (pecaMaisProxima >= 0 && !pecasAtingidas[pecaMaisProxima])
+        {
+            obstaculos.obter(pecaMaisProxima).levar_dano(arma.get_dano());
+            pecasAtingidas[pecaMaisProxima] = true;
+        }
         rastros.inserir({{x1, y1}, {x2, y2}, 0.12f, arma.get_tipo()});
         for (std::size_t j = 0; j < inimigos.get_quantidade(); ++j)
         {
@@ -173,16 +249,25 @@ void Combate::atualizar_inimigos(float dt, const Jogador &jogador)
             this->inimigos.obter(a).afastar_de(this->inimigos.obter(b));
         }
     }
-    for (Inimigo &inimigo : this->inimigos)
-    {
-        inimigo.limitar_a(this->limites);
-    }
+    this->afastar_inimigos_de_obstaculos();
 }
 
 void Combate::resolver_colisoes()
 {
     for (Projetil &projetil : this->projeteis)
     {
+        if (!projetil.get_ativo())
+        {
+            continue;
+        }
+
+        for (Obstaculo &obstaculo : this->obstaculos)
+        {
+            if (obstaculo.get_intacto() && projetil.colidir_obstaculo(obstaculo.get_retangulo()))
+            {
+                obstaculo.levar_dano(projetil.get_dano());
+            }
+        }
         if (!projetil.get_ativo())
         {
             continue;
@@ -243,6 +328,10 @@ void Combate::limpar_inativos()
 
 void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mostrarHitboxes) const
 {
+    for (const Obstaculo &obstaculo : this->obstaculos)
+    {
+        obstaculo.desenhar(renderizador, camera, mostrarHitboxes);
+    }
     for (const auto &tiro : tirosInimigos)
     {
         const auto pos = camera.para_tela(tiro.x, tiro.y);
@@ -299,7 +388,11 @@ void Combate::atualizar_hostis(float dt, Jogador &jogador)
         tiro.x += tiro.dx * 230 * dt;
         tiro.y += tiro.dy * 230 * dt;
         const SDL_FRect ret{tiro.x - 4, tiro.y - 4, 8, 8};
-        if (SDL_HasIntersectionF(&ret, &corpo))
+        if (this->tiro_bloqueado(ret))
+        {
+            tiro.ativo = false; // a cobertura absorve sem quebrar
+        }
+        else if (SDL_HasIntersectionF(&ret, &corpo))
         {
             jogador.receber_dano(tiro.dano);
             tiro.ativo = false;

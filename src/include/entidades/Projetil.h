@@ -32,6 +32,8 @@ public:
     void atualizar(float dt);
     void atualizar(float dt, const SDL_FRect &limites, SDL_FPoint alvo);
     bool atingir(std::size_t indice);
+    // Trata o contato com um obstaculo; devolve true quando ele deve levar dano.
+    bool colidir_obstaculo(const SDL_FRect &area);
 
     bool get_ativo() const;
     void desativar();

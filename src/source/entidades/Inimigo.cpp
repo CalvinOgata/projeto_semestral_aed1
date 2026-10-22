@@ -185,6 +185,12 @@ void Inimigo::limitar_a(const SDL_FRect &area)
     this->y = std::clamp(this->y, area.y, std::max(area.y, area.y + area.h - this->get_altura()));
 }
 
+void Inimigo::deslocar(float dx, float dy)
+{
+    this->x += dx;
+    this->y += dy;
+}
+
 bool Inimigo::preparar_tiro(float dt)
 {
     if (!vivo) return false;

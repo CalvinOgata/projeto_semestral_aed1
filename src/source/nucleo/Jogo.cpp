@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <vector>
 
 #include "config/Config.h"
 #include "graficos/Desenho.h"
@@ -11,6 +12,34 @@
 
 namespace
 {
+static_assert(static_cast<int>(TipoArma::BOOMERANG) + 1 == QUANTIDADE_TIPOS_ARMA,
+              "O save precisa conhecer todos os tipos de arma");
+static_assert(MAX_ARMAS == CAPACIDADE_INVENTARIO, "O save precisa caber no inventario");
+
+// Converte o inventario para a forma neutra do save, preservando a ordem FIFO.
+std::vector<ArmaSalva> para_save(const FilaArmas &armas)
+{
+    std::vector<ArmaSalva> salvas;
+    for (int i = 0; i < armas.get_quantidade(); ++i)
+    {
+        const Armas *arma = armas.consultar(static_cast<std::size_t>(i));
+        salvas.push_back({static_cast<int>(arma->get_tipo()), arma->get_municao()});
+    }
+    return salvas;
+}
+
+FilaArmas do_save(const std::vector<ArmaSalva> &salvas)
+{
+    FilaArmas armas;
+    for (const auto &salva : salvas)
+    {
+        Armas arma(static_cast<TipoArma>(salva.tipo));
+        arma.set_municao(salva.municao);
+        armas.inserir(arma);
+    }
+    return armas;
+}
+
 // Trava o passo de tempo: sem isso, arrastar a janela acumula um dt enorme
 // e o jogador atravessaria meio mapa de uma vez.
 constexpr float DT_MAXIMO = 0.05f;
@@ -444,10 +473,10 @@ int Jogo::get_inimigosVivos() const
 
 void Jogo::abrir_inicio()
 {
-    int concluidas = 0;
+    ProgressoSalvo salvo;
     std::string detalhe;
-    const bool valido = this->progresso.carregar(concluidas, detalhe);
-    this->menu.configurar_inicial(valido && concluidas < Campanha::TOTAL_FASES, detalhe);
+    const bool valido = this->progresso.carregar(salvo, detalhe);
+    this->menu.configurar_inicial(valido && salvo.fasesConcluidas < Campanha::TOTAL_FASES, detalhe);
     this->estado = EstadoJogo::INICIAL;
     this->atirando = false;
     if (!this->savePendente)
@@ -458,17 +487,18 @@ void Jogo::abrir_inicio()
 
 void Jogo::iniciar_partida(bool continuar)
 {
-    int concluidas = 0;
+    ProgressoSalvo salvo;
     if (continuar)
     {
         std::string detalhe;
-        if (!this->progresso.carregar(concluidas, detalhe) || concluidas == Campanha::TOTAL_FASES)
+        if (!this->progresso.carregar(salvo, detalhe) ||
+            salvo.fasesConcluidas == Campanha::TOTAL_FASES)
         {
             this->abrir_inicio();
             return;
         }
     }
-    this->campanha.iniciar(concluidas, this->jogador);
+    this->campanha.iniciar(salvo.fasesConcluidas, this->jogador, do_save(salvo.armas));
     this->savePendente = false;
     this->mensagemSave.clear();
     if (!continuar)
@@ -481,8 +511,10 @@ void Jogo::iniciar_partida(bool continuar)
 
 void Jogo::salvar_progresso()
 {
-    this->savePendente = !this->progresso.salvar(this->campanha.get_fasesConcluidas(),
-                                               this->mensagemSave);
+    // O checkpoint guarda as armas com que a proxima fase comeca.
+    const ProgressoSalvo salvo = {this->campanha.get_fasesConcluidas(),
+                                  para_save(this->campanha.get_armasInicioFase())};
+    this->savePendente = !this->progresso.salvar(salvo, this->mensagemSave);
 }
 
 void Jogo::preparar_entrada()

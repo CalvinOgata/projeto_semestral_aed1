@@ -2,14 +2,14 @@
 
 #include <stdexcept>
 
-void Campanha::iniciar(int concluidas, Jogador &jogador)
+void Campanha::iniciar(int concluidas, Jogador &jogador, const FilaArmas &armas)
 {
     if (concluidas < 0 || concluidas > TOTAL_FASES)
     {
         throw std::invalid_argument("Progresso de campanha invalido");
     }
     this->fasesConcluidas = concluidas;
-    this->armasInicioFase = Jogador().get_armas();
+    this->armasInicioFase = armas.vazio() ? Jogador().get_armas() : armas;
     if (!this->concluida())
     {
         this->fase = Fase(concluidas + 1);
@@ -48,6 +48,11 @@ void Campanha::reiniciar_fase(Jogador &jogador)
 bool Campanha::concluida() const
 {
     return this->fasesConcluidas == TOTAL_FASES;
+}
+
+const FilaArmas &Campanha::get_armasInicioFase() const
+{
+    return this->armasInicioFase;
 }
 
 int Campanha::get_fasesConcluidas() const

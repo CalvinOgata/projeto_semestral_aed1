@@ -205,3 +205,43 @@ bool Projetil::atingir(std::size_t indice)
     }
     return true;
 }
+
+bool Projetil::colidir_obstaculo(const SDL_FRect &area)
+{
+    const SDL_FRect corpo = this->get_retangulo();
+    if (!ativo || !SDL_HasIntersectionF(&corpo, &area))
+    {
+        return false;
+    }
+    if (tipo == TipoArma::BOOMERANG)
+    {
+        // Bate e volta, como na parede; na volta atravessa sem novo dano.
+        if (retornando)
+        {
+            return false;
+        }
+        retornando = true;
+        alcanceRestante = 3000;
+        atingidos.clear();
+        return true;
+    }
+    if (tipo == TipoArma::RICOCHETE && ricochetes > 0)
+    {
+        const float sobreposicaoX = std::min(corpo.x + corpo.w - area.x, area.x + area.w - corpo.x);
+        const float sobreposicaoY = std::min(corpo.y + corpo.h - area.y, area.y + area.h - corpo.y);
+        if (sobreposicaoX < sobreposicaoY)
+        {
+            velX = -velX;
+            x += x < area.x + area.w / 2 ? -sobreposicaoX : sobreposicaoX;
+        }
+        else
+        {
+            velY = -velY;
+            y += y < area.y + area.h / 2 ? -sobreposicaoY : sobreposicaoY;
+        }
+        --ricochetes;
+        return true;
+    }
+    desativar();
+    return true;
+}

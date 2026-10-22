@@ -16,11 +16,13 @@ private:
     FilaArmas armasInicioFase;
 
 public:
-    void iniciar(int concluidas, Jogador &jogador);
+    // Inventario vazio inicia com as armas padrao do jogador.
+    void iniciar(int concluidas, Jogador &jogador, const FilaArmas &armas = FilaArmas());
     bool atualizar_transicao(Jogador &jogador);
     void reiniciar_fase(Jogador &jogador);
     bool concluida() const;
     int get_fasesConcluidas() const;
+    const FilaArmas &get_armasInicioFase() const;
     Fase &get_faseAtual();
     const Fase &get_faseAtual() const;
 };

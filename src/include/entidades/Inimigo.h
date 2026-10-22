@@ -35,6 +35,7 @@ public:
     bool soltar_coracao();
     int get_danoTiro() const;
     void limitar_a(const SDL_FRect &area);
+    void deslocar(float dx, float dy);
 
     void perseguir(float alvoX, float alvoY, float dt);
     void afastar_de(Inimigo &outro);

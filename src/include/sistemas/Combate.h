@@ -3,6 +3,7 @@
 
 #include "entidades/Inimigo.h"
 #include "entidades/Jogador.h"
+#include "entidades/Obstaculo.h"
 #include "entidades/Projetil.h"
 #include "estruturas/ListaSequencial.h"
 
@@ -14,6 +15,8 @@ private:
     SDL_FRect limites = {0, 0, 800, 400};
     ListaSequencial<Projetil> projeteis;
     ListaSequencial<Inimigo> inimigos;
+    // Quebrados continuam na lista, inativos, ate a sala ser recriada.
+    ListaSequencial<Obstaculo> obstaculos;
     struct TiroInimigo { float x, y, dx, dy; int dano; bool ativo = true; };
     struct Coracao { float x, y, tempo = 10; };
     ListaSequencial<TiroInimigo> tirosInimigos;
@@ -32,6 +35,9 @@ private:
     void atualizar_projeteis(float dt, const Jogador &jogador);
     void atualizar_inimigos(float dt, const Jogador &jogador);
     void resolver_colisoes();
+    // No posicionamento inicial usa o quadro visual, para nenhum sprite nascer sobre a peca.
+    void afastar_inimigos_de_obstaculos(bool pelaArte = false);
+    bool tiro_bloqueado(const SDL_FRect &area) const;
     void limpar_inativos();
 
 public:
@@ -39,6 +45,9 @@ public:
     void reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos = 0,
                    bool boss = false, int tema = 1);
     void limpar_projeteis();
+    // Chamado apos reiniciar; empurra inimigos que nasceram sobre a peca.
+    void adicionar_obstaculo(const Obstaculo &obstaculo);
+    void afastar_jogador(Jogador &jogador) const;
     void envelhecer_coracoes(float dt);
     void disparar(Jogador &jogador);
     void atualizar(float dt, Jogador &jogador);

@@ -126,7 +126,9 @@ A chegada preserva a posicao no mundo ao mudar as coordenadas locais da sala. `C
 o checkpoint. Reiniciar no menu de pausa ou morte recriam apenas a fase atual e o jogador.
 `Campanha` guarda uma copia de `FilaArmas` do inicio da fase: avancar copia o
 inventario atual para a proxima fase, e reiniciar devolve essa copia ao jogador.
-O checkpoint em disco nao guarda armas.
+O checkpoint em disco guarda essa copia; `Jogo` converte `FilaArmas` para
+`ArmaSalva` (indice de `TipoArma` e municao), mantendo a persistencia sem
+dependencia das entidades.
 A tecla R nao reinicia mais. O reinicio pelo menu retoma a partida.
 
 Para configurar a fase inicial, edite os registros no construtor de `Fase`, em
@@ -163,8 +165,9 @@ da planta ramificada daquele estagio (7, 9 ou 11 salas). Nao e preciso armazenar
 ele nao le arquivos nem altera diretamente o progresso.
 
 `ArquivoProgresso`, em `persistencia/`, recebe um caminho e trata somente leitura,
-validacao e escrita. O esquema JSON v1 tem `versao` e `fases_concluidas` (0 a 3).
-O leitor e especifico para esse esquema, sem biblioteca externa; um esquema mais
+validacao e escrita. O esquema JSON v2 tem `versao`, `fases_concluidas` (0 a 3) e `armas`
+(ate tres objetos `{tipo, municao}`); o v1, sem `armas`, ainda e aceito.
+O leitor e especifico para esses esquemas, sem biblioteca externa; um esquema mais
 complexo deve motivar a revisao dessa escolha. O arquivo temporario e renomeado
 somente apos fechar a escrita com sucesso, preservando o save anterior em erros.
 Isso protege contra escritas incompletas, mas nao promete durabilidade contra
@@ -206,6 +209,16 @@ preservando esses indices. Apenas projeteis inativos e rastros vencidos sao remo
 `Sala` possui `ListaSequencial<ArmaChao>` com armas coletaveis e descartadas.
 A busca da arma mais proxima custa O(n); as coletas ficam marcadas para preservar
 o estado local. Revisitar nao recria itens. Todas as fases usam baus aleatorios. Nenhum TAD conhece essas regras.
+
+## Obstaculos de cobertura
+
+`Obstaculo` (em `entidades/`) guarda tipo, retangulo e vida, calcula o menor
+deslocamento para separar um corpo e desenha caixote ou barreira de firewall.
+Cada `Combate` possui uma `ListaSequencial<Obstaculo>`; como os inimigos, pecas
+quebradas ficam inativas na lista ate a fase ser recriada. `Combate` aplica as
+regras: tiros do jogador causam dano, tiros inimigos sao absorvidos, e corpos sao
+empurrados pelo eixo de menor penetracao (busca linear, O(n) por entidade).
+`Sala::preparar` escolhe um dos modelos autorais de cobertura indicados na planta.
 
 ## Inimigos, recompensas e defesa
 

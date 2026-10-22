@@ -119,6 +119,13 @@ com o titulo PAUSADO e as opcoes Continuar, Reiniciar, Menu inicial e Sair.
 Reiniciar recomeca a fase atual e o jogador, preservando fases concluidas.
 O reinicio manual fica exclusivamente nesse menu; a tecla R nao executa nenhuma acao.
 
+As salas de combate, baus e boss possuem cobertura: caixotes (pacotes de dados,
+5 de vida) e barreiras de firewall (12 de vida). Eles bloqueiam o movimento de
+todos e param os tiros inimigos sem sofrer dano; somente os ataques do jogador os
+quebram, e rachaduras aparecem na metade da vida. O ricochete quica neles, o
+bumerangue volta ao acerta-los, e laser/espada param na primeira peca do caminho.
+Pecas quebradas continuam quebradas ao revisitar a sala.
+
 As configuracoes das salas sao fixas. Dano de contato e geracao procedural ainda nao estao implementados.
 
 ## Tela inicial e salvamento
@@ -137,14 +144,24 @@ Movimento, tiros e temporizadores ficam congelados durante a consulta.
 O jogo salva automaticamente ao iniciar uma nova campanha e ao concluir cada
 fase. O arquivo `saves/progresso.json` fica ao lado do executavel, mesmo quando
 o jogo e iniciado de outro diretorio. Ele nao e incluido no Git e `make clean`
-nao o remove. Exemplo apos concluir duas fases:
+nao o remove. Exemplo apos concluir uma fase com laser, espada e pistola:
 
 ```json
 {
-  "versao": 1,
-  "fases_concluidas": 2
+  "versao": 2,
+  "fases_concluidas": 1,
+  "armas": [
+    {"tipo": 2, "municao": 33},
+    {"tipo": 5, "municao": 40},
+    {"tipo": 0, "municao": 0}
+  ]
 }
 ```
+
+`armas` guarda, na ordem da fila (a primeira e a equipada), as armas com que a
+proxima fase comeca. `tipo` e o indice de `TipoArma`: 0 pistola, 1 shotgun,
+2 laser, 3 dupla, 4 ricochete, 5 espada, 6 arco, 7 boomerang. Saves antigos
+(versao 1, sem `armas`) continuam validos e comecam com a pistola.
 
 O salvamento e por fase: sair no meio da fase faz `Continuar` voltar ao inicio
 dela. Salas, tiros e posicoes em andamento nao sao serializados. Cada fase comeca
@@ -247,7 +264,7 @@ descartes persistem ao revisitar a sala.
 As armas e a municao acompanham o jogador ao avancar de fase; vida, escudo e
 estamina recomecam cheios. Reiniciar ou morrer devolve as armas com que a fase
 comecou. Se o inventario chegar vazio, a pistola inicial e entregue.
-Carregar o save comeca com a pistola, pois o checkpoint nao guarda armas. As armas no chao usam os mesmos icones do inventario,
+`Continuar` restaura as armas e a municao salvas no checkpoint. As armas no chao usam os mesmos icones do inventario,
 em quadros de 36x36 pixels com o nome abaixo, incluindo armas dos baus e descartadas.
 Na mao do personagem, a arma equipada usa esse mesmo icone e acompanha a mira.
 Trocar ou soltar a arma atualiza o desenho; sem armas, a mao fica sem icone.

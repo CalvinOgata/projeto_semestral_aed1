@@ -29,6 +29,7 @@ struct ConfiguracaoSala
     bool mapaRamificado = false;
     bool portalSaida = false;
     int tema = 1; // numero da fase, usado nos sprites tematicos
+    int cobertura = 0; // modelo de caixotes/barreiras; 0 deixa a sala livre
 };
 
 enum class EstadoSala

@@ -10,6 +10,53 @@
 #include "graficos/IconeArma.h"
 #include "graficos/Ambiente.h"
 
+namespace
+{
+// Pecas autorais em uma sala de referencia de 936x516. Evitam a cruz central,
+// que liga as portas e recebe portal e baus, e ficam longe das paredes.
+struct PecaCobertura
+{
+    TipoObstaculo tipo;
+    float x, y;
+    bool vertical;
+};
+
+constexpr auto C = TipoObstaculo::CAIXOTE;
+constexpr auto B = TipoObstaculo::BARREIRA;
+const PecaCobertura COBERTURA_QUADRANTES[] = {
+    {C, 234, 129, false}, {C, 274, 129, false}, {C, 702, 387, false}, {C, 662, 387, false},
+    {B, 702, 129, false}, {B, 234, 387, false},
+};
+const PecaCobertura COBERTURA_TRINCHEIRA[] = {
+    {B, 300, 120, true}, {B, 300, 396, true}, {B, 640, 120, true}, {B, 640, 396, true},
+    {C, 170, 110, false}, {C, 770, 406, false},
+};
+// Na sala do boss o lado direito fica livre para ele nascer e se mover.
+const PecaCobertura COBERTURA_FORTALEZA[] = {
+    {B, 234, 150, false}, {B, 234, 366, false}, {B, 380, 130, true}, {B, 380, 386, true},
+    {C, 840, 90, false}, {C, 840, 426, false},
+};
+const PecaCobertura COBERTURA_LABIRINTO[] = {
+    {C, 190, 110, false}, {C, 230, 110, false}, {C, 190, 150, false},
+    {C, 746, 406, false}, {C, 706, 406, false}, {C, 746, 366, false},
+    {B, 600, 124, true}, {B, 336, 392, true}, {C, 380, 130, false}, {C, 556, 386, false},
+};
+const PecaCobertura COBERTURA_DEPOSITO[] = {
+    {C, 110, 90, false}, {C, 150, 90, false}, {C, 826, 90, false},
+    {C, 110, 426, false}, {C, 826, 426, false}, {C, 786, 426, false},
+};
+
+template <std::size_t N>
+void adicionar_pecas(Combate &combate, const PecaCobertura (&pecas)[N], float escalaX, float escalaY)
+{
+    for (const auto &peca : pecas)
+    {
+        combate.adicionar_obstaculo(Obstaculo(peca.tipo, peca.x * escalaX, peca.y * escalaY,
+                                              peca.vertical));
+    }
+}
+}
+
 Sala::Sala(const ConfiguracaoSala &configuracao) : configuracao(configuracao)
 {
     // Mantem espaco para entrada, portas e entidades sem clamp com limites invertidos.
@@ -27,6 +74,16 @@ void Sala::preparar()
         this->combate.reiniciar(this->get_limites(), this->configuracao.quantidadeInimigos,
                                this->configuracao.dificuldade, configuracao.brutos, configuracao.boss,
                                configuracao.tema);
+        const float escalaX = configuracao.largura / 936, escalaY = configuracao.altura / 516;
+        switch (configuracao.cobertura)
+        {
+        case 1: adicionar_pecas(combate, COBERTURA_QUADRANTES, escalaX, escalaY); break;
+        case 2: adicionar_pecas(combate, COBERTURA_TRINCHEIRA, escalaX, escalaY); break;
+        case 3: adicionar_pecas(combate, COBERTURA_FORTALEZA, escalaX, escalaY); break;
+        case 4: adicionar_pecas(combate, COBERTURA_LABIRINTO, escalaX, escalaY); break;
+        case 5: adicionar_pecas(combate, COBERTURA_DEPOSITO, escalaX, escalaY); break;
+        default: break;
+        }
         const TipoArma tipos[] = {TipoArma::SHOTGUN, TipoArma::LASER, TipoArma::DUPLA,
             TipoArma::RICOCHETE, TipoArma::ESPADA, TipoArma::ARCO, TipoArma::BOOMERANG};
         for (int i = 0; configuracao.armasIniciais && i < 7; ++i)
@@ -140,6 +197,7 @@ void Sala::limitar_jogador(Jogador &jogador) const
         }
     }
     jogador.set_posicao(melhorX, melhorY);
+    this->combate.afastar_jogador(jogador);
 }
 
 SDL_FRect Sala::get_limites() const

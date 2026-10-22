@@ -19,45 +19,47 @@ struct PlantaSala
     int virus, brutos, baus;
     bool boss;
     std::array<int, 4> vizinhos;
+    // 1 quadrantes, 2 trincheira, 3 fortaleza (boss), 4 labirinto, 5 deposito (baus).
+    int cobertura;
 };
 
 // Fase 1, dos compiladores: lobby, combate inicial, tesouro, dois ramos e boss ao norte.
 const PlantaSala PLANTA_FASE_1[] = {
-    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}},
-    {"A - PRE-PROCESSADOR", 1, 0, 3, 0, 0, false, {{0, 3, 4, 2}}},
-    {"B - CACHE DE BUILD", 1, 1, 0, 0, 1, false, {{-1, -1, 1, -1}}},
-    {"C - ANALISE LEXICA", 2, 0, 4, 2, 0, false, {{1, -1, 5, -1}}},
-    {"D - PARSER", 1, -1, 4, 2, 0, false, {{-1, 5, -1, 1}}},
-    {"E - LINKER", 2, -1, 0, 0, 2, false, {{4, -1, 6, 3}}},
-    {"F - COMPILADOR FECHADO", 2, -2, 0, 0, 0, true, {{-1, -1, -1, 5}}},
+    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}, 0},
+    {"A - PRE-PROCESSADOR", 1, 0, 3, 0, 0, false, {{0, 3, 4, 2}}, 1},
+    {"B - CACHE DE BUILD", 1, 1, 0, 0, 1, false, {{-1, -1, 1, -1}}, 5},
+    {"C - ANALISE LEXICA", 2, 0, 4, 2, 0, false, {{1, -1, 5, -1}}, 2},
+    {"D - PARSER", 1, -1, 4, 2, 0, false, {{-1, 5, -1, 1}}, 4},
+    {"E - LINKER", 2, -1, 0, 0, 2, false, {{4, -1, 6, 3}}, 5},
+    {"F - COMPILADOR FECHADO", 2, -2, 0, 0, 0, true, {{-1, -1, -1, 5}}, 3},
 };
 
 // Fase 2, da rede: corredor principal para leste com desvios ao norte e ao sul.
 const PlantaSala PLANTA_FASE_2[] = {
-    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}},
-    {"A - ROTEADOR", 1, 0, 4, 0, 0, false, {{0, 4, 2, 3}}},
-    {"B - CACHE DNS", 1, -1, 0, 0, 1, false, {{-1, -1, -1, 1}}},
-    {"C - CAIXA DE SPAM", 1, 1, 5, 1, 0, false, {{-1, 5, 1, -1}}},
-    {"D - PROXY", 2, 0, 4, 2, 0, false, {{1, 6, -1, -1}}},
-    {"E - BOTNET", 2, 1, 6, 2, 0, false, {{3, 7, -1, -1}}},
-    {"F - PING 999", 3, 0, 5, 3, 0, false, {{4, -1, 8, 7}}},
-    {"G - LOOT DROP", 3, 1, 0, 0, 2, false, {{5, -1, 6, -1}}},
-    {"H - REDE ANTISSOCIAL", 3, -1, 0, 0, 0, true, {{-1, -1, -1, 6}}},
+    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}, 0},
+    {"A - ROTEADOR", 1, 0, 4, 0, 0, false, {{0, 4, 2, 3}}, 1},
+    {"B - CACHE DNS", 1, -1, 0, 0, 1, false, {{-1, -1, -1, 1}}, 5},
+    {"C - CAIXA DE SPAM", 1, 1, 5, 1, 0, false, {{-1, 5, 1, -1}}, 2},
+    {"D - PROXY", 2, 0, 4, 2, 0, false, {{1, 6, -1, -1}}, 4},
+    {"E - BOTNET", 2, 1, 6, 2, 0, false, {{3, 7, -1, -1}}, 2},
+    {"F - PING 999", 3, 0, 5, 3, 0, false, {{4, -1, 8, 7}}, 4},
+    {"G - LOOT DROP", 3, 1, 0, 0, 2, false, {{5, -1, 6, -1}}, 5},
+    {"H - REDE ANTISSOCIAL", 3, -1, 0, 0, 0, true, {{-1, -1, -1, 6}}, 3},
 };
 
 // Fase 3, do kernel: subida vertical a partir do lobby, com alas laterais e boss no topo.
 const PlantaSala PLANTA_FASE_3[] = {
-    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, -1, 1, -1}}},
-    {"A - KERNEL PANIC", 0, -1, 5, 1, 0, false, {{2, 3, -1, 0}}},
-    {"B - ROOTKIT", -1, -1, 6, 2, 0, false, {{-1, 1, 4, -1}}},
-    {"C - RANSOMWARE", 1, -1, 6, 2, 0, false, {{1, 6, 5, -1}}},
-    {"D - SPYWARE", -1, -2, 7, 2, 0, false, {{-1, 7, -1, 2}}},
-    {"E - WORM", 1, -2, 7, 2, 0, false, {{7, 8, -1, 3}}},
-    {"F - COFRE DE MEMORIA", 2, -1, 0, 0, 1, false, {{3, -1, -1, -1}}},
-    {"G - DEADLOCK", 0, -2, 6, 3, 0, false, {{4, 5, 9, -1}}},
-    {"H - SAVE POINT", 2, -2, 0, 0, 2, false, {{5, -1, -1, -1}}},
-    {"I - PROCESSOS ZUMBIS", 0, -3, 6, 4, 0, false, {{-1, -1, 10, 7}}},
-    {"J - TELA AZUL DA MORTE", 0, -4, 2, 0, 0, true, {{-1, -1, -1, 9}}},
+    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, -1, 1, -1}}, 0},
+    {"A - KERNEL PANIC", 0, -1, 5, 1, 0, false, {{2, 3, -1, 0}}, 1},
+    {"B - ROOTKIT", -1, -1, 6, 2, 0, false, {{-1, 1, 4, -1}}, 4},
+    {"C - RANSOMWARE", 1, -1, 6, 2, 0, false, {{1, 6, 5, -1}}, 2},
+    {"D - SPYWARE", -1, -2, 7, 2, 0, false, {{-1, 7, -1, 2}}, 2},
+    {"E - WORM", 1, -2, 7, 2, 0, false, {{7, 8, -1, 3}}, 4},
+    {"F - COFRE DE MEMORIA", 2, -1, 0, 0, 1, false, {{3, -1, -1, -1}}, 5},
+    {"G - DEADLOCK", 0, -2, 6, 3, 0, false, {{4, 5, 9, -1}}, 1},
+    {"H - SAVE POINT", 2, -2, 0, 0, 2, false, {{5, -1, -1, -1}}, 5},
+    {"I - PROCESSOS ZUMBIS", 0, -3, 6, 4, 0, false, {{-1, -1, 10, 7}}, 4},
+    {"J - TELA AZUL DA MORTE", 0, -4, 2, 0, 0, true, {{-1, -1, -1, 9}}, 3},
 };
 
 // Cada fase mistura um tema de computacao com uma referencia de jogos.
@@ -97,6 +99,7 @@ Fase::Fase(int numero) : numero(numero)
         config.vizinhos = sala.vizinhos;
         config.mapaRamificado = true;
         config.tema = numero;
+        config.cobertura = sala.cobertura;
         salas.inserir(Sala(config));
         origens.inserir({sala.coluna * (largura + Sala::COMPRIMENTO_CORREDOR),
                         sala.linha * (altura + Sala::COMPRIMENTO_CORREDOR)});
