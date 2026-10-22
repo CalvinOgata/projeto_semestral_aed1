@@ -218,7 +218,8 @@ Cada `Combate` possui uma `ListaSequencial<Obstaculo>`; como os inimigos, pecas
 quebradas ficam inativas na lista ate a fase ser recriada. `Combate` aplica as
 regras: tiros do jogador causam dano, tiros inimigos sao absorvidos, e corpos sao
 empurrados pelo eixo de menor penetracao (busca linear, O(n) por entidade).
-`Sala::preparar` escolhe um dos modelos autorais de cobertura indicados na planta.
+`Sala::preparar` escolhe um dos modelos autorais de cobertura indicados na planta e
+expande cada barreira em blocos independentes de 24x24, que quebram um a um.
 
 ## Inimigos, recompensas e defesa
 

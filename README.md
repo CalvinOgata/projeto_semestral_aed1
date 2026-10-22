@@ -120,10 +120,11 @@ Reiniciar recomeca a fase atual e o jogador, preservando fases concluidas.
 O reinicio manual fica exclusivamente nesse menu; a tecla R nao executa nenhuma acao.
 
 As salas de combate, baus e boss possuem cobertura: caixotes (pacotes de dados,
-5 de vida) e barreiras de firewall (12 de vida). Eles bloqueiam o movimento de
+5 de vida) e barreiras de firewall formadas por fileiras de cinco bloquinhos 24x24
+(3 de vida cada). Cada acerto atinge um so bloquinho, abrindo frestas na barreira. Eles bloqueiam o movimento de
 todos e param os tiros inimigos sem sofrer dano; somente os ataques do jogador os
 quebram, e rachaduras aparecem na metade da vida. O ricochete quica neles, o
-bumerangue volta ao acerta-los, e laser/espada param na primeira peca do caminho.
+bumerangue volta ao acerta-los, e laser/espada param na primeira peca do caminho; um golpe de espada atinge so um bloco.
 Pecas quebradas continuam quebradas ao revisitar a sala.
 
 As configuracoes das salas sao fixas. Dano de contato e geracao procedural ainda nao estao implementados.

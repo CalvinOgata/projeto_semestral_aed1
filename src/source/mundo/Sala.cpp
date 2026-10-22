@@ -51,8 +51,19 @@ void adicionar_pecas(Combate &combate, const PecaCobertura (&pecas)[N], float es
 {
     for (const auto &peca : pecas)
     {
-        combate.adicionar_obstaculo(Obstaculo(peca.tipo, peca.x * escalaX, peca.y * escalaY,
-                                              peca.vertical));
+        const float x = peca.x * escalaX, y = peca.y * escalaY;
+        if (peca.tipo == TipoObstaculo::CAIXOTE)
+        {
+            combate.adicionar_obstaculo(Obstaculo(peca.tipo, x, y));
+            continue;
+        }
+        // A barreira vira uma fileira de bloquinhos centrada no ponto autoral.
+        for (int i = 0; i < BLOCOS_POR_BARREIRA; ++i)
+        {
+            const float desvio = (i - (BLOCOS_POR_BARREIRA - 1) / 2.0f) * LADO_BLOCO_BARREIRA;
+            combate.adicionar_obstaculo(Obstaculo(peca.tipo, x + (peca.vertical ? 0 : desvio),
+                                                  y + (peca.vertical ? desvio : 0)));
+        }
     }
 }
 }

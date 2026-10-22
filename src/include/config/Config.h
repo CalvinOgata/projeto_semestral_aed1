@@ -34,7 +34,9 @@ constexpr float VELOCIDADE_INIMIGO = 115.0f;
 constexpr int VIDA_INIMIGO = 2;
 // Obstaculos so quebram com ataques do jogador; tiros inimigos apenas param neles.
 constexpr int VIDA_CAIXOTE = 5;
-constexpr int VIDA_BARREIRA = 12;
+constexpr int VIDA_BLOCO_BARREIRA = 3; // cada bloquinho da barreira quebra sozinho
+constexpr float LADO_BLOCO_BARREIRA = 24;
+constexpr int BLOCOS_POR_BARREIRA = 5;
 
 // Paleta
 constexpr SDL_Color COR_MUNDO = {104, 104, 110, 255};

@@ -169,7 +169,9 @@ void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
     // Nove segmentos formam o leque de 90 graus da espada.
     const int raios = espada ? 9 : 1;
     std::vector<bool> atingidos(inimigos.get_quantidade(), false);
-    std::vector<bool> pecasAtingidas(obstaculos.get_quantidade(), false);
+    // Cada ataque danifica so a peca mais proxima entre os raios que a tocam.
+    int pecaAtingida = -1;
+    float distanciaPeca = 0;
     for (int i = 0; i < raios; ++i)
     {
         const float a = angulo + (espada ? (i - 4) * static_cast<float>(M_PI) / 16 : 0);
@@ -177,7 +179,7 @@ void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
         float x2 = x1 + std::cos(a) * (espada ? 80 : 1600);
         float y2 = y1 + std::sin(a) * (espada ? 80 : 1600);
         SDL_IntersectFRectAndLine(&limites, &x1, &y1, &x2, &y2);
-        // O primeiro obstaculo no caminho leva o dano e interrompe o raio.
+        // O primeiro obstaculo no caminho interrompe o raio.
         int pecaMaisProxima = -1;
         float menorDistancia = 0;
         for (std::size_t j = 0; j < obstaculos.get_quantidade(); ++j)
@@ -201,10 +203,10 @@ void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
                 y2 = ay;
             }
         }
-        if (pecaMaisProxima >= 0 && !pecasAtingidas[pecaMaisProxima])
+        if (pecaMaisProxima >= 0 && (pecaAtingida < 0 || menorDistancia < distanciaPeca))
         {
-            obstaculos.obter(pecaMaisProxima).levar_dano(arma.get_dano());
-            pecasAtingidas[pecaMaisProxima] = true;
+            pecaAtingida = pecaMaisProxima;
+            distanciaPeca = menorDistancia;
         }
         rastros.inserir({{x1, y1}, {x2, y2}, 0.12f, arma.get_tipo()});
         for (std::size_t j = 0; j < inimigos.get_quantidade(); ++j)
@@ -222,6 +224,10 @@ void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
                 atingidos[j] = true;
             }
         }
+    }
+    if (pecaAtingida >= 0)
+    {
+        obstaculos.obter(static_cast<std::size_t>(pecaAtingida)).levar_dano(arma.get_dano());
     }
 }
 
@@ -261,11 +267,13 @@ void Combate::resolver_colisoes()
             continue;
         }
 
+        // Um contato atinge so um bloco, mesmo sobre a emenda entre dois.
         for (Obstaculo &obstaculo : this->obstaculos)
         {
             if (obstaculo.get_intacto() && projetil.colidir_obstaculo(obstaculo.get_retangulo()))
             {
                 obstaculo.levar_dano(projetil.get_dano());
+                break;
             }
         }
         if (!projetil.get_ativo())

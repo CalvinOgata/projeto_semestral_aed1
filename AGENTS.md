@@ -55,14 +55,17 @@ As updated on 2026-10-22:
 
 - User request (2026-10-22): crates/barriers inside rooms for cover; only player attacks
   break them. Interpreted as: enemy shots are absorbed without damage.
-- `entidades/Obstaculo`: CAIXOTE 40x40 (VIDA_CAIXOTE 5) and BARREIRA "firewall" 120x28,
-  optionally vertical (VIDA_BARREIRA 12). Procedural SDL drawing; cracks at half health.
+- `entidades/Obstaculo`: CAIXOTE 40x40 (VIDA_CAIXOTE 5) and BARREIRA, a 24x24 firewall
+  block (VIDA_BLOCO_BARREIRA 3). Authored barriers expand in Sala into a horizontal or
+  vertical row of BLOCOS_POR_BARREIRA (5) independent blocks, so hits break one block at
+  a time (user request). Procedural SDL drawing; cracks at half health.
 - Each room's `Combate` owns `ListaSequencial<Obstaculo>`; broken pieces stay inactive in
   the list and persist on revisits until the phase is recreated.
 - Pieces block player and enemy bodies (minimum-axis push-out; initial placement pushes
   enemies by visual frame). Player projectiles damage and stop; ricochet bounces (uses a
-  bounce); boomerang turns back on its outbound leg and passes through returning. Laser
-  and sword rays stop at and damage the first piece (once per attack).
+  bounce); boomerang turns back on its outbound leg and passes through returning. A projectile
+  contact damages only one piece, even on a seam. Laser and sword rays stop at the first
+  piece; each attack damages only the nearest piece touched by any of its rays.
 - Authored patterns in Sala.cpp (`cobertura` in PlantaSala): 1 quadrants, 2 trench,
   3 fortress (boss rooms; right side kept clear for the boss), 4 maze, 5 depot (chest
   rooms, corners only). Lobbies have none. Patterns avoid the central door cross.

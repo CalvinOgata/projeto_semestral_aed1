@@ -4,17 +4,12 @@
 
 #include "config/Config.h"
 
-Obstaculo::Obstaculo(TipoObstaculo tipo, float centroX, float centroY, bool vertical)
-    : tipo(tipo), vida(tipo == TipoObstaculo::CAIXOTE ? VIDA_CAIXOTE : VIDA_BARREIRA),
+Obstaculo::Obstaculo(TipoObstaculo tipo, float centroX, float centroY)
+    : tipo(tipo), vida(tipo == TipoObstaculo::CAIXOTE ? VIDA_CAIXOTE : VIDA_BLOCO_BARREIRA),
       vidaMax(vida)
 {
-    float largura = 40, altura = 40;
-    if (tipo == TipoObstaculo::BARREIRA)
-    {
-        largura = vertical ? 28 : 120;
-        altura = vertical ? 120 : 28;
-    }
-    this->area = {centroX - largura / 2, centroY - altura / 2, largura, altura};
+    const float lado = tipo == TipoObstaculo::CAIXOTE ? 40 : LADO_BLOCO_BARREIRA;
+    this->area = {centroX - lado / 2, centroY - lado / 2, lado, lado};
 }
 
 bool Obstaculo::get_intacto() const
@@ -67,7 +62,7 @@ void Obstaculo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool 
         SDL_RenderFillRectF(renderizador, &ret);
     };
     // Sombra no piso para destacar o volume.
-    bloco(4, tela.h - 2, tela.w, 6, {10, 12, 18, 140});
+    bloco(4, tela.h - 2, tela.w - 4, 6, {10, 12, 18, 140});
     const bool danificado = this->vida * 2 <= this->vidaMax;
     if (this->tipo == TipoObstaculo::CAIXOTE)
     {
@@ -91,34 +86,15 @@ void Obstaculo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool 
     }
     else
     {
-        // Firewall: tijolos de metal com rejunte incandescente.
+        // Bloco de firewall: dois tijolos desencontrados com rejunte incandescente.
         bloco(0, 0, tela.w, tela.h, {36, 18, 22, 255});
-        const bool vertical = tela.h > tela.w;
-        const float tijolo = 18;
-        const int linhas = static_cast<int>((vertical ? tela.w : tela.h) / 9);
-        const float comprimento = vertical ? tela.h : tela.w;
-        for (int linha = 0; linha < linhas; ++linha)
-        {
-            for (float p = (linha % 2) * -tijolo / 2; p < comprimento - 2; p += tijolo)
-            {
-                const float inicio = std::max(2.0f, p + 1), fim = std::min(comprimento - 2, p + tijolo - 1);
-                if (fim <= inicio)
-                {
-                    continue;
-                }
-                const SDL_Color cor = (linha + static_cast<int>(p)) % 3 == 0 ?
-                    SDL_Color{150, 56, 46, 255} : SDL_Color{122, 44, 40, 255};
-                if (vertical)
-                    bloco(2 + linha * 8.0f, inicio, 7, fim - inicio, cor);
-                else
-                    bloco(inicio, 2 + linha * 8.0f, fim - inicio, 7, cor);
-            }
-        }
-        // Faixa de alerta acesa no topo.
-        if (vertical)
-            bloco(tela.w / 2 - 1, 2, 3, tela.h - 4, {255, 150, 60, 200});
-        else
-            bloco(2, tela.h / 2 - 1, tela.w - 4, 3, {255, 150, 60, 200});
+        const float meio = tela.h / 2;
+        bloco(2, 2, tela.w - 4, meio - 3, {150, 56, 46, 255});
+        bloco(2, meio + 1, tela.w * 0.45f - 2, meio - 3, {122, 44, 40, 255});
+        bloco(tela.w * 0.45f + 1, meio + 1, tela.w * 0.55f - 3, meio - 3, {138, 50, 43, 255});
+        bloco(2, 2, tela.w - 4, 2, {186, 84, 62, 255});
+        bloco(1, meio - 1, tela.w - 2, 2, {255, 150, 60, 200});
+        bloco(tela.w * 0.45f - 1, meio, 2, meio - 1, {255, 150, 60, 160});
     }
     if (danificado)
     {
