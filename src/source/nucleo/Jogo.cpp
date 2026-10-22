@@ -348,7 +348,7 @@ void Jogo::desenhar()
     else if (this->estado == EstadoJogo::VITORIA)
     {
         Texto::desenhar_centralizado(this->renderizador, "CAMPANHA CONCLUIDA!", 480, 200, 4, COR_TEXTO);
-        Texto::desenhar_centralizado(this->renderizador, "VOCE COMPLETOU AS 5 FASES", 480, 270, 2, COR_TEXTO);
+        Texto::desenhar_centralizado(this->renderizador, "VOCE COMPLETOU AS " + std::to_string(Campanha::TOTAL_FASES) + " FASES", 480, 270, 2, COR_TEXTO);
         Texto::desenhar_centralizado(this->renderizador, "ENTER: MENU INICIAL", 480, 320, 2, COR_TEXTO);
     }
     else

@@ -35,7 +35,8 @@ O menu tambem responde ao mouse (passar por cima seleciona, clique confirma).
 
 ## Como esta agora
 
-Uma campanha com **cinco fases**. A fase 1 possui sete salas de 936x516:
+Uma campanha com **tres fases** ramificadas, todas com salas de 936x516,
+lobby, salas de bau e boss. A fase 1 possui sete salas:
 
 ```text
                   F (boss)
@@ -55,7 +56,34 @@ Derrote o boss de F e toque no portal central para avancar.
 Ao limpar uma sala, os inimigos das salas adjacentes ja ficam visiveis; eles so
 comecam a agir quando o jogador entra.
 Salas limpas e baus abertos persistem nas revisitas.
-As fases 2–5 mantem tres salas lineares, com dificuldade crescente e um portal central apos limpar a ultima sala.
+A fase 2 (dificuldade 2) possui nove salas:
+
+```text
+          B (1 bau)        H (boss)
+          |                |
+Lobby --- A ----- D ------ F
+          |                |
+          C ----- E ------ G (2 baus)
+```
+
+A tem 4 virus; C, 5 virus e 1 bruta-monte; D, 4 e 2; E, 6 e 2; F, 5 e 3.
+
+A fase 3 (dificuldade 3) possui onze salas, subindo a partir do lobby:
+
+```text
+                  J (boss + 2 virus)
+                  |
+                  I
+                  |
+          D ----- G ----- E ----- H (2 baus)
+          |               |
+          B ----- A ----- C ----- F (1 bau)
+                  |
+                Lobby
+```
+
+A tem 5 virus e 1 bruta-monte; B e C, 6 e 2; D e E, 7 e 2; G, 6 e 3; I, 6 e 4.
+Nas tres fases, o boss da ultima sala libera o portal central de saida.
 
 Baus abrem automaticamente a menos de 64 pixels e soltam duas armas aleatorias,
 incluindo pistola e todas as sete outras armas; repeticoes sao possiveis.
@@ -84,7 +112,7 @@ As configuracoes das salas sao fixas. Dano de contato e geracao procedural ainda
 O minimapa mostra todas as salas e suas conexoes na fase atual, inclusive as nao
 visitadas. A sala atual recebe uma borda amarela e um ponto indica a posicao do
 jogador dentro dela. Verde indica sala concluida, cinza nao visitada e vermelho
-em combate; salas de baus e boss possuem identificacao. Funciona nas cinco fases,
+em combate; salas de baus e boss possuem identificacao. Funciona nas tres fases,
 inclusive pelo menu de pausa. M ou Esc fecham o mapa e retornam ao estado anterior.
 Movimento, tiros e temporizadores ficam congelados durante a consulta.
 
@@ -107,7 +135,7 @@ nao o remove. Exemplo apos concluir duas fases:
 O salvamento e por fase: sair no meio da fase faz `Continuar` voltar ao inicio
 dela. Salas, tiros e posicoes em andamento nao sao serializados. Cada fase comeca
 com vida, estamina e municao iniciais, tanto ao avancar quanto ao carregar.
-Apos a quinta fase, aparece a tela de vitoria e o save registra cinco fases
+Apos a terceira fase, aparece a tela de vitoria e o save registra tres fases
 concluidas. `Continuar` fica desabilitado; escolha `Novo jogo` para recomecar.
 
 Sem save, com arquivo invalido ou com campanha concluida, a tela inicial explica
@@ -143,7 +171,7 @@ mesmos modulos nos dois diretorios (templates ficam apenas nos cabecalhos):
 | `estruturas/` | TADs genericos: fila circular e lista sequencial |
 | `inventario/` | `FilaArmas`: aplica a fila ao inventario |
 | `entidades/` | `Jogador`, `Inimigo`, `Projetil`, `Armas` |
-| `mundo/` | `Sala`: entidades; `Fase`: salas; `Campanha`: cinco fases |
+| `mundo/` | `Sala`: entidades; `Fase`: salas; `Campanha`: tres fases |
 | `persistencia/` | `ArquivoProgresso`: leitura e escrita do checkpoint JSON |
 | `sistemas/` | `Combate`: disparos, inimigos, colisoes e remocao de inativos |
 | `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao |
@@ -200,8 +228,7 @@ terminal. Se o PNG estiver ausente ou invalido, o jogo informa o erro ao iniciar
 `Armas` representa cada arma e `FilaArmas` guarda ate tres: coleta entra no
 fim, a frente fica equipada. Q retira a frente e a reinsere no fim; G retira
 somente a frente e preserva sua municao no chao. F com fila cheia nao coleta
-nem substitui nada. Na fase 1, os baus soltam as armas. Nas fases 2–5, as sete
-novidades aparecem no chao de cada sala, na metade esquerda. Coletas e
+nem substitui nada. Em todas as fases, as armas vem dos baus. Coletas e
 descartes persistem ao revisitar a sala.
 Avancar de fase ou usar Reiniciar na pausa recria armas e inventario. As armas no chao usam os mesmos icones do inventario,
 em quadros de 36x36 pixels com o nome abaixo, incluindo armas dos baus e descartadas.

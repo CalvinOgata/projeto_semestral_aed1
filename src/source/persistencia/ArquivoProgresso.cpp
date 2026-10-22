@@ -107,7 +107,8 @@ bool ArquivoProgresso::carregar(int &fasesConcluidas, std::string &mensagem) con
     }
     fasesConcluidas = campos["fases_concluidas"];
     mensagem = fasesConcluidas == QUANTIDADE_FASES ? "CAMPANHA SALVA CONCLUIDA" :
-        "CONTINUAR NA FASE " + std::to_string(fasesConcluidas + 1) + "/5";
+        "CONTINUAR NA FASE " + std::to_string(fasesConcluidas + 1) + "/" +
+        std::to_string(QUANTIDADE_FASES);
     return true;
 }
 

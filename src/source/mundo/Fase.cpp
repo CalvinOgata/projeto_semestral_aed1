@@ -1,11 +1,65 @@
 #include "mundo/Fase.h"
 
-#include <string>
 #include <algorithm>
+#include <array>
+#include <iterator>
+#include <string>
 #include "config/Config.h"
 #include <stdexcept>
 
 #include "config/CampanhaConfig.h"
+
+namespace
+{
+// Planta autoral de uma sala: posicao na grade e conexoes {esquerda, direita, cima, baixo}.
+struct PlantaSala
+{
+    const char *nome;
+    int coluna, linha;
+    int virus, brutos, baus;
+    bool boss;
+    std::array<int, 4> vizinhos;
+};
+
+// Fase 1: lobby, combate inicial, tesouro, dois ramos e boss ao norte.
+const PlantaSala PLANTA_FASE_1[] = {
+    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}},
+    {"A - VIRUS", 1, 0, 3, 0, 0, false, {{0, 3, 4, 2}}},
+    {"B - TESOURO", 1, 1, 0, 0, 1, false, {{-1, -1, 1, -1}}},
+    {"C - QUARENTENA", 2, 0, 4, 2, 0, false, {{1, -1, 5, -1}}},
+    {"D - FIREWALL", 1, -1, 4, 2, 0, false, {{-1, 5, -1, 1}}},
+    {"E - ARSENAL", 2, -1, 0, 0, 2, false, {{4, -1, 6, 3}}},
+    {"F - BOSS", 2, -2, 0, 0, 0, true, {{-1, -1, -1, 5}}},
+};
+
+// Fase 2: corredor principal para leste com desvios ao norte e ao sul.
+const PlantaSala PLANTA_FASE_2[] = {
+    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}},
+    {"A - ROTEADOR", 1, 0, 4, 0, 0, false, {{0, 4, 2, 3}}},
+    {"B - CACHE", 1, -1, 0, 0, 1, false, {{-1, -1, -1, 1}}},
+    {"C - SPAM", 1, 1, 5, 1, 0, false, {{-1, 5, 1, -1}}},
+    {"D - PROXY", 2, 0, 4, 2, 0, false, {{1, 6, -1, -1}}},
+    {"E - BOTNET", 2, 1, 6, 2, 0, false, {{3, 7, -1, -1}}},
+    {"F - TROJAN", 3, 0, 5, 3, 0, false, {{4, -1, 8, 7}}},
+    {"G - ARSENAL", 3, 1, 0, 0, 2, false, {{5, -1, 6, -1}}},
+    {"H - BOSS", 3, -1, 0, 0, 0, true, {{-1, -1, -1, 6}}},
+};
+
+// Fase 3: subida vertical a partir do lobby, com alas laterais e boss no topo.
+const PlantaSala PLANTA_FASE_3[] = {
+    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, -1, 1, -1}}},
+    {"A - KERNEL PANIC", 0, -1, 5, 1, 0, false, {{2, 3, -1, 0}}},
+    {"B - ROOTKIT", -1, -1, 6, 2, 0, false, {{-1, 1, 4, -1}}},
+    {"C - RANSOMWARE", 1, -1, 6, 2, 0, false, {{1, 6, 5, -1}}},
+    {"D - SPYWARE", -1, -2, 7, 2, 0, false, {{-1, 7, -1, 2}}},
+    {"E - WORM", 1, -2, 7, 2, 0, false, {{7, 8, -1, 3}}},
+    {"F - COFRE", 2, -1, 0, 0, 1, false, {{3, -1, -1, -1}}},
+    {"G - BACKDOOR", 0, -2, 6, 3, 0, false, {{4, 5, 9, -1}}},
+    {"H - ARSENAL", 2, -2, 0, 0, 2, false, {{5, -1, -1, -1}}},
+    {"I - SENTINELA", 0, -3, 6, 4, 0, false, {{-1, -1, 10, 7}}},
+    {"J - BOSS", 0, -4, 2, 0, 0, true, {{-1, -1, -1, 9}}},
+};
+}
 
 Fase::Fase(int numero) : numero(numero)
 {
@@ -13,48 +67,25 @@ Fase::Fase(int numero) : numero(numero)
     {
         throw std::invalid_argument("Numero de fase invalido");
     }
-    if (numero == 1)
+    const PlantaSala *planta = numero == 1 ? PLANTA_FASE_1 :
+                               (numero == 2 ? PLANTA_FASE_2 : PLANTA_FASE_3);
+    const std::size_t quantidade = numero == 1 ? std::size(PLANTA_FASE_1) :
+        (numero == 2 ? std::size(PLANTA_FASE_2) : std::size(PLANTA_FASE_3));
+    const float largura = 936, altura = 516;
+    for (std::size_t i = 0; i < quantidade; ++i)
     {
-        const std::array<std::array<int, 4>, 7> conexoes = {{
-            {{-1, 1, -1, -1}}, {{0, 3, 4, 2}}, {{-1, -1, 1, -1}},
-            {{1, -1, 5, -1}}, {{-1, 5, -1, 1}}, {{4, -1, 6, 3}},
-            {{-1, -1, -1, 5}}
-        }};
-        const char *nomes[] = {"LOBBY", "A - VIRUS", "B - TESOURO", "C - QUARENTENA",
-                               "D - FIREWALL", "E - ARSENAL", "F - BOSS"};
-        for (int i = 0; i < 7; ++i)
-        {
-            ConfiguracaoSala config{nomes[i], 936, 516, 1,
-                i == 1 ? 3 : ((i == 3 || i == 4) ? 4 : 0), {true}};
-            config.brutos = (i == 3 || i == 4) ? 2 : 0;
-            config.boss = i == 6;
-            config.portalSaida = i == 6;
-            config.baus = i == 2 ? 1 : (i == 5 ? 2 : 0);
-            config.armasIniciais = false;
-            config.vizinhos = conexoes[i];
-            config.mapaRamificado = true;
-            salas.inserir(Sala(config));
-            const int colunas[] = {0, 1, 1, 2, 1, 2, 2};
-            const int linhas[] = {0, 0, 1, 0, -1, -1, -2};
-            origens.inserir({colunas[i] * (936 + Sala::COMPRIMENTO_CORREDOR),
-                            linhas[i] * (516 + Sala::COMPRIMENTO_CORREDOR)});
-        }
-        return;
-    }
-    const int extra = numero - 1;
-    const char *nomes[] = {"SETOR DE BOOT", "REDE INFECTADA", "NUCLEO EM QUARENTENA"};
-    const float larguras[] = {936, 1120, 1440}, alturas[] = {516, 640, 800};
-    float x = 0;
-    for (int i = 0; i < 3; ++i)
-    {
-        ConfiguracaoSala config{nomes[i], larguras[i], alturas[i], 1 + extra + i,
-                               4 + i * 3 + extra * 2, {true}};
+        const PlantaSala &sala = planta[i];
+        ConfiguracaoSala config{sala.nome, largura, altura, numero, sala.virus, {true}};
+        config.brutos = sala.brutos;
+        config.boss = sala.boss;
+        config.portalSaida = sala.boss;
+        config.baus = sala.baus;
+        config.armasIniciais = false;
+        config.vizinhos = sala.vizinhos;
         config.mapaRamificado = true;
-        config.vizinhos = {{i - 1, i == 2 ? -1 : i + 1, -1, -1}};
-        config.portalSaida = i == 2;
         salas.inserir(Sala(config));
-        origens.inserir({x, (516 - alturas[i]) / 2});
-        x += larguras[i] + Sala::COMPRIMENTO_CORREDOR;
+        origens.inserir({sala.coluna * (largura + Sala::COMPRIMENTO_CORREDOR),
+                        sala.linha * (altura + Sala::COMPRIMENTO_CORREDOR)});
     }
 }
 

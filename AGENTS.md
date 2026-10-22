@@ -32,11 +32,12 @@ brainstorming examples into approved mechanics, characters, or assets.
 
 ## Verified prototype baseline
 
-As updated on 2026-10-19:
+As updated on 2026-10-22:
 
 - The build uses C++17, SDL2, libpng, and a Makefile. Text uses an embedded bitmap font;
   SDL2_ttf is not required.
-- The game starts at a main menu. Five phases remain; phase 1 now has seven
+- The game starts at a main menu. Three phases remain (reduced from five by user request), all
+  branching graphs of 936x516 rooms with lobby, chest rooms and a final boss. Phase 1 has seven
   936x516 rooms in a directional graph: Lobby–A, A–B (south), A–C (east),
   A–D (north), D–E (east), C–E (north), E–F (north).
   A has 3 viruses; C/D each have 4 viruses and 2 brutes. B has one chest,
@@ -44,8 +45,11 @@ As updated on 2026-10-19:
 - Each room owns its combat and persistent state in ListaSequencial<Sala>.
   Four neighbor indices describe phase 1 connections. Doors lock only while their own room is in active combat; empty/cleared rooms
   stay open, including E–F (the previous A/C/D prerequisite was removed). Defeating F's boss
-  creates a central portal; touching it completes the phase. Phases 2–5 retain
-  their three-room linear layouts, with a central exit portal after clearing the last room.
+  creates a central portal; touching it completes the phase. Phase 2 (9 rooms, difficulty 2):
+  Lobby–A, A–B (north, 1 chest), A–C (south), A–D, C–E, D–F, E–G (2 chests), F–G, F–H (north, boss).
+  Phase 3 (11 rooms, difficulty 3) climbs north from the lobby: Lobby–A, A–B/C (west/east),
+  B–D, C–E, C–F (1 chest), D–G, G–E, E–H (2 chests), G–I, I–J (boss + 2 viruses).
+  Layouts are constant tables (`PlantaSala`) in Fase.cpp; per-room counts are initial balancing choices.
 - Pause-menu Restart and player death reset the current phase/player without losing completed
   phases. Cleared enemies/chests never respawn on revisits. Projectiles are
   discarded on leaving. Only active combat updates; hearts in inactive rooms
@@ -121,9 +125,9 @@ Use the existing `.clang-format` configuration.
   beginning of the next unfinished phase, not the exact room/position.
 - Every phase starts with a fresh player (health, stamina, starting weapon/ammo),
   consistently for advancement, restart, and loading. Pause-menu Restart resets only the current
-  phase. Completing phase five shows victory and records campaign completion.
+  phase. Completing phase three shows victory and records campaign completion.
 - `saves/progresso.json` is relative to the executable directory, resolved via
-  SDL_GetBasePath. Schema v1: `versao` = 1, `fases_concluidas` = integer 0..5.
+  SDL_GetBasePath. Schema v1: `versao` = 1, `fases_concluidas` = integer 0..3. Old saves above 3 are rejected as invalid.
   A completed campaign disables Continue. New game replaces the old checkpoint.
 - Persistence is SDL-independent and accepts an explicit file path. Its narrow
   JSON reader validates the entire two-integer schema, version, and range.
@@ -224,8 +228,7 @@ Use the existing `.clang-format` configuration.
   54 pixels into the tail; full inventory leaves it untouched. Q moves the front
   to the tail through FIFO operations; G drops the front with its remaining ammo.
   These supplementary controls and floor distribution are initial implementation choices.
-- Only phases 2–5 retain the initial seven-weapon distribution per room.
-  Phase 1 uses proximity-opened chests in B/E, each dropping two random weapons
+- All phases use proximity-opened chests in their chest rooms, each dropping two random weapons
   uniformly from all eight types (duplicates allowed), with no inventory insertion. `Sala` owns floor
   items and preserves collections/drops on revisits. Phase reset/advancement recreates
   the player and items. Existing phase checkpoint semantics remain unchanged.
@@ -246,7 +249,7 @@ Use the existing `.clang-format` configuration.
   the prior gameplay/pause state. While open, simulation and gameplay actions stop,
   held fire is cleared, and repeated keydown events do not toggle it. Entry resets it.
 - interface/Minimapa draws all rooms and actual directional connections using
-  read-only Fase room/neighbor queries, supporting both branching and linear phases.
+  read-only Fase room/neighbor queries for every branching phase.
   Current room has a gold border and a position marker; cleared/unvisited/combat
   rooms are green/gray/red, with chest/boss labels. No exploration fog is applied.
 
@@ -292,8 +295,7 @@ Use the existing `.clang-format` configuration.
 - graficos/Ambiente draws deterministic plate floors with subtle circuit details,
   segmented relief walls, gate lights/grilles, and a dark violet floor portal with
   a stone rim. No external texture dependency was added.
-- All five phases finish through a central portal after clearing their final room;
-  phase 1 still requires its boss. Checkpoint and phase-reset semantics are unchanged.
+- All three phases finish through a central portal after defeating their boss. Checkpoint and phase-reset semantics are unchanged.
 
 - Room/corridor collision uses overlapping valid hitbox-position rectangles, so
   both outward travel and reversal preserve movement through the doorway. The

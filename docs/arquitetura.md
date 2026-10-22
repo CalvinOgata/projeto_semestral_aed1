@@ -11,7 +11,7 @@ Jogo (janela, entrada, estados e laco principal)
   |-- Jogador (movimento, mira, vida e estamina)
   |     `-- FilaArmas (inventario: primeira arma = equipada)
   |           `-- Fila<Armas, MAX_ARMAS> (armazenamento FIFO)
-  |-- Campanha (cinco fases; mantem a fase atual)
+  |-- Campanha (tres fases; mantem a fase atual)
   |     `-- Fase (progressao e sala ativa)
   |           `-- ListaSequencial<Sala>
   |                 `-- Sala (tamanho, dificuldade, requisitos e estado)
@@ -117,11 +117,11 @@ A pausa interrompe todos esses tempos.
 `Fase` guarda a sequencia em `ListaSequencial<Sala>` e acessa a atual por indice.
 Avancar/voltar nao remove salas da lista; isso preserva seu estado. A navegacao
 ocorre ao terminar de atravessar o corredor e exige liberacao da sala atual.
-A fase 1 usa quatro indices de vizinhos por sala (esquerda, direita, cima, baixo),
+Cada sala usa quatro indices de vizinhos por sala (esquerda, direita, cima, baixo),
 formando um pequeno grafo sobre a lista existente. Portas travam apenas durante
-o combate da propria sala; E–F nao tem trava adicional. O portal central de F
-conclui a fase apos derrotar o boss.
-As fases 2–5 mantem navegacao linear e portal central na ultima sala liberada.
+o combate da propria sala. O portal central da sala do boss conclui a fase
+apos derrota-lo. As plantas das tres fases (7, 9 e 11 salas) ficam em tabelas
+constantes em `Fase.cpp`, com posicao na grade, inimigos, baus e vizinhos.
 A chegada preserva a posicao no mundo ao mudar as coordenadas locais da sala. `Campanha` avanca e `Jogo` grava
 o checkpoint. Reiniciar no menu de pausa ou morte recriam apenas a fase atual e o jogador.
 A tecla R nao reinicia mais. O reinicio pelo menu retoma a partida.
@@ -145,22 +145,22 @@ de vida associado a `Sala`, evitando listas globais compartilhadas entre salas.
 
 `interface/Minimapa` consulta salas e vizinhos por acesso somente leitura em `Fase`.
 Um percurso das conexoes posiciona os blocos conforme as quatro direcoes, sem copiar
-o mapa autoral para a interface. Fases lineares fornecem vizinhos esquerdo/direito.
+o mapa autoral para a interface.
 `Jogo` controla a sobreposicao com M, bloqueia a simulacao e as acoes enquanto ela
 esta aberta e restaura a partida ou pausa ao fechar com M/Esc. O minimapa mostra
 todas as salas, estados e um marcador da posicao do jogador na sala atual.
 
 `Campanha` conhece o numero de fases concluidas e a fase atual. Ela controla a
-passagem entre cinco fases e reinicializa o jogador em cada etapa. `Fase(numero)`
-aplica a dificuldade e quantidade de inimigos daquele estagio, mantendo a
-estrutura linear de tres salas nas fases 2–5 e sete salas ramificadas na fase 1. Nao e preciso armazenar todas as fases simultaneamente.
+passagem entre tres fases e reinicializa o jogador em cada etapa. `Fase(numero)`
+aplica a dificuldade e quantidade de inimigos daquele estagio, a partir
+da planta ramificada daquele estagio (7, 9 ou 11 salas). Nao e preciso armazenar todas as fases simultaneamente.
 
 `Jogo` coordena os estados `INICIAL`, `JOGANDO`, `PAUSADO`, `VITORIA` e `SAINDO`.
 `Menu` oferece modos inicial e pausa, com teclado e mouse. O menu solicita acoes;
 ele nao le arquivos nem altera diretamente o progresso.
 
 `ArquivoProgresso`, em `persistencia/`, recebe um caminho e trata somente leitura,
-validacao e escrita. O esquema JSON v1 tem `versao` e `fases_concluidas` (0 a 5).
+validacao e escrita. O esquema JSON v1 tem `versao` e `fases_concluidas` (0 a 3).
 O leitor e especifico para esse esquema, sem biblioteca externa; um esquema mais
 complexo deve motivar a revisao dessa escolha. O arquivo temporario e renomeado
 somente apos fechar a escrita com sucesso, preservando o save anterior em erros.
@@ -170,7 +170,7 @@ queda de energia, pois nao utiliza fsync.
 A camada de aplicacao resolve `saves/progresso.json` ao lado do executavel e
 salva ao iniciar um jogo novo e quando o contador de fases concluidas muda.
 O checkpoint nao armazena entidades, salas intermediarias ou posicoes. Carregar
-reconstroi o inicio da proxima fase; concluir cinco fases registra a vitoria.
+reconstroi o inicio da proxima fase; concluir tres fases registra a vitoria.
 Falhas sao exibidas na pausa e nos menus e podem ser repetidas por F5, sem
 interromper o jogo. Durante a partida os avisos permanecem ocultos.
 
@@ -202,8 +202,7 @@ preservando esses indices. Apenas projeteis inativos e rastros vencidos sao remo
 
 `Sala` possui `ListaSequencial<ArmaChao>` com armas coletaveis e descartadas.
 A busca da arma mais proxima custa O(n); as coletas ficam marcadas para preservar
-o estado local. Revisitar nao recria itens. A fase 1 usa baus aleatorios; as
-fases 2–5 mantem a distribuicao inicial deterministica. Nenhum TAD conhece essas regras.
+o estado local. Revisitar nao recria itens. Todas as fases usam baus aleatorios. Nenhum TAD conhece essas regras.
 
 ## Inimigos, recompensas e defesa
 
