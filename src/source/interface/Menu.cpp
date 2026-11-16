@@ -5,9 +5,9 @@
 
 namespace
 {
-const char *OPCOES_PAUSA[Menu::NUM_OPCOES_PAUSA] = {"CONTINUAR", "REINICIAR", "MENU INICIAL",
+const char *OPCOES_PAUSA[] = {"CONTINUAR", "REINICIAR", "MENU INICIAL",
                                                      "SAIR"};
-const char *OPCOES_INICIAIS[Menu::NUM_OPCOES_INICIAIS] = {"NOVO JOGO", "CONTINUAR", "SAIR"};
+const char *OPCOES_INICIAIS[] = {"NOVO JOGO", "CONTINUAR", "SAIR"};
 
 constexpr int ALTURA_OPCAO = 44;
 constexpr int ALTURA_OPCAO_SLOT = 64;

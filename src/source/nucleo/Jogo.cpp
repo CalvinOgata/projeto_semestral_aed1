@@ -13,6 +13,7 @@
 #include "interface/Texto.h"
 #include "interface/Hud.h"
 #include "interface/Minimapa.h"
+#include "nucleo/Plataforma.h"
 
 namespace
 {
@@ -154,29 +155,34 @@ void Jogo::executar()
 {
     while (this->estado != EstadoJogo::SAINDO)
     {
-        const Uint64 agora = SDL_GetPerformanceCounter();
-        float dt = static_cast<float>(agora - this->tempoAnterior) /
-                   static_cast<float>(SDL_GetPerformanceFrequency());
-        this->tempoAnterior = agora;
-
-        if (dt > DT_MAXIMO)
-        {
-            dt = DT_MAXIMO;
-        }
-
-        this->tratar_eventos();
-
-        if (this->estado == EstadoJogo::JOGANDO)
-        {
-            this->atualizar(dt);
-        }
-        else if (this->estado == EstadoJogo::GAME_OVER)
-        {
-            this->atualizar_gameOver(dt);
-        }
-
-        this->desenhar();
+        this->passo();
     }
+}
+
+void Jogo::passo()
+{
+    const Uint64 agora = SDL_GetPerformanceCounter();
+    float dt = static_cast<float>(agora - this->tempoAnterior) /
+               static_cast<float>(SDL_GetPerformanceFrequency());
+    this->tempoAnterior = agora;
+
+    if (dt > DT_MAXIMO)
+    {
+        dt = DT_MAXIMO;
+    }
+
+    this->tratar_eventos();
+
+    if (this->estado == EstadoJogo::JOGANDO)
+    {
+        this->atualizar(dt);
+    }
+    else if (this->estado == EstadoJogo::GAME_OVER)
+    {
+        this->atualizar_gameOver(dt);
+    }
+
+    this->desenhar();
 }
 
 void Jogo::tratar_eventos()
@@ -756,6 +762,7 @@ void Jogo::salvar_progresso()
     salvo.continueDisponivel = this->continueDisponivel;
     salvo.pontuacaoTotal = this->pontuacaoTotal;
     this->savePendente = !this->progresso.salvar(salvo, this->mensagemSave);
+    Plataforma::persistir_saves();
 }
 
 void Jogo::concluir_fase()
@@ -807,6 +814,7 @@ void Jogo::encerrar_gameOver()
 {
     std::string mensagem;
     const bool apagado = this->progresso.apagar(mensagem);
+    Plataforma::persistir_saves();
     this->savePendente = false;
     this->abrir_inicio();
     if (!apagado)

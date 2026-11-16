@@ -82,7 +82,8 @@ public:
     Jogo &operator=(const Jogo &) = delete;
 
     bool inicializar();
-    void executar();
+    void executar(); // laco do desktop: repete passo() ate o jogo sair
+    void passo();    // um quadro: eventos, atualizacao e desenho
 
     EstadoJogo get_estado() const;
     int get_inimigosVivos() const;

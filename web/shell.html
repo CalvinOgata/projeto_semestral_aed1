@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>M.C.G.A - Make Computers Great Again</title>
+  <link rel="icon" href="data:,">
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* O jogo desenha em 960x540; o navegador amplia sem borrar os pixels. */
+    #canvas {
+      display: block;
+      outline: none;
+      image-rendering: pixelated;
+    }
+    #carregando {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      font: 16px monospace;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+  <div id="carregando">CARREGANDO...</div>
+  <script>
+    var Module = {
+      canvas: document.getElementById('canvas'),
+      setStatus: function (texto) {
+        var aviso = document.getElementById('carregando');
+        aviso.textContent = texto ? texto.toUpperCase() : '';
+        aviso.style.display = texto ? 'flex' : 'none';
+      },
+      onRuntimeInitialized: function () {
+        Module.setStatus('');
+      },
+      printErr: function (texto) {
+        console.error(texto);
+      },
+      // Sem isto um erro deixaria a pagina parada em "CARREGANDO...".
+      onAbort: function (motivo) {
+        Module.setStatus('ERRO AO INICIAR O JOGO: ' + motivo);
+      }
+    };
+    // Maior retangulo 16:9 que cabe na pagina (inclusive em tela cheia).
+    function ajustarCanvas() {
+      var escala = Math.min(window.innerWidth / 960, window.innerHeight / 540);
+      var canvas = document.getElementById('canvas');
+      canvas.style.width = Math.floor(960 * escala) + 'px';
+      canvas.style.height = Math.floor(540 * escala) + 'px';
+    }
+    window.addEventListener('resize', ajustarCanvas);
+    ajustarCanvas();
+    // Dentro do iframe do itch.io as teclas so chegam depois de um clique.
+    window.addEventListener('click', function () { window.focus(); });
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>

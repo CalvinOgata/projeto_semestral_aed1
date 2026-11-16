@@ -14,6 +14,30 @@ make clean  # apaga build/ e o executavel
 
 Arch: `sudo pacman -S sdl2 libpng` · Debian/Ubuntu: `sudo apt install libsdl2-dev libpng-dev`
 
+### Versao web (opcional)
+
+So e necessaria para gerar a versao de navegador; o `make` normal nao depende dela.
+Instale o [emsdk](https://github.com/emscripten-core/emsdk) fora da pasta do projeto:
+
+```sh
+git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
+cd ~/emsdk && ./emsdk install latest && ./emsdk activate latest
+source ~/emsdk/emsdk_env.sh   # em cada terminal (ou no ~/.zshrc / ~/.bashrc)
+```
+
+```sh
+make web       # gera build-web/index.html (unico arquivo, codigo e assets embutidos)
+make web-zip   # gera jogo-web.zip para o itch.io
+```
+
+O `build-web/index.html` abre direto no navegador (duplo clique), sem servidor.
+No navegador os saves ficam no IndexedDB do proprio navegador e a opcao SAIR
+nao aparece nos menus. O layout da pagina esta em `web/shell.html`.
+
+Publicar no itch.io: projeto do tipo **HTML**, enviar `jogo-web.zip`, marcar
+"This file will be played in the browser", tamanho do embed 960x540 e ativar o
+botao de tela cheia.
+
 ## Controles
 
 | Entrada | Acao |
@@ -241,7 +265,7 @@ mesmos modulos nos dois diretorios (templates ficam apenas nos cabecalhos):
 | `mundo/` | `Sala`: entidades; `Fase`: salas; `Campanha`: tres fases |
 | `persistencia/` | `ArquivoProgresso`: leitura e escrita do checkpoint JSON |
 | `sistemas/` | `Combate`: disparos, inimigos, colisoes e remocao de inativos |
-| `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao |
+| `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao; `Plataforma`: diferencas desktop/web |
 | `graficos/` | `Camera`, `Desenho`, `Sprite`: coordenadas, desenho e texturas PNG |
 | `interface/` | `Hud`: barras; `Menu`, `Texto`: menus e fonte bitmap |
 | `config/` | `Config.h`: resolucao, paleta e constantes |

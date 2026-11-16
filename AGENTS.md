@@ -59,6 +59,23 @@ As updated on 2026-10-22:
   nodes. Removed cross-links D–E (phase 1) and E–G (phases 2 and 3). Room positions,
   enemy/chest counts and canonical parents are unchanged. Tests live outside the repo.
 
+## Web build (2026-11-16)
+
+- User request: run the game in the browser and publish it on itch.io (HTML project,
+  zip with index.html at its root). Emscripten ports provide SDL2, libpng and zlib.
+- `Jogo::passo()` runs one frame; desktop `executar()` loops over it, while web `main`
+  hands it to `emscripten_set_main_loop_arg`. Only the web build uses `#ifdef
+  __EMSCRIPTEN__`, confined to `main.cpp` and `nucleo/Plataforma`.
+- Web saves: `Plataforma` mounts IDBFS at `/saves` (SDL_GetBasePath is `/`), waits for
+  the initial sync before `Jogo::inicializar`, and syncs after each save/delete.
+- `Plataforma::PERMITE_SAIR` hides the last menu option (SAIR) on the web.
+- `web/shell.html` is a minimal page that scales the canvas to the largest 16:9 box
+  (SDL then matches the backbuffer to the CSS size) and shows abort errors instead of
+  a stuck loading message. `-sSINGLE_FILE=1` plus `--embed-file assets` produce one
+  self-contained `index.html` (~6 MB) because the user opens it directly via file://,
+  where browsers block fetching separate .wasm/.data files. SDL already prevents browser defaults for F-keys, so F5 does not reload.
+- Browser checks live in `~/.codex/web-teste/` (Playwright scripts `pw_*.mjs` using system Chromium).
+
 ## Room cover (obstacles)
 
 - User request (2026-10-22): crates/barriers inside rooms for cover; only player attacks
@@ -137,7 +154,10 @@ Run commands from the repository root:
 - `make run`: build and launch the game.
 - `make format-check`: check source formatting using clang-format.
 - `make format`: apply `.clang-format`; avoid unrelated formatting changes.
-- `make clean`: remove generated build objects and the executable.
+- `make clean`: remove generated build objects, the executable and web outputs.
+- `make web` / `make web-zip`: browser build in `build-web/` via Emscripten `em++`
+  (emsdk installed by each developer outside the repo; optional for desktop builds),
+  and `jogo-web.zip` for itch.io upload.
 
 Preserve existing Portuguese identifiers and follow README naming conventions:
 PascalCase classes, lowercase-starting methods, snake_case verb phrases,

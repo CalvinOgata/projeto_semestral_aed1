@@ -7,6 +7,7 @@
 #include <string>
 
 #include "config/CampanhaConfig.h"
+#include "nucleo/Plataforma.h"
 
 // O que o menu pede ao jogo depois de tratar um evento.
 enum class AcaoMenu
@@ -34,8 +35,9 @@ enum class TelaMenu
 class Menu
 {
 public:
-    static constexpr int NUM_OPCOES_INICIAIS = 3;
-    static constexpr int NUM_OPCOES_PAUSA = 4;
+    // "SAIR" e sempre a ultima opcao e nao aparece na versao web.
+    static constexpr int NUM_OPCOES_INICIAIS = Plataforma::PERMITE_SAIR ? 3 : 2;
+    static constexpr int NUM_OPCOES_PAUSA = Plataforma::PERMITE_SAIR ? 4 : 3;
     static constexpr int NUM_OPCOES_SLOTS = QUANTIDADE_SLOTS_SAVE + 1;
 
 private:

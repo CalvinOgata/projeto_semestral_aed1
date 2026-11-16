@@ -4,3 +4,5 @@ jogo
 *.d
 claude-session.txt
 saves/
+build-web/
+jogo-web.zip
