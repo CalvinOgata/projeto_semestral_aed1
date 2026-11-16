@@ -19,20 +19,22 @@ void Campanha::iniciar(int concluidas, Jogador &jogador, const FilaArmas &armas)
 
 bool Campanha::atualizar_transicao(Jogador &jogador)
 {
-    if (this->concluida() || !this->fase.atualizar_transicao(jogador))
+    return !this->concluida() && this->fase.atualizar_transicao(jogador);
+}
+
+bool Campanha::avancar_fase(Jogador &jogador)
+{
+    if (this->concluida() || !this->fase.get_concluida())
     {
         return false;
     }
-    if (this->fase.get_concluida())
+    ++this->fasesConcluidas;
+    if (!this->concluida())
     {
-        ++this->fasesConcluidas;
-        if (!this->concluida())
-        {
-            // O inventario acompanha o jogador para a proxima fase.
-            this->armasInicioFase = jogador.get_armas();
-            this->fase = Fase(this->fasesConcluidas + 1);
-            this->fase.reiniciar(jogador, this->armasInicioFase);
-        }
+        // O inventario acompanha o jogador para a proxima fase.
+        this->armasInicioFase = jogador.get_armas();
+        this->fase = Fase(this->fasesConcluidas + 1);
+        this->fase.reiniciar(jogador, this->armasInicioFase);
     }
     return true;
 }

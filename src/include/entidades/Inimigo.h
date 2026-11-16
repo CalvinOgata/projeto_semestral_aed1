@@ -24,6 +24,7 @@ private:
     SDL_FPoint marcoProgresso = {0, 0};
     bool visaoLivre = true; // linha ate o jogador sem cobertura no caminho
     bool coracaoSolto = false;
+    bool mortePontuada = false;
     float x; // canto superior esquerdo, em coordenadas de mundo
     float y;
     DimensoesEntidade dimensoes;
@@ -47,6 +48,8 @@ public:
     int get_tema() const;
     int get_vidaMax() const;
     bool soltar_coracao();
+    // Devolve true uma unica vez, depois que este inimigo morreu.
+    bool registrar_mortePontuada();
     int get_danoTiro() const;
     void limitar_a(const SDL_FRect &area);
     void deslocar(float dx, float dy);

@@ -23,6 +23,10 @@ public:
     void liberar(); // chamar antes de destruir o renderizador
     const std::string &get_erro() const;
     bool desenhar(SDL_Renderer *renderizador, const SDL_FRect &quadro) const;
+    // Recorta uma regiao normalizada da mesma textura e a encaixa no quadro.
+    // Assim o HUD pode usar literalmente a cabeca do sprite do jogador.
+    bool desenhar_recorte(SDL_Renderer *renderizador, const SDL_FRect &quadro,
+                         const SDL_FRect &recorteNormalizado) const;
 };
 
 #endif

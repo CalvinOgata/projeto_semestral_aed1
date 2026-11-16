@@ -100,3 +100,26 @@ bool Sprite::desenhar(SDL_Renderer *renderizador, const SDL_FRect &quadro) const
                               quadro.y + (quadro.h - h) / 2.0f, w, h};
     return SDL_RenderCopyF(renderizador, this->textura, nullptr, &destino) == 0;
 }
+
+bool Sprite::desenhar_recorte(SDL_Renderer *renderizador, const SDL_FRect &quadro,
+                              const SDL_FRect &recorteNormalizado) const
+{
+    if (renderizador == nullptr || this->textura == nullptr || quadro.w <= 0 || quadro.h <= 0 ||
+        recorteNormalizado.x < 0 || recorteNormalizado.y < 0 || recorteNormalizado.w <= 0 ||
+        recorteNormalizado.h <= 0 || recorteNormalizado.x + recorteNormalizado.w > 1 ||
+        recorteNormalizado.y + recorteNormalizado.h > 1)
+    {
+        return false;
+    }
+    const SDL_Rect origem = {
+        static_cast<int>(recorteNormalizado.x * this->largura),
+        static_cast<int>(recorteNormalizado.y * this->altura),
+        std::max(1, static_cast<int>(recorteNormalizado.w * this->largura)),
+        std::max(1, static_cast<int>(recorteNormalizado.h * this->altura))};
+    const float escala = std::min(quadro.w / origem.w, quadro.h / origem.h);
+    const float w = origem.w * escala;
+    const float h = origem.h * escala;
+    const SDL_FRect destino = {quadro.x + (quadro.w - w) / 2.0f,
+                              quadro.y + (quadro.h - h) / 2.0f, w, h};
+    return SDL_RenderCopyF(renderizador, this->textura, &origem, &destino) == 0;
+}

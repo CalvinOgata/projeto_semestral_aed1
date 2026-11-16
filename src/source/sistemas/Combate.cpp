@@ -5,6 +5,7 @@
 #include <random>
 #include <vector>
 
+#include "config/CampanhaConfig.h"
 #include "config/Config.h"
 
 bool Combate::buscar_alvoMaisProximo(const Jogador &jogador, SDL_FPoint &alvo) const
@@ -54,6 +55,8 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, 
     this->limpar_projeteis();
     this->dificuldade = std::max(1, dificuldade);
     this->tema = tema;
+    this->pontosComuns = 0;
+    this->pontosBoss = 0;
     this->temPosicaoAnterior = false;
     const int virus = std::max(0, quantidade);
     brutos = std::max(0, brutos);
@@ -272,15 +275,21 @@ void Combate::limpar_projeteis()
     this->projeteis.limpar();
     tirosInimigos.limpar();
     this->rastros.limpar();
+    this->rastrosSoco.limpar();
 }
 
 void Combate::disparar(Jogador &jogador)
 {
     Armas *arma = jogador.get_armaEquipada();
 
-    if (arma == nullptr || !arma->atirar())
+    if (arma == nullptr)
     {
-        return; // sem arma na fila ou sem municao
+        atacar_soco(jogador);
+        return;
+    }
+    if (!arma->atirar())
+    {
+        return; // arma presente, mas sem municao: a fila nao esta vazia
     }
 
     if (arma->get_tipo() == TipoArma::LASER || arma->get_tipo() == TipoArma::ESPADA)
@@ -306,6 +315,60 @@ void Combate::disparar(Jogador &jogador)
         // Origem no corpo evita nascer alem da parede ao encostar nela.
         projeteis.inserir(Projetil(jogador.get_centroX(), jogador.get_centroY(), dx, dy,
                                   arma->get_dano(), arma->get_tipo()));
+    }
+}
+
+void Combate::atacar_soco(const Jogador &jogador)
+{
+    const SDL_FPoint origem = {jogador.get_centroX(), jogador.get_centroY()};
+    const SDL_FPoint direcao = jogador.get_direcaoMira();
+    const float angulo = std::atan2(direcao.y, direcao.x);
+    rastrosSoco.inserir({origem, angulo, DURACAO_RASTRO_SOCO});
+
+    int inimigoAtingido = -1;
+    int obstaculoAtingido = -1;
+    float menorDistancia = ALCANCE_SOCO + 1.0f;
+    // O alvo usa o ponto de sua area mais proximo da mao. Assim, inimigos
+    // grandes podem ser atingidos pela borda sem aumentar o alcance do golpe.
+    auto considerar = [&](const SDL_FRect &area, int indice, bool inimigo)
+    {
+        const float alvoX = std::clamp(origem.x, area.x, area.x + area.w);
+        const float alvoY = std::clamp(origem.y, area.y, area.y + area.h);
+        const float dx = alvoX - origem.x;
+        const float dy = alvoY - origem.y;
+        const float distancia = std::hypot(dx, dy);
+        const float alinhamento = distancia < 0.001f ? 1.0f :
+            (dx * direcao.x + dy * direcao.y) / distancia;
+        // Aproximadamente 80 graus de abertura total na frente do jogador.
+        if (distancia > ALCANCE_SOCO || alinhamento < 0.766f || distancia >= menorDistancia)
+        {
+            return;
+        }
+        menorDistancia = distancia;
+        inimigoAtingido = inimigo ? indice : -1;
+        obstaculoAtingido = inimigo ? -1 : indice;
+    };
+    for (std::size_t i = 0; i < inimigos.get_quantidade(); ++i)
+    {
+        if (inimigos.obter(i).get_vivo())
+        {
+            considerar(inimigos.obter(i).get_retangulo(), static_cast<int>(i), true);
+        }
+    }
+    for (std::size_t i = 0; i < obstaculos.get_quantidade(); ++i)
+    {
+        if (obstaculos.obter(i).get_intacto())
+        {
+            considerar(obstaculos.obter(i).get_retangulo(), static_cast<int>(i), false);
+        }
+    }
+    if (inimigoAtingido >= 0)
+    {
+        inimigos.obter(static_cast<std::size_t>(inimigoAtingido)).levar_dano(DANO_SOCO);
+    }
+    else if (obstaculoAtingido >= 0)
+    {
+        obstaculos.obter(static_cast<std::size_t>(obstaculoAtingido)).levar_dano(DANO_SOCO);
     }
 }
 
@@ -483,6 +546,12 @@ void Combate::atualizar(float dt, Jogador &jogador)
         rastro.tempo -= dt;
     }
     rastros.remover_se([](const Rastro &r) { return r.tempo <= 0; });
+    for (auto &rastro : rastrosSoco)
+    {
+        rastro.tempo -= dt;
+    }
+    rastrosSoco.remover_se([](const RastroSoco &r) { return r.tempo <= 0; });
+    registrar_pontuacaoMortes();
     atualizar_coracoes(dt, jogador);
     if (this->ondasRestantes > 0 && this->avisos.vazio() && this->get_inimigosVivos() <= 1)
     {
@@ -497,6 +566,35 @@ void Combate::limpar_inativos()
 {
     this->projeteis.remover_se([](const Projetil &p) { return !p.get_ativo(); });
     // Preserva indices dos inimigos para registrar acertos do boomerang por trajeto.
+}
+
+void Combate::registrar_pontuacaoMortes()
+{
+    for (auto &inimigo : inimigos)
+    {
+        if (!inimigo.registrar_mortePontuada())
+        {
+            continue;
+        }
+        if (inimigo.get_tipo() == TipoInimigo::BOSS)
+        {
+            pontosBoss += PONTOS_BOSS;
+        }
+        else
+        {
+            pontosComuns += inimigo.get_tipo() == TipoInimigo::BRUTO ? PONTOS_BRUTO : PONTOS_VIRUS;
+        }
+    }
+}
+
+int Combate::get_pontosComuns() const
+{
+    return pontosComuns;
+}
+
+int Combate::get_pontosBoss() const
+{
+    return pontosBoss;
 }
 
 void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mostrarHitboxes) const
@@ -552,6 +650,29 @@ void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
         const auto b = camera.para_tela(rastro.fim.x, rastro.fim.y);
         SDL_SetRenderDrawColor(renderizador, 120, 255, rastro.tipo == TipoArma::LASER ? 160 : 255, 255);
         SDL_RenderDrawLineF(renderizador, a.x, a.y, b.x, b.y);
+    }
+    for (const auto &rastro : rastrosSoco)
+    {
+        const auto centro = camera.para_tela(rastro.centro.x, rastro.centro.y);
+        const float intensidade = std::clamp(rastro.tempo / DURACAO_RASTRO_SOCO, 0.0f, 1.0f);
+        const Uint8 alfa = static_cast<Uint8>(90 + 165 * intensidade);
+        // Duas linhas poligonais proximas formam um risco branco curvado.
+        for (int camada = 0; camada < 2; ++camada)
+        {
+            const float raio = 43.0f + camada * 4.0f;
+            SDL_SetRenderDrawColor(renderizador, 245, 250, 255,
+                                   static_cast<Uint8>(alfa - camada * 45));
+            SDL_FPoint anterior = {centro.x + std::cos(rastro.angulo - 0.7f) * raio,
+                                   centro.y + std::sin(rastro.angulo - 0.7f) * raio};
+            for (int segmento = 1; segmento <= 10; ++segmento)
+            {
+                const float angulo = rastro.angulo - 0.7f + segmento * 1.4f / 10.0f;
+                const SDL_FPoint atual = {centro.x + std::cos(angulo) * raio,
+                                          centro.y + std::sin(angulo) * raio};
+                SDL_RenderDrawLineF(renderizador, anterior.x, anterior.y, atual.x, atual.y);
+                anterior = atual;
+            }
+        }
     }
     for (const Inimigo &inimigo : this->inimigos)
     {

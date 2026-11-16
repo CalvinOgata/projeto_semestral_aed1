@@ -117,11 +117,20 @@ A pausa interrompe todos esses tempos.
 `Fase` guarda a sequencia em `ListaSequencial<Sala>` e acessa a atual por indice.
 Avancar/voltar nao remove salas da lista; isso preserva seu estado. A navegacao
 ocorre ao terminar de atravessar o corredor e exige liberacao da sala atual.
-Cada sala usa quatro indices de vizinhos por sala (esquerda, direita, cima, baixo),
-formando um pequeno grafo sobre a lista existente. Portas travam apenas durante
+Cada sala usa quatro indices de vizinhos (esquerda, direita, cima, baixo),
+derivados exclusivamente da tabela de pais da arvore. Portas travam apenas durante
 o combate da propria sala. O portal central da sala do boss conclui a fase
 apos derrota-lo. As plantas das tres fases (7, 9 e 11 salas) ficam em tabelas
-constantes em `Fase.cpp`, com posicao na grade, inimigos, baus e vizinhos.
+constantes em `Fase.cpp`, com posicao na grade, inimigos e baus. `PAIS_FASE_n`
+e a fonte unica das arestas: `construir_conexoes` gera os dois sentidos de cada
+ligacao pai-filho. O construtor rejeita pais invalidos/ciclos, salas sobrepostas,
+pares nao adjacentes e portas ocupadas por duas conexoes. Nao ha ligacoes cruzadas.
+As tres fases possuem respectivamente 6, 8 e 10 arestas para 7, 9 e 11 salas.
+
+`Arvore<size_t>` guarda os indices revelados, com raiz no lobby. Ao liberar a sala
+atual, `preparar_adjacentes` insere apenas seus filhos canonicos e prepara seu
+conteudo sem marcar visita. A navegacao consulta filho ou pai; conhecer um destino
+de outro ramo nao autoriza uma passagem. Reiniciar limpa a arvore e recria a raiz.
 A chegada preserva a posicao no mundo ao mudar as coordenadas locais da sala. `Campanha` avanca e `Jogo` grava
 o checkpoint. Reiniciar no menu de pausa ou morte recriam apenas a fase atual e o jogador.
 `Campanha` guarda uma copia de `FilaArmas` do inicio da fase: avancar copia o
@@ -149,11 +158,19 @@ de vida associado a `Sala`, evitando listas globais compartilhadas entre salas.
 ## Campanha, menus e persistencia
 
 `interface/Minimapa` consulta salas e vizinhos por acesso somente leitura em `Fase`.
-Um percurso das conexoes posiciona os blocos conforme as quatro direcoes, sem copiar
-o mapa autoral para a interface.
+O percurso em pre-ordem determina quais nos estao revelados, nao a posicao deles.
+`get_origemSala` fornece uma copia das mesmas coordenadas usadas pelo cenario.
+O minimapa aplica escalas positivas a essas coordenadas, preservando esquerda/direita,
+cima/baixo e alinhamentos. Os limites da fase inteira fixam o enquadramento, sem
+mover nos quando outros sao revelados. Somente as arestas pai-filho da arvore
+revelada sao desenhadas, em segmentos retos entre as portas correspondentes.
+Os rotulos ESQ/DIR/CIMA/BAIXO consultam os vizinhos reais e indicam qual porta usar
+na sala pai para chegar ao filho; o mesmo acesso define as pontas dos segmentos.
+A interface nao mantem outra tabela de conexoes nem ordena irmaos por indice.
 `Jogo` controla a sobreposicao com M, bloqueia a simulacao e as acoes enquanto ela
 esta aberta e restaura a partida ou pausa ao fechar com M/Esc. O minimapa mostra
-todas as salas, estados e um marcador da posicao do jogador na sala atual.
+somente os nos revelados, seus estados e um marcador da sala atual. Desenhar o
+mapa nao insere nos nem modifica a progressao.
 
 `Campanha` conhece o numero de fases concluidas e a fase atual. Ela controla a
 passagem entre tres fases e reinicializa o jogador em cada etapa. `Fase(numero)`

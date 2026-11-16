@@ -1,6 +1,5 @@
 #include "mundo/Fase.h"
 
-#include <algorithm>
 #include <array>
 #include <iterator>
 #include <string>
@@ -11,57 +10,65 @@
 
 namespace
 {
-// Planta autoral de uma sala: posicao na grade e conexoes {esquerda, direita, cima, baixo}.
+// Planta autoral de uma sala. As conexoes sao derivadas exclusivamente dos pais.
 struct PlantaSala
 {
     const char *nome;
     int coluna, linha;
     int virus, brutos, baus;
     bool boss;
-    std::array<int, 4> vizinhos;
     // 1 quadrantes, 2 trincheira, 3 fortaleza (boss), 4 labirinto, 5 deposito (baus).
     int cobertura;
     int ondasExtras; // reforcos que surgem quando resta no maximo um inimigo
 };
 
-// Fase 1, dos compiladores: lobby, combate inicial, tesouro, dois ramos e boss ao norte.
+// Fase 1: lobby no topo; A ramifica para B/C/D, C para E e E para o boss F.
 const PlantaSala PLANTA_FASE_1[] = {
-    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}, 0, 0},
-    {"A - PRE-PROCESSADOR", 1, 0, 4, 0, 0, false, {{0, 3, 4, 2}}, 1, 1},
-    {"B - CACHE DE BUILD", 1, 1, 0, 0, 1, false, {{-1, -1, 1, -1}}, 5, 0},
-    {"C - ANALISE LEXICA", 2, 0, 5, 2, 0, false, {{1, -1, 5, -1}}, 2, 1},
-    {"D - PARSER", 1, -1, 5, 2, 0, false, {{-1, 5, -1, 1}}, 4, 1},
-    {"E - LINKER", 2, -1, 0, 0, 2, false, {{4, -1, 6, 3}}, 5, 0},
-    {"F - COMPILADOR FECHADO", 2, -2, 0, 0, 0, true, {{-1, -1, -1, 5}}, 3, 0},
+    {"LOBBY", 0, 0, 0, 0, 0, false, 0, 0},
+    {"A - PRE-PROCESSADOR", 0, 1, 4, 0, 0, false, 1, 1},
+    {"B - CACHE DE BUILD", -1, 1, 0, 0, 1, false, 5, 0},
+    {"C - ANALISE LEXICA", 1, 1, 5, 2, 0, false, 2, 1},
+    {"D - PARSER", 0, 2, 5, 2, 0, false, 4, 1},
+    {"E - LINKER", 1, 2, 0, 0, 2, false, 5, 0},
+    {"F - COMPILADOR FECHADO", 1, 3, 0, 0, 0, true, 3, 0},
 };
 
-// Fase 2, da rede: corredor principal para leste com desvios ao norte e ao sul.
+// Fase 2: C leva a E; D leva a F, que ramifica para G e para o boss H.
 const PlantaSala PLANTA_FASE_2[] = {
-    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, 1, -1, -1}}, 0, 0},
-    {"A - ROTEADOR", 1, 0, 5, 1, 0, false, {{0, 4, 2, 3}}, 1, 1},
-    {"B - CACHE DNS", 1, -1, 0, 0, 1, false, {{-1, -1, -1, 1}}, 5, 0},
-    {"C - CAIXA DE SPAM", 1, 1, 6, 2, 0, false, {{-1, 5, 1, -1}}, 2, 1},
-    {"D - PROXY", 2, 0, 5, 2, 0, false, {{1, 6, -1, -1}}, 4, 2},
-    {"E - BOTNET", 2, 1, 7, 2, 0, false, {{3, 7, -1, -1}}, 2, 1},
-    {"F - PING 999", 3, 0, 6, 3, 0, false, {{4, -1, 8, 7}}, 4, 2},
-    {"G - LOOT DROP", 3, 1, 0, 0, 2, false, {{5, -1, 6, -1}}, 5, 0},
-    {"H - REDE ANTISSOCIAL", 3, -1, 0, 0, 0, true, {{-1, -1, -1, 6}}, 3, 0},
+    {"LOBBY", 0, 0, 0, 0, 0, false, 0, 0},
+    {"A - ROTEADOR", 0, 1, 5, 1, 0, false, 1, 1},
+    {"B - CACHE DNS", -1, 1, 0, 0, 1, false, 5, 0},
+    {"C - CAIXA DE SPAM", 1, 1, 6, 2, 0, false, 2, 1},
+    {"D - PROXY", 0, 2, 5, 2, 0, false, 4, 2},
+    {"E - BOTNET", 1, 2, 7, 2, 0, false, 2, 1},
+    {"F - PING 999", 0, 3, 6, 3, 0, false, 4, 2},
+    {"G - LOOT DROP", 1, 3, 0, 0, 2, false, 5, 0},
+    {"H - REDE ANTISSOCIAL", 0, 4, 0, 0, 0, true, 3, 0},
 };
 
-// Fase 3, do kernel: subida vertical a partir do lobby, com alas laterais e boss no topo.
+// Fase 3: lobby no topo, ramos B/C e caminho B-D-G-I-J ate o boss.
 const PlantaSala PLANTA_FASE_3[] = {
-    {"LOBBY", 0, 0, 0, 0, 0, false, {{-1, -1, 1, -1}}, 0, 0},
-    {"A - KERNEL PANIC", 0, -1, 6, 2, 0, false, {{2, 3, -1, 0}}, 1, 1},
-    {"B - ROOTKIT", -1, -1, 7, 2, 0, false, {{-1, 1, 4, -1}}, 4, 2},
-    {"C - RANSOMWARE", 1, -1, 7, 2, 0, false, {{1, 6, 5, -1}}, 2, 2},
-    {"D - SPYWARE", -1, -2, 8, 2, 0, false, {{-1, 7, -1, 2}}, 2, 2},
-    {"E - WORM", 1, -2, 8, 3, 0, false, {{7, 8, -1, 3}}, 4, 2},
-    {"F - COFRE DE MEMORIA", 2, -1, 0, 0, 1, false, {{3, -1, -1, -1}}, 5, 0},
-    {"G - DEADLOCK", 0, -2, 7, 3, 0, false, {{4, 5, 9, -1}}, 1, 2},
-    {"H - SAVE POINT", 2, -2, 0, 0, 2, false, {{5, -1, -1, -1}}, 5, 0},
-    {"I - PROCESSOS ZUMBIS", 0, -3, 7, 4, 0, false, {{-1, -1, 10, 7}}, 4, 3},
-    {"J - TELA AZUL DA MORTE", 0, -4, 3, 0, 0, true, {{-1, -1, -1, 9}}, 3, 0},
+    {"LOBBY", 0, 0, 0, 0, 0, false, 0, 0},
+    {"A - KERNEL PANIC", 0, 1, 6, 2, 0, false, 1, 1},
+    {"B - ROOTKIT", -1, 1, 7, 2, 0, false, 4, 2},
+    {"C - RANSOMWARE", 1, 1, 7, 2, 0, false, 2, 2},
+    {"D - SPYWARE", -1, 2, 8, 2, 0, false, 2, 2},
+    {"E - WORM", 1, 2, 8, 3, 0, false, 4, 2},
+    {"F - COFRE DE MEMORIA", 2, 1, 0, 0, 1, false, 5, 0},
+    {"G - DEADLOCK", 0, 2, 7, 3, 0, false, 1, 2},
+    {"H - SAVE POINT", 2, 2, 0, 0, 2, false, 5, 0},
+    {"I - PROCESSOS ZUMBIS", 0, 3, 7, 4, 0, false, 4, 3},
+    {"J - TELA AZUL DA MORTE", 0, 4, 3, 0, 0, true, 3, 0},
 };
+
+// Fonte unica das ligacoes: portas, corredores e arvore usam estes mesmos pais.
+// A raiz (lobby) e a unica sala sem pai.
+constexpr int PAIS_FASE_1[] = {-1, 0, 1, 1, 1, 3, 5};
+constexpr int PAIS_FASE_2[] = {-1, 0, 1, 1, 1, 3, 4, 6, 6};
+constexpr int PAIS_FASE_3[] = {-1, 0, 1, 1, 2, 3, 3, 4, 5, 7, 9};
+static_assert(std::size(PAIS_FASE_1) == std::size(PLANTA_FASE_1));
+static_assert(std::size(PAIS_FASE_2) == std::size(PLANTA_FASE_2));
+static_assert(std::size(PAIS_FASE_3) == std::size(PLANTA_FASE_3));
 
 // Cada fase mistura um tema de computacao com uma referencia de jogos.
 struct PlantaFase
@@ -70,14 +77,64 @@ struct PlantaFase
     const char *subtitulo;
     const PlantaSala *salas;
     std::size_t quantidade;
+    const int *pais;
 };
 
 const PlantaFase PLANTAS[] = {
-    {"FASE DOS COMPILADORES", "SPEEDRUN DO BUILD", PLANTA_FASE_1, std::size(PLANTA_FASE_1)},
-    {"FASE DA REDE", "MULTIPLAYER COM LAG", PLANTA_FASE_2, std::size(PLANTA_FASE_2)},
-    {"FASE DO KERNEL", "GAME OVER EM TELA AZUL", PLANTA_FASE_3, std::size(PLANTA_FASE_3)},
+    {"FASE DOS COMPILADORES", "SPEEDRUN DO BUILD", PLANTA_FASE_1,
+     std::size(PLANTA_FASE_1), PAIS_FASE_1},
+    {"FASE DA REDE", "MULTIPLAYER COM LAG", PLANTA_FASE_2,
+     std::size(PLANTA_FASE_2), PAIS_FASE_2},
+    {"FASE DO KERNEL", "GAME OVER EM TELA AZUL", PLANTA_FASE_3,
+     std::size(PLANTA_FASE_3), PAIS_FASE_3},
 };
 static_assert(std::size(PLANTAS) == QUANTIDADE_FASES, "Cada fase precisa de uma planta");
+
+std::vector<std::array<int, 4>> construir_conexoes(const PlantaFase &planta)
+{
+    if (planta.quantidade == 0 || planta.pais[0] != -1)
+    {
+        throw std::logic_error("A planta precisa de um lobby como unica raiz");
+    }
+    std::vector<std::array<int, 4>> conexoes(planta.quantidade, {{-1, -1, -1, -1}});
+    for (std::size_t filho = 1; filho < planta.quantidade; ++filho)
+    {
+        const int pai = planta.pais[filho];
+        // Pais anteriores aos filhos garantem conectividade com a raiz e ausencia de ciclos.
+        if (pai < 0 || static_cast<std::size_t>(pai) >= filho)
+        {
+            throw std::logic_error("Pai invalido ou ciclo na planta da fase");
+        }
+        const auto &sala = planta.salas[filho];
+        for (std::size_t anterior = 0; anterior < filho; ++anterior)
+        {
+            if (sala.coluna == planta.salas[anterior].coluna &&
+                sala.linha == planta.salas[anterior].linha)
+            {
+                throw std::logic_error("Salas sobrepostas na planta da fase");
+            }
+        }
+        const int dx = sala.coluna - planta.salas[pai].coluna;
+        const int dy = sala.linha - planta.salas[pai].linha;
+        int direcao = -1;
+        if (dx == -1 && dy == 0) direcao = static_cast<int>(Direcao::ESQUERDA);
+        if (dx == 1 && dy == 0) direcao = static_cast<int>(Direcao::DIREITA);
+        if (dx == 0 && dy == -1) direcao = static_cast<int>(Direcao::CIMA);
+        if (dx == 0 && dy == 1) direcao = static_cast<int>(Direcao::BAIXO);
+        if (direcao < 0)
+        {
+            throw std::logic_error("Pai e filho precisam compartilhar um corredor reto");
+        }
+        const int oposta = direcao ^ 1;
+        if (conexoes[pai][direcao] != -1 || conexoes[filho][oposta] != -1)
+        {
+            throw std::logic_error("Duas conexoes ocupam a mesma porta");
+        }
+        conexoes[pai][direcao] = static_cast<int>(filho);
+        conexoes[filho][oposta] = pai;
+    }
+    return conexoes;
+}
 }
 
 Fase::Fase(int numero) : numero(numero)
@@ -87,6 +144,7 @@ Fase::Fase(int numero) : numero(numero)
         throw std::invalid_argument("Numero de fase invalido");
     }
     const PlantaFase &planta = PLANTAS[numero - 1];
+    const auto conexoes = construir_conexoes(planta);
     const float largura = 936, altura = 516;
     for (std::size_t i = 0; i < planta.quantidade; ++i)
     {
@@ -97,19 +155,26 @@ Fase::Fase(int numero) : numero(numero)
         config.portalSaida = sala.boss;
         config.baus = sala.baus;
         config.armasIniciais = false;
-        config.vizinhos = sala.vizinhos;
+        config.vizinhos = conexoes[i];
         config.mapaRamificado = true;
         config.tema = numero;
         config.cobertura = sala.cobertura;
         config.ondasExtras = sala.ondasExtras;
+        config.mostrarComandos = i == 0;
         salas.inserir(Sala(config));
         origens.inserir({sala.coluna * (largura + Sala::COMPRIMENTO_CORREDOR),
                         sala.linha * (altura + Sala::COMPRIMENTO_CORREDOR)});
     }
+    // A arvore nasce somente com o lobby. As outras salas entram quando suas
+    // portas forem liberadas pela gameplay.
+    arvoreProgresso.definir_raiz(0);
 }
 
 void Fase::reiniciar(Jogador &jogador, const FilaArmas &armas)
 {
+    // Reiniciar executa explicitamente a operacao primitiva de limpeza. O
+    // construtor chamado em seguida define novamente apenas a raiz.
+    this->arvoreProgresso.limpar();
     *this = Fase(this->numero);
     jogador = Jogador();
     // Inventario vazio receberia uma fase sem como lutar; mantem a arma inicial.
@@ -118,7 +183,6 @@ void Fase::reiniciar(Jogador &jogador, const FilaArmas &armas)
         jogador.get_armas() = armas;
     }
     this->get_salaAtual().entrar(jogador);
-    preparar_adjacentes();
 }
 
 bool Fase::atualizar_transicao(Jogador &jogador)
@@ -140,6 +204,7 @@ bool Fase::atualizar_transicao(Jogador &jogador)
         const auto direcao = static_cast<Direcao>(d);
         const int destino = get_vizinho(indiceAtual, direcao);
         if (destino < 0 || !atual.porta_liberada(direcao)) continue;
+        if (!consultar_transicaoArvore(indiceAtual, static_cast<std::size_t>(destino))) continue;
         const auto &config = atual.get_configuracao();
         const float comprimento = Sala::COMPRIMENTO_CORREDOR;
         const bool chegou = d == 0 ? jogador.get_x() <= -comprimento - jogador.get_largura() :
@@ -186,18 +251,20 @@ void Fase::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool hitbo
 
 SDL_FRect Fase::get_limitesVisuais() const
 {
-    const auto origem = origens.obter(indiceAtual);
-    float esquerda = 0, cima = 0, direita = 0, baixo = 0;
-    for (std::size_t i = 0; i < salas.get_quantidade(); ++i)
-    {
-        const auto pos = origens.obter(i);
-        const auto &config = salas.obter(i).get_configuracao();
-        esquerda = std::min(esquerda, pos.x - 12);
-        cima = std::min(cima, pos.y - 12);
-        direita = std::max(direita, pos.x + config.largura + 12);
-        baixo = std::max(baixo, pos.y + config.altura + 12);
-    }
-    return {esquerda - origem.x, cima - origem.y, direita - esquerda, baixo - cima};
+    // A camera considera somente a sala atual e os corredores que realmente
+    // saem dela. Assim ramos situados a esquerda/direita em outras partes da
+    // fase nao deslocam a sala atual para um canto vazio da tela.
+    const auto &config = get_salaAtual().get_configuracao();
+    const float margem = 12.0f;
+    const float esquerda = get_vizinho(indiceAtual, Direcao::ESQUERDA) >= 0 ?
+        -Sala::COMPRIMENTO_CORREDOR - margem : -margem;
+    const float direita = get_vizinho(indiceAtual, Direcao::DIREITA) >= 0 ?
+        config.largura + Sala::COMPRIMENTO_CORREDOR + margem : config.largura + margem;
+    const float cima = get_vizinho(indiceAtual, Direcao::CIMA) >= 0 ?
+        -Sala::COMPRIMENTO_CORREDOR - margem : -margem;
+    const float baixo = get_vizinho(indiceAtual, Direcao::BAIXO) >= 0 ?
+        config.altura + Sala::COMPRIMENTO_CORREDOR + margem : config.altura + margem;
+    return {esquerda, cima, direita - esquerda, baixo - cima};
 }
 
 Sala &Fase::get_salaAtual()
@@ -240,6 +307,11 @@ const Sala &Fase::get_sala(std::size_t indice) const
     return salas.obter(indice);
 }
 
+SDL_FPoint Fase::get_origemSala(std::size_t indice) const
+{
+    return origens.obter(indice);
+}
+
 int Fase::get_vizinho(std::size_t indice, Direcao direcao) const
 {
     const auto &config = get_sala(indice).get_configuracao();
@@ -258,6 +330,59 @@ int Fase::get_vizinho(std::size_t indice, Direcao direcao) const
     return -1;
 }
 
+int Fase::get_paiSalaDescoberta(std::size_t indice) const
+{
+    const auto *pai = arvoreProgresso.obter_pai(indice);
+    return pai == nullptr ? -1 : static_cast<int>(*pai);
+}
+
+std::vector<std::size_t> Fase::percorrer_salasDescobertas() const
+{
+    return arvoreProgresso.percorrer_pre_ordem();
+}
+
+std::size_t Fase::contar_salasDescobertas() const
+{
+    return arvoreProgresso.contar_nos();
+}
+
+int Fase::get_pontosComuns() const
+{
+    int total = 0;
+    for (const auto &sala : salas)
+    {
+        total += sala.get_pontosComuns();
+    }
+    return total;
+}
+
+int Fase::get_pontosBoss() const
+{
+    int total = 0;
+    for (const auto &sala : salas)
+    {
+        total += sala.get_pontosBoss();
+    }
+    return total;
+}
+
+bool Fase::consultar_transicaoArvore(std::size_t origem, std::size_t destino) const
+{
+    // Avanco para uma sala liberada: consulta direta de filho.
+    if (arvoreProgresso.obter_filho(origem, destino) != nullptr)
+    {
+        return true;
+    }
+    // Retorno pelo caminho de descoberta: consulta do pai.
+    const auto *pai = arvoreProgresso.obter_pai(origem);
+    if (pai != nullptr && *pai == destino)
+    {
+        return true;
+    }
+    // Destino conhecido nao basta: somente uma aresta pai-filho permite passagem.
+    return false;
+}
+
 void Fase::atualizar(float dt, Jogador &jogador)
 {
     for (std::size_t i = 0; i < salas.get_quantidade(); ++i)
@@ -271,9 +396,20 @@ void Fase::atualizar(float dt, Jogador &jogador)
 void Fase::preparar_adjacentes()
 {
     if (!get_salaAtual().liberada()) return;
-    for (int d = 0; d < 4; ++d)
+    const PlantaFase &planta = PLANTAS[numero - 1];
+    for (std::size_t indiceFilho = 1; indiceFilho < planta.quantidade; ++indiceFilho)
     {
-        const int vizinho = get_vizinho(indiceAtual, static_cast<Direcao>(d));
-        if (vizinho >= 0) salas.obter(static_cast<std::size_t>(vizinho)).preparar();
+        if (planta.pais[indiceFilho] != static_cast<int>(indiceAtual))
+        {
+            continue;
+        }
+        // A insercao continua acontecendo em tempo real, mas somente o pai
+        // canonico pode executa-la. Assim a ordem de exploracao nao altera a
+        // forma final da arvore.
+        if (!arvoreProgresso.contem(indiceFilho))
+        {
+            arvoreProgresso.inserir_filho(indiceAtual, indiceFilho);
+        }
+        salas.obter(indiceFilho).preparar();
     }
 }

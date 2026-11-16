@@ -8,7 +8,7 @@
 constexpr int LARGURA_TELA = 960;
 constexpr int ALTURA_TELA = 540;
 
-constexpr char TITULO_JANELA[] = "Projeto AED - Roguelike";
+constexpr char TITULO_JANELA[] = "M.C.G.A: Make Computers Great Again";
 
 // Grade do piso das salas.
 constexpr int PASSO_GRADE = 48;
@@ -21,6 +21,10 @@ constexpr float COMPRIMENTO_ARMA = 34.0f;
 constexpr float ESPESSURA_ARMA = 10.0f;
 constexpr float RECUO_ARMA = 2.0f;      // quanto o pivo fica atras do centro
 constexpr float INTERVALO_TIRO = 0.14f; // segundos entre disparos
+constexpr float INTERVALO_SOCO = 0.48f; // mais lento que qualquer arma de fogo
+constexpr float ALCANCE_SOCO = 62.0f;
+constexpr float DURACAO_RASTRO_SOCO = 0.14f;
+constexpr int DANO_SOCO = 1;
 constexpr float DURACAO_TITULO_FASE = 3.0f; // segundos do nome da fase ao entrar nela
 constexpr int MUNICAO_INICIAL = 400;
 

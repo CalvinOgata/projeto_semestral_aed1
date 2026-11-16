@@ -1,19 +1,21 @@
 #include "interface/Hud.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
 #include <string>
 
 #include "config/Config.h"
-#include "interface/Texto.h"
 #include "graficos/IconeArma.h"
+#include "graficos/Sprite.h"
+#include "interface/Texto.h"
 
 namespace
 {
 enum class Icone
 {
     VIDA,
-    ESCUDO,
-    ENERGIA
+    ESCUDO
 };
 
 void desenhar_icone(SDL_Renderer *renderizador, int x, int y, Icone icone, SDL_Color cor)
@@ -21,30 +23,70 @@ void desenhar_icone(SDL_Renderer *renderizador, int x, int y, Icone icone, SDL_C
     SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, 220);
     if (icone == Icone::VIDA)
     {
-        // Coracao pixelado, preenchido em linhas.
-        const SDL_Rect partes[] = {{x + 1, y, 5, 4}, {x + 9, y, 5, 4},
-                                   {x, y + 3, 15, 5}, {x + 2, y + 8, 11, 3},
-                                   {x + 4, y + 11, 7, 2}, {x + 6, y + 13, 3, 2}};
+        // Coracao de 24x25, grande o bastante para acompanhar a hotbar.
+        const SDL_Rect partes[] = {{x + 2, y, 8, 6}, {x + 14, y, 8, 6},
+                                   {x, y + 5, 24, 8}, {x + 3, y + 13, 18, 5},
+                                   {x + 6, y + 18, 12, 4}, {x + 9, y + 22, 6, 3}};
         for (const auto &parte : partes)
         {
             SDL_RenderFillRect(renderizador, &parte);
         }
     }
-    else if (icone == Icone::ESCUDO)
-    {
-        const SDL_Point pontos[] = {{x, y}, {x + 14, y}, {x + 14, y + 8},
-                                    {x + 7, y + 15}, {x, y + 8}, {x, y}};
-        SDL_RenderDrawLines(renderizador, pontos, 6);
-        SDL_RenderDrawLine(renderizador, x + 7, y + 3, x + 7, y + 11);
-        SDL_RenderDrawLine(renderizador, x + 3, y + 6, x + 11, y + 6);
-    }
     else
     {
-        const SDL_Point pontos[] = {{x + 9, y}, {x + 2, y + 8}, {x + 7, y + 8},
-                                    {x + 4, y + 15}, {x + 13, y + 5},
-                                    {x + 8, y + 5}, {x + 9, y}};
-        SDL_RenderDrawLines(renderizador, pontos, 7);
+        // Escudo de 24x25, com cruz igualmente ampliada.
+        const SDL_Point pontos[] = {{x, y}, {x + 24, y}, {x + 24, y + 13},
+                                    {x + 12, y + 25}, {x, y + 13}, {x, y}};
+        SDL_RenderDrawLines(renderizador, pontos, 6);
+        SDL_RenderDrawLine(renderizador, x + 12, y + 4, x + 12, y + 19);
+        SDL_RenderDrawLine(renderizador, x + 5, y + 10, x + 19, y + 10);
     }
+}
+
+void desenhar_cicloFila(SDL_Renderer *renderizador)
+{
+    // Uma unica seta circular anti-horaria, sem fundo, ao lado da hotbar.
+    constexpr int CENTRO_X = 728;
+    constexpr int CENTRO_Y = 49;
+    constexpr float PI = 3.14159265358979323846f;
+    SDL_SetRenderDrawColor(renderizador, 235, 242, 250, 225);
+    for (int raio : {24, 25})
+    {
+        float anguloAnterior = -150.0f * PI / 180.0f;
+        int xAnterior = CENTRO_X + static_cast<int>(raio * std::cos(anguloAnterior));
+        int yAnterior = CENTRO_Y - static_cast<int>(raio * std::sin(anguloAnterior));
+        for (int graus = -140; graus <= 150; graus += 10)
+        {
+            const float angulo = graus * PI / 180.0f;
+            const int x = CENTRO_X + static_cast<int>(raio * std::cos(angulo));
+            const int y = CENTRO_Y - static_cast<int>(raio * std::sin(angulo));
+            SDL_RenderDrawLine(renderizador, xAnterior, yAnterior, x, y);
+            xAnterior = x;
+            yAnterior = y;
+        }
+    }
+
+    // Ponta tangente ao fim do arco: da esquerda superior para a esquerda
+    // inferior, deixando inequivoco o sentido anti-horario.
+    const float pontaAngulo = 150.0f * PI / 180.0f;
+    const int pontaX = CENTRO_X + static_cast<int>(25.0f * std::cos(pontaAngulo));
+    const int pontaY = CENTRO_Y - static_cast<int>(25.0f * std::sin(pontaAngulo));
+    const float direcaoX = -std::sin(pontaAngulo);
+    const float direcaoY = -std::cos(pontaAngulo);
+    const float baseX = pontaX - direcaoX * 11.0f;
+    const float baseY = pontaY - direcaoY * 11.0f;
+    const float perpendicularX = -direcaoY;
+    const float perpendicularY = direcaoX;
+    SDL_RenderDrawLine(renderizador, pontaX, pontaY,
+                       static_cast<int>(baseX + perpendicularX * 6.0f),
+                       static_cast<int>(baseY + perpendicularY * 6.0f));
+    SDL_RenderDrawLine(renderizador, pontaX, pontaY,
+                       static_cast<int>(baseX - perpendicularX * 6.0f),
+                       static_cast<int>(baseY - perpendicularY * 6.0f));
+
+    Texto::desenhar_centralizado(renderizador, "Q", CENTRO_X,
+                                CENTRO_Y - Texto::altura(2) / 2, 2,
+                                {235, 242, 250, 255});
 }
 
 void desenhar_inventario(SDL_Renderer *renderizador, const FilaArmas &armas)
@@ -52,14 +94,15 @@ void desenhar_inventario(SDL_Renderer *renderizador, const FilaArmas &armas)
     constexpr int LADO_ATUAL = 64;
     constexpr int LADO_RESERVA = 48;
     constexpr int ESPACO = 8;
-    constexpr int MARGEM = 16;
+    constexpr int MARGEM_HORIZONTAL = 16;
+    constexpr int MARGEM_VERTICAL = 17;
     constexpr int LARGURA = LADO_ATUAL + (MAX_ARMAS - 1) * (LADO_RESERVA + ESPACO);
-    int x = LARGURA_TELA - MARGEM - LARGURA;
+    int x = LARGURA_TELA - MARGEM_HORIZONTAL - LARGURA;
     for (int i = 0; i < MAX_ARMAS; ++i)
     {
         const bool equipada = i == 0;
         const int lado = equipada ? LADO_ATUAL : LADO_RESERVA;
-        const int y = MARGEM + (LADO_ATUAL - lado) / 2;
+        const int y = MARGEM_VERTICAL + (LADO_ATUAL - lado) / 2;
         const SDL_Rect caixa = {x, y, lado, lado};
         SDL_SetRenderDrawColor(renderizador, 12, 18, 26, equipada ? 210 : 165);
         SDL_RenderFillRect(renderizador, &caixa);
@@ -81,17 +124,17 @@ void desenhar_inventario(SDL_Renderer *renderizador, const FilaArmas &armas)
         }
         x += lado + ESPACO;
     }
+    desenhar_cicloFila(renderizador);
 }
 
-void desenhar_barra(SDL_Renderer *renderizador, int y, const char *nome, int valor,
-                    int maximo, SDL_Color cor, Icone icone)
+void desenhar_barra(SDL_Renderer *renderizador, int y, int valor, int maximo,
+                    SDL_Color cor, Icone icone)
 {
-    desenhar_icone(renderizador, 26, y + 3, icone, cor);
-    Texto::desenhar(renderizador, nome, 50, y, 1, {230, 237, 245, 220});
+    desenhar_icone(renderizador, 26, y, icone, cor);
     const std::string valorTexto = std::to_string(valor) + "/" + std::to_string(maximo);
-    Texto::desenhar(renderizador, valorTexto, 204 - Texto::largura(valorTexto, 1),
+    Texto::desenhar(renderizador, valorTexto, 272 - Texto::largura(valorTexto, 1),
                     y, 1, {230, 237, 245, 220});
-    const SDL_Rect trilha = {50, y + 12, 154, 9};
+    const SDL_Rect trilha = {62, y + 12, 210, 14};
     SDL_SetRenderDrawColor(renderizador, 8, 12, 20, 160);
     SDL_RenderFillRect(renderizador, &trilha);
     const float proporcao = maximo > 0 ?
@@ -112,9 +155,21 @@ void desenhar_barra(SDL_Renderer *renderizador, int y, const char *nome, int val
         SDL_RenderDrawLine(renderizador, divisor, trilha.y, divisor, trilha.y + trilha.h - 1);
     }
 }
+
+std::string formatar_relogio(float segundos)
+{
+    const int decimosTotais = std::max(0, static_cast<int>(segundos * 10.0f));
+    const int minutos = decimosTotais / 600;
+    const int segundosInteiros = decimosTotais / 10 % 60;
+    const int decimos = decimosTotais % 10;
+    char texto[24];
+    std::snprintf(texto, sizeof(texto), "%02d:%02d.%d", minutos, segundosInteiros, decimos);
+    return texto;
+}
 }
 
-void Hud::desenhar(SDL_Renderer *renderizador, const Jogador &jogador)
+void Hud::desenhar(SDL_Renderer *renderizador, const Jogador &jogador,
+                   const Sprite &spriteJogador, int vidas, int pontuacao, float tempoFase)
 {
     if (renderizador == nullptr)
     {
@@ -123,18 +178,28 @@ void Hud::desenhar(SDL_Renderer *renderizador, const Jogador &jogador)
     SDL_BlendMode anterior;
     SDL_GetRenderDrawBlendMode(renderizador, &anterior);
     SDL_SetRenderDrawBlendMode(renderizador, SDL_BLENDMODE_BLEND);
-    // Uma unica caixa para os tres atributos, sobreposta no canto superior esquerdo.
-    const SDL_Rect caixa = {16, 16, 200, 104};
-    SDL_SetRenderDrawColor(renderizador, 12, 18, 26, 140);
-    SDL_RenderFillRect(renderizador, &caixa);
-    SDL_SetRenderDrawColor(renderizador, 180, 200, 220, 70);
-    SDL_RenderDrawRect(renderizador, &caixa);
-    desenhar_barra(renderizador, 25, "VIDA", jogador.get_vida(), jogador.get_vidaMax(),
-                    {235, 88, 111, 255}, Icone::VIDA);
-    desenhar_barra(renderizador, 55, "ESCUDO", jogador.get_escudo(), jogador.get_escudoMax(),
-                    {73, 190, 234, 255}, Icone::ESCUDO);
-    desenhar_barra(renderizador, 85, "ENERGIA", jogador.get_estamina(), jogador.get_estaminaMax(),
-                    {237, 197, 76, 255}, Icone::ENERGIA);
+    Texto::desenhar(renderizador, "VIDAS", 18, 13, 1, {230, 237, 245, 220});
+    for (int i = 0; i < std::clamp(vidas, 0, 3); ++i)
+    {
+        const SDL_FRect quadro = {70.0f + i * 46.0f, 2.0f, 42.0f, 38.0f};
+        spriteJogador.desenhar_recorte(renderizador, quadro, {0.25f, 0.08f, 0.58f, 0.42f});
+    }
+
+    // Vida e escudo ficam diretamente sobre a gameplay, sem painel de fundo.
+    desenhar_barra(renderizador, 50, jogador.get_vida(), jogador.get_vidaMax(),
+                   {235, 88, 111, 255}, Icone::VIDA);
+    desenhar_barra(renderizador, 90, jogador.get_escudo(), jogador.get_escudoMax(),
+                   {73, 190, 234, 255}, Icone::ESCUDO);
+
+    // Pontuacao e tempo tambem nao usam caixa ou borda de fundo.
+    const std::string pontos = std::to_string(std::max(0, pontuacao));
+    const std::string relogio = formatar_relogio(tempoFase);
+    Texto::desenhar(renderizador, "PONTUACAO", 24, 136, 1, {230, 237, 245, 220});
+    Texto::desenhar(renderizador, pontos, 272 - Texto::largura(pontos, 1), 136, 1,
+                    {255, 222, 110, 240});
+    Texto::desenhar(renderizador, "TEMPO", 24, 159, 1, {230, 237, 245, 220});
+    Texto::desenhar(renderizador, relogio, 272 - Texto::largura(relogio, 1), 159, 1,
+                    {230, 237, 245, 240});
 
     desenhar_inventario(renderizador, jogador.get_armas());
 

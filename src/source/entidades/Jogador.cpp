@@ -9,19 +9,16 @@
 #include "graficos/Sprite.h"
 
 Jogador::Jogador(const DimensoesEntidade &dimensoes)
-    : vida(0), escudo(50), escudoMax(50), estamina(0), vidaMax(0), estaminaMax(0),
-      x(0.0f), y(0.0f), dimensoes(dimensoes), velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
+    : vida(0), escudo(50), escudoMax(50), vidaMax(0), x(0.0f), y(0.0f),
+      dimensoes(dimensoes), velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
 {
     if (!dimensoes.valida())
     {
         throw std::invalid_argument("Dimensoes de jogador invalidas");
     }
-    // mudar_vidaMax()/mudar_estaminaMax() somam ao valor atual, por isso os
-    // atributos comecam zerados na lista de inicializacao acima.
+    // mudar_vidaMax() soma ao valor atual, por isso vidaMax comeca zerada.
     this->mudar_vidaMax(100);
-    this->mudar_estaminaMax(100);
     this->rec_vida(this->get_vidaMax());
-    this->rec_estamina(this->get_estaminaMax());
 
     // Arma inicial: entra na fila, que e de onde o jogo le o dano e a municao.
     Armas inicial;
@@ -43,16 +40,6 @@ void Jogador::rec_vida(int quantidade)
     }
 }
 
-void Jogador::rec_estamina(int quantidade)
-{
-    this->estamina += quantidade;
-
-    if (this->get_estamina() > this->get_estaminaMax())
-    {
-        this->estamina = this->estaminaMax;
-    }
-}
-
 void Jogador::perder_vida(int quantidade)
 {
     this->vida -= quantidade;
@@ -60,16 +47,6 @@ void Jogador::perder_vida(int quantidade)
     if (this->vida < 0)
     {
         this->vida = 0;
-    }
-}
-
-void Jogador::perder_estamina(int quantidade)
-{
-    this->estamina -= quantidade;
-
-    if (this->estamina < 0)
-    {
-        this->estamina = 0;
     }
 }
 
@@ -87,38 +64,14 @@ void Jogador::mudar_vidaMax(int quantidade)
     }
 }
 
-void Jogador::mudar_estaminaMax(int quantidade)
-{
-    this->estaminaMax += quantidade;
-
-    if (this->get_estaminaMax() < 1)
-    {
-        this->estaminaMax = 1;
-    }
-    if (this->get_estamina() > this->get_estaminaMax())
-    {
-        this->estamina = this->estaminaMax;
-    }
-}
-
 int Jogador::get_vida() const
 {
     return this->vida;
 }
 
-int Jogador::get_estamina() const
-{
-    return this->estamina;
-}
-
 int Jogador::get_vidaMax() const
 {
     return this->vidaMax;
-}
-
-int Jogador::get_estaminaMax() const
-{
-    return this->estaminaMax;
 }
 
 bool Jogador::morto() const
@@ -128,6 +81,16 @@ bool Jogador::morto() const
         return false;
     }
     return true;
+}
+
+void Jogador::set_ignorarTirosInimigos(bool ignorar)
+{
+    this->ignorarTirosInimigos = ignorar;
+}
+
+bool Jogador::get_ignorarTirosInimigos() const
+{
+    return this->ignorarTirosInimigos;
 }
 
 void Jogador::set_posicao(float novoX, float novoY)
@@ -341,7 +304,7 @@ int Jogador::get_escudoMax() const
 
 void Jogador::receber_dano(int quantidade)
 {
-    if (quantidade <= 0 || morto() || invulnerabilidade > 0) return;
+    if (quantidade <= 0 || morto() || invulnerabilidade > 0 || ignorarTirosInimigos) return;
     const int absorvido = std::min(escudo, quantidade);
     perder_escudo(absorvido);
     perder_vida(quantidade - absorvido);

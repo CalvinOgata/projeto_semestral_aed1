@@ -17,6 +17,9 @@ struct ProgressoSalvo
 {
     int fasesConcluidas = 0;
     std::vector<ArmaSalva> armas;
+    int vidas = 3;
+    bool continueDisponivel = true;
+    int pontuacaoTotal = 0;
 };
 
 // Formato JSON versionado, independente de SDL e das entidades em memoria.
@@ -30,6 +33,7 @@ public:
     explicit ArquivoProgresso(const std::filesystem::path &caminho);
     bool carregar(ProgressoSalvo &progresso, std::string &mensagem) const;
     bool salvar(const ProgressoSalvo &progresso, std::string &mensagem) const;
+    bool apagar(std::string &mensagem) const;
 };
 
 #endif

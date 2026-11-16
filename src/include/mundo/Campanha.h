@@ -19,6 +19,8 @@ public:
     // Inventario vazio inicia com as armas padrao do jogador.
     void iniciar(int concluidas, Jogador &jogador, const FilaArmas &armas = FilaArmas());
     bool atualizar_transicao(Jogador &jogador);
+    // Confirma a fase cujo portal ja foi alcancado e prepara a seguinte.
+    bool avancar_fase(Jogador &jogador);
     void reiniciar_fase(Jogador &jogador);
     bool concluida() const;
     int get_fasesConcluidas() const;

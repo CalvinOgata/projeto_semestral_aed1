@@ -15,12 +15,11 @@ private:
     float esperaEscudo = 0;
     float cargaEscudo = 0;
     float invulnerabilidade = 0;
+    bool ignorarTirosInimigos = false;
     int vida;
     int escudo;
     int escudoMax;
-    int estamina;
     int vidaMax;
-    int estaminaMax;
 
     float x;
     float y;
@@ -42,17 +41,14 @@ public:
     void perder_escudo(int);
     int get_escudo() const;
     int get_escudoMax() const;
-    void rec_estamina(int);
     void perder_vida(int);
-    void perder_estamina(int);
     void mudar_vidaMax(int);
-    void mudar_estaminaMax(int);
 
-    int get_estamina() const;
     int get_vida() const;
     int get_vidaMax() const;
-    int get_estaminaMax() const;
     bool morto() const;
+    void set_ignorarTirosInimigos(bool ignorar);
+    bool get_ignorarTirosInimigos() const;
 
     // --- posicao e movimento ---
     void set_posicao(float, float);

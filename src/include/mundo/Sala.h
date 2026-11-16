@@ -31,6 +31,7 @@ struct ConfiguracaoSala
     int tema = 1; // numero da fase, usado nos sprites tematicos
     int cobertura = 0; // modelo de caixotes/barreiras; 0 deixa a sala livre
     int ondasExtras = 0; // ondas de reforco apos a primeira
+    bool mostrarComandos = false; // tutorial desenhado no piso do lobby
 };
 
 enum class EstadoSala
@@ -83,6 +84,8 @@ public:
     bool liberada() const;
     EstadoSala get_estado() const;
     int get_inimigosVivos() const;
+    int get_pontosComuns() const;
+    int get_pontosBoss() const;
     const ConfiguracaoSala &get_configuracao() const;
     SDL_FRect get_limites() const;
     SDL_FRect get_porta(bool direita) const;

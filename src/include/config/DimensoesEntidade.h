@@ -17,7 +17,9 @@ struct DimensoesEntidade
     }
 };
 
-constexpr DimensoesEntidade DIMENSOES_HEROI = {32, 32, 48, 48};
+// O Tux ganhou presenca visual de 64x64, mas conserva a hitbox de 32x32.
+// Assim a arte cresce sem mudar a dificuldade das colisoes e dos tiros.
+constexpr DimensoesEntidade DIMENSOES_HEROI = {32, 32, 64, 64};
 constexpr DimensoesEntidade DIMENSOES_INIMIGO_COMUM = {28, 28, 48, 48};
 // Bruta-montes e boss usam estes perfis com visuais provisorios.
 constexpr DimensoesEntidade DIMENSOES_GUARDA_COSTAS = {44, 44, 64, 64};

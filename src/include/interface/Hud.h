@@ -3,10 +3,13 @@
 
 #include "entidades/Jogador.h"
 
+class Sprite;
+
 // Sobreposicao de leitura: nao recebe eventos nem reserva area da sala.
 namespace Hud
 {
-void desenhar(SDL_Renderer *renderizador, const Jogador &jogador);
+void desenhar(SDL_Renderer *renderizador, const Jogador &jogador, const Sprite &spriteJogador,
+              int vidas, int pontuacao, float tempoFase);
 }
 
 #endif

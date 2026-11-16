@@ -293,6 +293,17 @@ bool Inimigo::soltar_coracao()
     coracaoSolto = true;
     return true;
 }
+
+bool Inimigo::registrar_mortePontuada()
+{
+    if (vivo || mortePontuada)
+    {
+        return false;
+    }
+    mortePontuada = true;
+    return true;
+}
+
 int Inimigo::get_danoTiro() const
 {
     return tipo == TipoInimigo::BOSS ? 18 : (tipo == TipoInimigo::BRUTO ? 12 : 8);

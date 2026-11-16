@@ -15,6 +15,8 @@ private:
     SDL_FRect limites = {0, 0, 800, 400};
     int dificuldade = 1;
     int tema = 1;
+    int pontosComuns = 0;
+    int pontosBoss = 0;
     // Reforcos: cada onda extra surge quando resta no maximo um inimigo vivo.
     int ondasRestantes = 0;
     int reforcoVirus = 0;
@@ -44,7 +46,15 @@ private:
         TipoArma tipo;
     };
     ListaSequencial<Rastro> rastros;
+    struct RastroSoco
+    {
+        SDL_FPoint centro;
+        float angulo;
+        float tempo;
+    };
+    ListaSequencial<RastroSoco> rastrosSoco;
     void atacar_instantaneo(const Jogador &jogador, const Armas &arma);
+    void atacar_soco(const Jogador &jogador);
     void atualizar_projeteis(float dt, const Jogador &jogador);
     void atualizar_inimigos(float dt, const Jogador &jogador);
     void resolver_colisoes();
@@ -60,6 +70,7 @@ private:
     void estimar_velocidadeJogador(float dt, const Jogador &jogador);
     bool tiro_bloqueado(const SDL_FRect &area) const;
     void limpar_inativos();
+    void registrar_pontuacaoMortes();
 
 public:
     bool buscar_alvoMaisProximo(const Jogador &jogador, SDL_FPoint &alvo) const;
@@ -77,6 +88,8 @@ public:
     void desenhar(SDL_Renderer *renderizador, const Camera &camera,
                   bool mostrarHitboxes = false) const;
     int get_inimigosVivos() const;
+    int get_pontosComuns() const;
+    int get_pontosBoss() const;
 };
 
 #endif

@@ -49,13 +49,13 @@ A fase 1 possui sete salas (Pre-processador, Cache de build, Analise lexica,
 Parser, Linker e Compilador fechado):
 
 ```text
-                  F (boss)
-                  |
-          D ----- E (2 baus)
-          |       |
-Lobby --- A ----- C
+          Lobby
           |
-          B (1 bau)
+ B ------ A ------ C
+(bau)     |        |
+          D        E (2 baus)
+                   |
+                   F (boss)
 ```
 
 A tem 4 virus. C e D possuem, cada uma, 5 virus e 2 bruta-montes. A, C e D recebem
@@ -64,42 +64,55 @@ O lobby e as salas B/E nao possuem inimigos. As portas abrem ao eliminar todos
 os inimigos da sala; atravesse o corredor estreito para chegar a sala seguinte.
 Salas vazias ou limpas ficam abertas, permitindo voltar pelo corredor, inclusive em E–F.
 Derrote o boss de F e toque no portal central para avancar.
-Ao limpar uma sala, os inimigos das salas adjacentes ja ficam visiveis; eles so
+Ao limpar uma sala, seus filhos entram na arvore e sao preparados; seus inimigos so
 comecam a agir quando o jogador entra.
 Salas limpas e baus abertos persistem nas revisitas.
 A fase 2 (dificuldade 2) possui nove salas (Roteador, Cache DNS, Caixa de spam,
 Proxy, Botnet, Ping 999, Loot drop e Rede antissocial):
 
 ```text
-          B (1 bau)        H (boss)
-          |                |
-Lobby --- A ----- D ------ F
-          |                |
-          C ----- E ------ G (2 baus)
+          Lobby
+          |
+ B ------ A ------ C
+(bau)     |        |
+          D        E
+          |
+          F ------ G (2 baus)
+          |
+          H (boss)
 ```
 
 A tem 5 virus e 1 bruta-monte; C, 6 e 2; D, 5 e 2; E, 7 e 2; F, 6 e 3. D e F
 recebem duas ondas de reforco; as demais salas de combate, uma.
 
-A fase 3 (dificuldade 3) possui onze salas, subindo a partir do lobby (Kernel panic,
+A fase 3 (dificuldade 3) possui onze salas, com lobby no topo (Kernel panic,
 Rootkit, Ransomware, Spyware, Worm, Cofre de memoria, Deadlock, Save point,
 Processos zumbis e Tela azul da morte):
 
 ```text
-                  J (boss + 2 virus)
-                  |
-                  I
-                  |
-          D ----- G ----- E ----- H (2 baus)
-          |               |
-          B ----- A ----- C ----- F (1 bau)
-                  |
-                Lobby
+          Lobby
+          |
+ B ------ A ------ C ------ F (bau)
+ |                 |
+ D ------ G        E ------ H (2 baus)
+          |
+          I
+          |
+          J (boss + 3 virus)
 ```
 
 A tem 6 virus e 2 bruta-montes; B e C, 7 e 2; D, 8 e 2; E, 8 e 3; G, 7 e 3; I, 7 e 4.
 A recebe uma onda de reforco, I recebe tres e as demais, duas.
 Nas tres fases, o boss da ultima sala libera o portal central de saida.
+
+Os desenhos acima e o minimapa preservam as posicoes relativas das salas:
+esquerda, direita, cima e baixo correspondem ao cenario real. A escala e compactada.
+Toda passagem liga exatamente pai e filho, nos dois sentidos; nao existem
+atalhos entre ramos. A tabela de pais gera as portas e corredores, e tambem
+governa a descoberta no minimapa. Cada no do mapa informa ESQ/DIR/CIMA/BAIXO:
+a porta a usar na sala pai para chegar a ele. Os nos ja revelados nao mudam de
+posicao ao descobrir outros ramos. As posicoes e o conteudo das salas continuam
+fixos por fase.
 
 Baus abrem automaticamente a menos de 64 pixels e soltam duas armas aleatorias,
 incluindo pistola e todas as sete outras armas; repeticoes sao possiveis.
@@ -141,9 +154,9 @@ As configuracoes das salas sao fixas. Dano de contato e geracao procedural ainda
 
 ## Tela inicial e salvamento
 
-O minimapa mostra todas as salas e suas conexoes na fase atual, inclusive as nao
-visitadas. A sala atual recebe uma borda amarela e um ponto indica a posicao do
-jogador dentro dela. Verde indica sala concluida, cinza nao visitada e vermelho
+O minimapa mostra apenas as salas ja reveladas na arvore: inicialmente o lobby;
+ao liberar uma sala, seus filhos aparecem, mesmo antes da visita. M apenas consulta
+a arvore. A sala atual recebe borda amarela e um marcador. Verde indica sala concluida, cinza nao visitada e vermelho
 em combate; salas de baus e boss possuem identificacao. Funciona nas tres fases,
 inclusive pelo menu de pausa. M ou Esc fecham o mapa e retornam ao estado anterior.
 Movimento, tiros e temporizadores ficam congelados durante a consulta.
