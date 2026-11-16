@@ -143,8 +143,12 @@ A tecla R nao reinicia mais. O reinicio pelo menu retoma a partida.
 Para configurar a fase inicial, edite os registros no construtor de `Fase`, em
 `src/source/mundo/Fase.cpp`. As dimensoes minimas sao 400x300, dificuldade pelo
 menos 1, quantidade de inimigos nao negativa. Os inimigos nascem na
-metade direita, afastados da entrada inicial. Dificuldade `d` aplica vida
-`VIDA_INIMIGO + d - 1` e velocidade `VELOCIDADE_INIMIGO * (1 + 0.12 * (d - 1))`.
+metade direita, afastados da entrada inicial. As classes basico, medio e boss
+calculam inicialmente 4/20/100 de vida multiplicados por `1 + 0.2 * (d - 1)`.
+O ajuste global conserva 75% do resultado e, em seguida, 90% do restante,
+arredondando cada etapa para baixo; na fase 1, portanto, as vidas efetivas sao
+2/13/67. A velocidade continua usando
+`1 + 0.12 * (d - 1)`.
 
 O jogador caminha pelo piso e pelos corredores liberados; inimigos ficam no piso da sala;
 projeteis saindo dele sao desativados, exceto ricochetes e boomerangs. A camera respeita os limites da fase com margem de 12 pixels
@@ -215,9 +219,10 @@ O arquivo fica em `assets/sprites/personagens/tux.png`, relativo ao executavel.
 
 ## Tipos de armas e objetos de sala
 
-`Armas` guarda `TipoArma`, municao, dano, quantidade de projeteis e cadencia;
-continua independente de SDL. `Combate` implementa shotgun, laser, tiro duplo,
-ricochete, espada, arco e boomerang. Laser e espada aplicam dano imediato e
+`Armas` guarda `TipoArma`, municao, dano, quantidade de projeteis, cadencia,
+afinidade e classe de alcance; continua independente de SDL. Os nove tipos
+formam uma matriz de tres afinidades por tres alcances. `Combate` implementa
+escopeta, pulso, laser, tiro duplo, ricochete, espada, arco e bumerangue. Laser e espada aplicam dano imediato e
 armazenam rastros visuais breves. Projeteis usam passos de no maximo 1/240 s
 para evitar saltar sobre hitboxes. Boomerangs registram indices atingidos por
 trajeto; inimigos mortos permanecem inativos na lista ate reiniciar a sala,
@@ -240,8 +245,12 @@ expande cada barreira em blocos independentes de 24x24, que quebram um a um.
 
 ## Inimigos, recompensas e defesa
 
-`TipoInimigo` distingue virus, bruta-montes e boss com vida base 2/12/65,
-perfis de colisao proprios e tiros de dano 8/12/18. `Combate` guarda
+`TipoInimigo` distingue basico, medio e boss. O ajuste de facilidade aplica uma
+reducao de 25% e depois outra de 10% sobre a vida calculada e o dano hostil: na
+fase 1, as vidas efetivas sao 2/13/67 e os tiros causam 5/8/11. `Afinidade` distingue
+vermelho (malware), azul (software fechado) e verde (hardware com IA), sem
+alterar a classe de forca. Arma e alvo com a mesma afinidade causam 2x o
+dano-base; combinacoes diferentes e o soco neutro causam 1x. `Combate` guarda
 tiros hostis separados dos projeteis do jogador e verifica colisoes em passos
 de ate 1/240 s. `Inimigo` decide o proprio movimento (distancia preferida, giro
 e contorno) a partir da linha de visao que `Combate` calcula por quadro; `Combate`
@@ -253,8 +262,9 @@ sao inseridos no fim da lista, preservando os indices usados pelo bumerangue.
 
 Cada morte produz exatamente um coracao, inclusive ataques instantaneos.
 `Combate` controla coleta e expiracao; `Fase` envelhece coletas inativas.
-`Sala` possui baus e armas no chao; abrir um bau sorteia duas armas uniformemente
-entre os oito tipos, com reposicao. B/E possuem um/dois baus. Nenhum TAD depende
+`Sala` possui baus e armas no chao; abrir um bau gera primeiro uma arma da
+afinidade eficaz contra o boss da fase e depois sorteia uma entre os nove tipos,
+com reposicao. B/E possuem um/dois baus. Nenhum TAD depende
 dessas regras de jogo; armazenamento permanece encapsulado.
 
 A pausa apresenta somente o titulo PAUSADO, fase/nome da sala e quatro opcoes:

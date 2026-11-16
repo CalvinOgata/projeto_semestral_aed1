@@ -18,42 +18,47 @@ const SpriteArma PISTOLA = {{
     "............", "............", "..mmmmmmmm..", "..mMMMMMMma.",
     "..mmmmmmmm..", "...mm..m....", "...mmmmm....", "...mm.......",
     "..aaa.......", "..aaa.......", "............", "............"
-}, {208, 154, 94, 255}};
+}, {96, 230, 118, 255}};
 const SpriteArma SHOTGUN = {{
     "............", "............", ".....mmmmmmm", "....mMMMMMMM",
     "..aaammmmmmm", ".aaaamMMMMMM", ".aaammmmmmmm", "aaaa..mm....",
     "aaa.........", "............", "............", "............"
-}, {218, 138, 65, 255}};
+}, {244, 70, 82, 255}};
 const SpriteArma LASER = {{
     "............", ".....aa.....", "...mmAAmm...", "..mMMaaMMmaa",
     "..mMMAAMMMAA", "..mmmmmmmma.", "...mm..m....", "...mmmmm....",
     "...aa.......", "...aa.......", "............", "............"
-}, {70, 224, 232, 255}};
+}, {244, 70, 82, 255}};
 const SpriteArma DUPLA = {{
     "............", "............", "mmmm....mmmm", "MMMMmmmmMMMM",
     "mmmmMAAMmmmm", "....maam....", "....mmmm....", ".....mm.....",
     ".....aa.....", ".....aa.....", "............", "............"
-}, {192, 139, 246, 255}};
+}, {76, 156, 255, 255}};
 const SpriteArma RICOCHETE = {{
     ".........a..", "........aAa.", ".........a..", "..mmmmmm....",
     "..mMMMMMmm..", "..mMaaMMMma.", "..mmmmmmmm..", "...mm..m....",
     "...mmmmm....", "...aa.......", "...aa.......", "............"
-}, {111, 227, 126, 255}};
+}, {96, 230, 118, 255}};
 const SpriteArma ESPADA = {{
     ".........MM.", "........MMm.", ".......MMm..", "......MMm...",
     ".....MMm....", "..a.MMm.....", "..aaMm......", "...aa.......",
     "..m.aa......", ".m...a......", "a...........", "............"
-}, {244, 196, 91, 255}};
+}, {76, 156, 255, 255}};
 const SpriteArma ARCO = {{
     "....a.......", "....maa.....", "....m..a....", "....m...a...",
     "....m....aM.", ".MMMMMMMMMMM", "....m....aM.", "....m...a...",
     "....m..a....", "....maa.....", "....a.......", "............"
-}, {224, 164, 86, 255}};
+}, {76, 156, 255, 255}};
 const SpriteArma BOOMERANG = {{
     "............", ".....aa.....", "....aAAa....", "...aAAAAa...",
     "..aAAaaAAa..", ".aAAa..aAAa.", ".aAa....aAa.", ".aa......aa.",
     ".a........a.", "............", "............", "............"
-}, {245, 162, 73, 255}};
+}, {96, 230, 118, 255}};
+const SpriteArma PULSO = {{
+    "............", "....aaaa....", "...aAAAAa...", "..amMMMMma..",
+    ".amMMAAMMma.", ".amMMAAMMmaa", "..amMMMMma..", "...mmmmmm...",
+    "...mm..m....", "...mmmmm....", "...aa.......", "............"
+}, {244, 70, 82, 255}};
 
 const SpriteArma &obter_sprite(TipoArma tipo)
 {
@@ -73,6 +78,8 @@ const SpriteArma &obter_sprite(TipoArma tipo)
         return ARCO;
     case TipoArma::BOOMERANG:
         return BOOMERANG;
+    case TipoArma::PULSO:
+        return PULSO;
     default:
         return PISTOLA;
     }

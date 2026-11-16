@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 
 #include "config/DimensoesEntidade.h"
+#include "entidades/Afinidade.h"
 #include "graficos/Camera.h"
 
 enum class TipoInimigo { VIRUS, BRUTO, BOSS };
@@ -12,7 +13,8 @@ class Inimigo
 {
 private:
     TipoInimigo tipo = TipoInimigo::VIRUS;
-    int tema = 1; // fase que define o visual de guardioes e boss
+    Afinidade afinidade = Afinidade::VERDE;
+    int tema = 1; // fase de origem; o visual agora depende da afinidade
     float mira = 0;
     float esperaTiro = 1.5f;
     int dificuldade = 1;
@@ -39,12 +41,15 @@ public:
 
     Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial,
             const DimensoesEntidade &dimensoes = DIMENSOES_INIMIGO_COMUM,
-            TipoInimigo tipo = TipoInimigo::VIRUS, int tema = 1, int dificuldade = 1);
+            TipoInimigo tipo = TipoInimigo::VIRUS, int tema = 1, int dificuldade = 1,
+            Afinidade afinidade = Afinidade::VERDE);
     // Segura o disparo pronto enquanto nao houver linha livre ate o jogador.
     bool preparar_tiro(float dt);
     int registrar_ataque(); // devolve o numero do ataque, a partir de zero
     void set_visaoLivre(bool livre);
     TipoInimigo get_tipo() const;
+    Afinidade get_afinidade() const;
+    const char *get_nome() const;
     int get_tema() const;
     int get_vidaMax() const;
     bool soltar_coracao();

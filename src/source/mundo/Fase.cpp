@@ -20,45 +20,47 @@ struct PlantaSala
     // 1 quadrantes, 2 trincheira, 3 fortaleza (boss), 4 labirinto, 5 deposito (baus).
     int cobertura;
     int ondasExtras; // reforcos que surgem quando resta no maximo um inimigo
+    Afinidade afinidade = Afinidade::NEUTRA;
+    bool misturarAfinidades = false;
 };
 
 // Fase 1: lobby no topo; A ramifica para B/C/D, C para E e E para o boss F.
 const PlantaSala PLANTA_FASE_1[] = {
     {"LOBBY", 0, 0, 0, 0, 0, false, 0, 0},
-    {"A - PRE-PROCESSADOR", 0, 1, 4, 0, 0, false, 1, 1},
+    {"A - PRE-PROCESSADOR", 0, 1, 4, 1, 0, false, 1, 1, Afinidade::AZUL},
     {"B - CACHE DE BUILD", -1, 1, 0, 0, 1, false, 5, 0},
-    {"C - ANALISE LEXICA", 1, 1, 5, 2, 0, false, 2, 1},
-    {"D - PARSER", 0, 2, 5, 2, 0, false, 4, 1},
+    {"C - ANALISE LEXICA", 1, 1, 5, 2, 0, false, 2, 1, Afinidade::VERMELHA},
+    {"D - PARSER", 0, 2, 5, 2, 0, false, 4, 1, Afinidade::VERDE},
     {"E - LINKER", 1, 2, 0, 0, 2, false, 5, 0},
-    {"F - COMPILADOR FECHADO", 1, 3, 0, 0, 0, true, 3, 0},
+    {"F - COMPILADOR FECHADO", 1, 3, 0, 0, 0, true, 3, 0, Afinidade::AZUL},
 };
 
 // Fase 2: C leva a E; D leva a F, que ramifica para G e para o boss H.
 const PlantaSala PLANTA_FASE_2[] = {
     {"LOBBY", 0, 0, 0, 0, 0, false, 0, 0},
-    {"A - ROTEADOR", 0, 1, 5, 1, 0, false, 1, 1},
+    {"A - ROTEADOR", 0, 1, 5, 1, 0, false, 1, 1, Afinidade::VERDE},
     {"B - CACHE DNS", -1, 1, 0, 0, 1, false, 5, 0},
-    {"C - CAIXA DE SPAM", 1, 1, 6, 2, 0, false, 2, 1},
-    {"D - PROXY", 0, 2, 5, 2, 0, false, 4, 2},
-    {"E - BOTNET", 1, 2, 7, 2, 0, false, 2, 1},
-    {"F - PING 999", 0, 3, 6, 3, 0, false, 4, 2},
+    {"C - CAIXA DE SPAM", 1, 1, 6, 2, 0, false, 2, 1, Afinidade::VERMELHA},
+    {"D - PROXY", 0, 2, 5, 2, 0, false, 4, 2, Afinidade::AZUL},
+    {"E - BOTNET", 1, 2, 7, 2, 0, false, 2, 1, Afinidade::VERMELHA, true},
+    {"F - PING 999", 0, 3, 6, 3, 0, false, 4, 2, Afinidade::VERDE, true},
     {"G - LOOT DROP", 1, 3, 0, 0, 2, false, 5, 0},
-    {"H - REDE ANTISSOCIAL", 0, 4, 0, 0, 0, true, 3, 0},
+    {"H - H100 COLOSSUS", 0, 4, 0, 0, 0, true, 3, 0, Afinidade::VERDE},
 };
 
 // Fase 3: lobby no topo, ramos B/C e caminho B-D-G-I-J ate o boss.
 const PlantaSala PLANTA_FASE_3[] = {
     {"LOBBY", 0, 0, 0, 0, 0, false, 0, 0},
-    {"A - KERNEL PANIC", 0, 1, 6, 2, 0, false, 1, 1},
-    {"B - ROOTKIT", -1, 1, 7, 2, 0, false, 4, 2},
-    {"C - RANSOMWARE", 1, 1, 7, 2, 0, false, 2, 2},
-    {"D - SPYWARE", -1, 2, 8, 2, 0, false, 2, 2},
-    {"E - WORM", 1, 2, 8, 3, 0, false, 4, 2},
+    {"A - KERNEL PANIC", 0, 1, 6, 2, 0, false, 1, 1, Afinidade::AZUL, true},
+    {"B - ROOTKIT", -1, 1, 7, 2, 0, false, 4, 2, Afinidade::VERMELHA},
+    {"C - RANSOMWARE", 1, 1, 7, 2, 0, false, 2, 2, Afinidade::VERMELHA, true},
+    {"D - SPYWARE", -1, 2, 8, 2, 0, false, 2, 2, Afinidade::AZUL, true},
+    {"E - WORM", 1, 2, 8, 3, 0, false, 4, 2, Afinidade::VERDE, true},
     {"F - COFRE DE MEMORIA", 2, 1, 0, 0, 1, false, 5, 0},
-    {"G - DEADLOCK", 0, 2, 7, 3, 0, false, 1, 2},
+    {"G - DEADLOCK", 0, 2, 7, 3, 0, false, 1, 2, Afinidade::VERDE, true},
     {"H - SAVE POINT", 2, 2, 0, 0, 2, false, 5, 0},
-    {"I - PROCESSOS ZUMBIS", 0, 3, 7, 4, 0, false, 4, 3},
-    {"J - TELA AZUL DA MORTE", 0, 4, 3, 0, 0, true, 3, 0},
+    {"I - PROCESSOS ZUMBIS", 0, 3, 7, 4, 0, false, 4, 3, Afinidade::VERMELHA, true},
+    {"J - WANNACRY PRIME", 0, 4, 3, 0, 0, true, 3, 0, Afinidade::VERMELHA, true},
 };
 
 // Fonte unica das ligacoes: portas, corredores e arvore usam estes mesmos pais.
@@ -158,6 +160,8 @@ Fase::Fase(int numero) : numero(numero)
         config.vizinhos = conexoes[i];
         config.mapaRamificado = true;
         config.tema = numero;
+        config.afinidadePrincipal = sala.afinidade;
+        config.misturarAfinidades = sala.misturarAfinidades;
         config.cobertura = sala.cobertura;
         config.ondasExtras = sala.ondasExtras;
         config.mostrarComandos = i == 0;

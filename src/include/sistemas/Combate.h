@@ -15,6 +15,9 @@ private:
     SDL_FRect limites = {0, 0, 800, 400};
     int dificuldade = 1;
     int tema = 1;
+    Afinidade afinidadePrincipal = Afinidade::VERDE;
+    bool misturarAfinidades = false;
+    int proximaAfinidade = 0;
     int pontosComuns = 0;
     int pontosBoss = 0;
     // Reforcos: cada onda extra surge quando resta no maximo um inimigo vivo.
@@ -22,7 +25,7 @@ private:
     int reforcoVirus = 0;
     int reforcoBrutos = 0;
     // Marca piscante no ponto de surgimento, para o jogador poder reagir.
-    struct Aviso { float x, y, tempo, duracao; TipoInimigo tipo; };
+    struct Aviso { float x, y, tempo, duracao; TipoInimigo tipo; Afinidade afinidade; };
     ListaSequencial<Aviso> avisos;
     // Velocidade estimada do jogador, usada na mira antecipada.
     SDL_FPoint posicaoJogadorAnterior = {0, 0};
@@ -32,7 +35,14 @@ private:
     ListaSequencial<Inimigo> inimigos;
     // Quebrados continuam na lista, inativos, ate a sala ser recriada.
     ListaSequencial<Obstaculo> obstaculos;
-    struct TiroInimigo { float x, y, dx, dy; int dano; bool ativo = true; float velocidade = 230; };
+    struct TiroInimigo
+    {
+        float x, y, dx, dy;
+        int dano;
+        bool ativo = true;
+        float velocidade = 230;
+        Afinidade afinidade = Afinidade::NEUTRA;
+    };
     struct Coracao { float x, y, tempo = 10; };
     ListaSequencial<TiroInimigo> tirosInimigos;
     ListaSequencial<Coracao> coracoes;
@@ -60,13 +70,15 @@ private:
     void resolver_colisoes();
     // No posicionamento inicial usa o quadro visual, para nenhum sprite nascer sobre a peca.
     void afastar_inimigos_de_obstaculos(bool pelaArte = false);
-    void criar_inimigo(TipoInimigo tipo, float centroX, float centroY);
+    void criar_inimigo(TipoInimigo tipo, Afinidade afinidade, float centroX, float centroY);
+    Afinidade obter_proximaAfinidade();
     void agendar_onda(const Jogador &jogador);
     void atualizar_avisos(float dt);
     void invocar_lacaios(const Inimigo &boss);
     int get_lacaiosVivos() const;
     bool linha_livre(SDL_FPoint origem, SDL_FPoint destino) const;
-    void disparar_hostil(SDL_FPoint origem, float angulo, float velocidade, int dano);
+    void disparar_hostil(SDL_FPoint origem, float angulo, float velocidade, int dano,
+                         Afinidade afinidade);
     void estimar_velocidadeJogador(float dt, const Jogador &jogador);
     bool tiro_bloqueado(const SDL_FRect &area) const;
     void limpar_inativos();
@@ -75,7 +87,9 @@ private:
 public:
     bool buscar_alvoMaisProximo(const Jogador &jogador, SDL_FPoint &alvo) const;
     void reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos = 0,
-                   bool boss = false, int tema = 1, int ondasExtras = 0);
+                   bool boss = false, int tema = 1, int ondasExtras = 0,
+                   Afinidade afinidadePrincipal = Afinidade::VERDE,
+                   bool misturarAfinidades = false);
     // Sem inimigos vivos, ondas pendentes ou surgimentos anunciados.
     bool concluido() const;
     void limpar_projeteis();

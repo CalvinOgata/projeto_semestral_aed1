@@ -26,15 +26,33 @@ Projetil::Projetil(float origemX, float origemY, float dirX, float dirY, int dan
 
     if (tipo == TipoArma::BOOMERANG)
     {
-        alcanceRestante = 260;
+        alcanceRestante = 170;
         lado = 18;
     }
-    if (tipo == TipoArma::ARCO)
+    else if (tipo == TipoArma::SHOTGUN)
+    {
+        alcanceRestante = 280;
+    }
+    else if (tipo == TipoArma::PISTOLA || tipo == TipoArma::DUPLA)
+    {
+        alcanceRestante = 600;
+    }
+    else if (tipo == TipoArma::PULSO)
+    {
+        alcanceRestante = 500;
+        lado = 22;
+    }
+    else if (tipo == TipoArma::ARCO)
     {
         alcanceRestante = 1200;
     }
-    this->velX = (dirX / comprimento) * VELOCIDADE_PROJETIL;
-    this->velY = (dirY / comprimento) * VELOCIDADE_PROJETIL;
+    else if (tipo == TipoArma::RICOCHETE)
+    {
+        alcanceRestante = 1300;
+    }
+    const float fatorVelocidade = tipo == TipoArma::PULSO ? 0.65f : 1.0f;
+    this->velX = (dirX / comprimento) * VELOCIDADE_PROJETIL * fatorVelocidade;
+    this->velY = (dirY / comprimento) * VELOCIDADE_PROJETIL * fatorVelocidade;
 }
 
 void Projetil::atualizar(float dt)
@@ -73,6 +91,16 @@ int Projetil::get_dano() const
     return this->dano;
 }
 
+TipoArma Projetil::get_tipo() const
+{
+    return this->tipo;
+}
+
+Afinidade Projetil::get_afinidade() const
+{
+    return Armas(this->tipo).get_afinidade();
+}
+
 float Projetil::get_x() const
 {
     return this->x;
@@ -102,8 +130,11 @@ void Projetil::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
 
     const SDL_FRect naTela = camera.para_tela(this->get_retangulo());
 
-    SDL_SetRenderDrawColor(renderizador, COR_PROJETIL.r, COR_PROJETIL.g, COR_PROJETIL.b,
-                           COR_PROJETIL.a);
+    SDL_Color cor = {96, 230, 118, 255};
+    const Afinidade afinidade = this->get_afinidade();
+    if (afinidade == Afinidade::VERMELHA) cor = {244, 70, 82, 255};
+    if (afinidade == Afinidade::AZUL) cor = {76, 156, 255, 255};
+    SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, cor.a);
     if (tipo == TipoArma::ARCO)
     {
         const float angulo = std::atan2(velY, velX);
@@ -119,6 +150,14 @@ void Projetil::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
         const auto centro = camera.para_tela(x, y);
         SDL_RenderDrawLineF(renderizador, centro.x, centro.y, centro.x + std::cos(giro) * 14, centro.y + std::sin(giro) * 14);
         SDL_RenderDrawLineF(renderizador, centro.x, centro.y, centro.x - std::sin(giro) * 14, centro.y + std::cos(giro) * 14);
+    }
+    else if (tipo == TipoArma::PULSO)
+    {
+        SDL_RenderFillRectF(renderizador, &naTela);
+        SDL_SetRenderDrawColor(renderizador, 255, 205, 210, 255);
+        const SDL_FRect nucleo = {naTela.x + naTela.w * 0.3f, naTela.y + naTela.h * 0.3f,
+                                 naTela.w * 0.4f, naTela.h * 0.4f};
+        SDL_RenderFillRectF(renderizador, &nucleo);
     }
     else
     {

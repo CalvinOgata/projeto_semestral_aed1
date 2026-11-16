@@ -35,7 +35,15 @@ constexpr float ALCANCE_PROJETIL = 900.0f; // some depois de percorrer isso
 
 // Inimigos
 constexpr float VELOCIDADE_INIMIGO = 115.0f;
-constexpr int VIDA_INIMIGO = 2;
+constexpr int VIDA_INIMIGO = 4;
+// Primeiro aplica a reducao de 25% e depois reduz mais 10% do resultado restante.
+// Em valores grandes, isso conserva 67,5% dos atributos originais.
+constexpr int ajustar_atributoInimigo(int valor)
+{
+    const int aposReducaoInicial = valor * 3 / 4;
+    const int ajustado = aposReducaoInicial * 9 / 10;
+    return valor <= 0 ? 0 : (ajustado > 0 ? ajustado : 1);
+}
 // Obstaculos so quebram com ataques do jogador; tiros inimigos apenas param neles.
 constexpr int VIDA_CAIXOTE = 5;
 constexpr int VIDA_BLOCO_BARREIRA = 3; // cada bloquinho da barreira quebra sozinho

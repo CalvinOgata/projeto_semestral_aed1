@@ -187,19 +187,24 @@ void Inimigo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
 
     const SDL_FRect naTela = camera.para_tela(this->get_retanguloVisual());
 
-    SpriteInimigo::desenhar(renderizador, tipo, tema, naTela);
+    SpriteInimigo::desenhar(renderizador, tipo, afinidade, naTela);
     const auto centro = camera.para_tela(get_centroX(), get_centroY());
-    Desenho::retangulo_rotacionado(renderizador, centro.x, centro.y, 30, 8, mira, {38,40,52,255});
-    Desenho::retangulo_rotacionado(renderizador, centro.x, centro.y - 1, 23, 3, mira, {166,177,190,255});
+    SDL_Color corAfinidade = afinidade == Afinidade::VERMELHA ? SDL_Color{244, 70, 82, 255} :
+        (afinidade == Afinidade::AZUL ? SDL_Color{76, 156, 255, 255} :
+                                       SDL_Color{96, 230, 118, 255});
+    Desenho::retangulo_rotacionado(renderizador, centro.x, centro.y, 30, 8, mira,
+                                   {38, 40, 52, 255});
+    Desenho::retangulo_rotacionado(renderizador, centro.x, centro.y - 1, 23, 3, mira,
+                                   corAfinidade);
 
     // Barra simples acima do corpo, proporcional a vida inicial deste inimigo.
     const SDL_FRect fundo = {naTela.x, naTela.y - 8.0f, naTela.w, 4.0f};
-    SDL_SetRenderDrawColor(renderizador, 62, 24, 28, 255);
+    SDL_SetRenderDrawColor(renderizador, 24, 26, 34, 255);
     SDL_RenderFillRectF(renderizador, &fundo);
 
     const float proporcao = static_cast<float>(this->vida) / this->vidaMax;
     const SDL_FRect barra = {fundo.x, fundo.y, fundo.w * proporcao, fundo.h};
-    SDL_SetRenderDrawColor(renderizador, 230, 60, 70, 255);
+    SDL_SetRenderDrawColor(renderizador, corAfinidade.r, corAfinidade.g, corAfinidade.b, 255);
     SDL_RenderFillRectF(renderizador, &barra);
     if (mostrarHitbox)
     {
@@ -212,8 +217,9 @@ void Inimigo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
 
 Inimigo::Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial,
                  const DimensoesEntidade &dimensoes, TipoInimigo tipo, int tema,
-                 int dificuldade)
-    : tipo(tipo), tema(tema), dificuldade(std::max(1, dificuldade)), x(mundoX), y(mundoY),
+                 int dificuldade, Afinidade afinidade)
+    : tipo(tipo), afinidade(afinidade), tema(tema), dificuldade(std::max(1, dificuldade)),
+      x(mundoX), y(mundoY),
       dimensoes(dimensoes), velocidade(std::max(0.0f, velocidadeInicial)),
       vida(std::max(1, vidaInicial)), vidaMax(std::max(1, vidaInicial)), vivo(true)
 {
@@ -277,6 +283,30 @@ TipoInimigo Inimigo::get_tipo() const
     return tipo;
 }
 
+Afinidade Inimigo::get_afinidade() const
+{
+    return afinidade;
+}
+
+const char *Inimigo::get_nome() const
+{
+    if (afinidade == Afinidade::VERMELHA)
+    {
+        if (tipo == TipoInimigo::VIRUS) return "ILOVEYOU.EXE";
+        if (tipo == TipoInimigo::BRUTO) return "MIRAI SWARM";
+        return "WANNACRY PRIME";
+    }
+    if (afinidade == Afinidade::AZUL)
+    {
+        if (tipo == TipoInimigo::VIRUS) return "EULA-BOT";
+        if (tipo == TipoInimigo::BRUTO) return "SENTINELA DRM";
+        return "COMPILADOR FECHADO";
+    }
+    if (tipo == TipoInimigo::VIRUS) return "NPU DRONE";
+    if (tipo == TipoInimigo::BRUTO) return "TPU SENTINEL";
+    return "H100 COLOSSUS";
+}
+
 int Inimigo::get_tema() const
 {
     return tema;
@@ -306,5 +336,6 @@ bool Inimigo::registrar_mortePontuada()
 
 int Inimigo::get_danoTiro() const
 {
-    return tipo == TipoInimigo::BOSS ? 18 : (tipo == TipoInimigo::BRUTO ? 12 : 8);
+    const int danoOriginal = tipo == TipoInimigo::BOSS ? 18 : (tipo == TipoInimigo::BRUTO ? 12 : 8);
+    return ajustar_atributoInimigo(danoOriginal);
 }

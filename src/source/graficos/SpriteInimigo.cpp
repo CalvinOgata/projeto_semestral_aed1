@@ -13,57 +13,77 @@ struct CorPixel
 // Contornos e sombras compartilhados entre os sprites.
 const SDL_Color CONTORNO = {18, 14, 26, 255};
 
-// Virus comum: chip infectado, trilhas e olhos luminosos.
-const char *const VIRUS[] = {
+// Basico vermelho, ILOVEYOU.EXE: carta infectada com olhos e asas digitais.
+const char *const ILOVEYOU[] = {
+    "............", "..rr....rr..", "...rr..rr...", "..rrrrrrrr..",
+    ".rRRRRRRRRr.", ".rRWRRRRWRr.", ".rRRRrrRRRr.", ".rRRrRRrRRr.",
+    ".rRrRRRRrRr.", ".rRRRRRRRRr.", "..rrrrrrrr..", "............",
+};
+const CorPixel CORES_ILOVEYOU[] = {
+    {'R', {232, 58, 72, 255}}, {'r', {126, 24, 42, 255}}, {'W', {255, 225, 230, 255}},
+};
+
+// Basico azul, EULA-BOT: documento de licenca mecanico.
+const char *const EULA[] = {
+    "...BBBBBB...", "..BWWWWWWB..", "..BWbbbbWB..", "..BWWWWWWB..",
+    "..BWbbbbWB..", "..BWWWWWWB..", "..BWbbbbWB..", "..BWWWWWWB..",
+    ".bBBb..bBBb.", "bb..b..b..bb", ".b..b..b..b.", "............",
+};
+const CorPixel CORES_EULA[] = {
+    {'B', {47, 111, 214, 255}}, {'b', {83, 171, 245, 255}}, {'W', {232, 245, 255, 255}},
+};
+
+// Basico verde, NPU DRONE: chip neural, trilhas e olho-sensor.
+const char *const NPU[] = {
     "..g..g..g..g", "..g..g..g..g", "ggGGGGGGGGgg", "..GggggggG..",
     "ggGgWggWgGgg", "..GgWggWgG..", "..GggggggG..", "ggGgRRRRgGgg",
     "..GggRRggG..", "ggGGGGGGGGgg", "..g..g..g..g", "..g..g..g..g",
 };
-const CorPixel CORES_VIRUS[] = {
+const CorPixel CORES_NPU[] = {
     {'G', {19, 58, 53, 255}}, {'g', {61, 204, 113, 255}},
     {'W', {220, 255, 164, 255}}, {'R', {52, 28, 64, 255}},
 };
 
-// Fase 1, guardiao SEGFAULT: bloco de erro rachado com olhos em X.
-const char *const GUARDIAO_SEGFAULT[] = {
+// Medio azul, SENTINELA DRM: bloco de licenca rachado com olhos em X.
+const char *const SENTINELA_DRM[] = {
     "................", "..KKKKKKKKKKKK..", ".KRRRRRRrRRRRRK.", ".KRWRWRRrRWRWRK.",
     ".KRRWRRrRRRWRRK.", ".KRWRWRrRRWRWRK.", ".KRRRRRrRRRRRRK.", ".KRYYYYYYYYYYRK.",
     ".KRYKYKYKYKYKRK.", ".KRYYYYYYYYYYRK.", ".KrRRRRRrRRRRrK.", ".KrrrrrrrrrrrrK.",
     "..KKKKKKKKKKKK..", "..KrrK....KrrK..", "..KrrK....KrrK..", ".KKKKK....KKKKK.",
 };
-const CorPixel CORES_SEGFAULT[] = {
-    {'R', {196, 52, 64, 255}}, {'r', {122, 30, 44, 255}},
-    {'W', {244, 236, 228, 255}}, {'Y', {255, 214, 90, 255}},
+const CorPixel CORES_DRM[] = {
+    {'R', {49, 105, 205, 255}}, {'r', {31, 56, 126, 255}},
+    {'W', {225, 242, 255, 255}}, {'Y', {82, 196, 255, 255}},
 };
 
-// Fase 2, guardiao SPAMBOT: envelope com antena que solta faiscas.
-const char *const GUARDIAO_SPAMBOT[] = {
+// Medio vermelho, MIRAI SWARM: roteador infectado com antenas e dispositivos IoT.
+const char *const MIRAI_SWARM[] = {
     "................", ".......YY.......", ".......KK.......", ".KKKKKKKKKKKKKK.",
     ".KwWWWWWWWWWWwK.", ".KWwWWWWWWWWwWK.", ".KWWwWWWWWWwWWK.", ".KWWWwBWWBwWWWK.",
     ".KWWWWwWWwWWWWK.", ".KWWWWWwwWWWRRK.", ".KWWWWWWWWWWRRK.", ".KwwwwwwwwwwwwK.",
     ".KKKKKKKKKKKKKK.", "...C...C...C....", "..C...C...C.....", "................",
 };
-const CorPixel CORES_SPAMBOT[] = {
-    {'W', {230, 232, 240, 255}}, {'w', {150, 160, 182, 255}},
-    {'B', {58, 120, 220, 255}}, {'R', {222, 62, 72, 255}},
-    {'Y', {255, 210, 80, 255}}, {'C', {120, 220, 255, 255}},
+const CorPixel CORES_MIRAI[] = {
+    {'W', {238, 224, 228, 255}}, {'w', {158, 112, 124, 255}},
+    {'B', {126, 24, 42, 255}}, {'R', {232, 58, 72, 255}},
+    {'Y', {255, 158, 92, 255}}, {'C', {255, 92, 104, 255}},
 };
 
-// Fase 3, guardiao PROCESSO ZUMBI: cerebro exposto, olhos vermelhos e bracos estendidos.
-const char *const GUARDIAO_ZUMBI[] = {
+// Medio verde, TPU SENTINEL: acelerador neural robusto com placas laterais.
+const char *const TPU_SENTINEL[] = {
     "....KKKKKKKK....", "...KPPPgPPPPK...", "..KGGGGGGGGGGK..", "..KGRRGGGGRRGK..",
     "..KGRRGGGgRRGK..", "..KGGGGKKGGGGK..", "..KGKWKWKWKWGK..", "..KGGGGGGGGGGK..",
     "...KKKKKKKKKK...", ".KwwwwKDDKwwwwK.", "KGKwwwwDDwwwwKGK", "KGKwwwwwwwwwwKGK",
     ".K.KwwwKKwwwK.K.", "...KDDK..KDDK...", "...KDDK..KDDK...", "..KKKK....KKKK..",
 };
-const CorPixel CORES_ZUMBI[] = {
-    {'G', {112, 172, 92, 255}}, {'g', {62, 104, 62, 255}},
-    {'P', {222, 122, 152, 255}}, {'R', {236, 52, 52, 255}},
-    {'W', {236, 232, 214, 255}}, {'w', {120, 124, 140, 255}},
+const CorPixel CORES_TPU[] = {
+    {'G', {72, 204, 104, 255}}, {'g', {31, 104, 61, 255}},
+    {'P', {146, 255, 164, 255}}, {'R', {196, 255, 102, 255}},
+    {'W', {226, 244, 230, 255}}, {'w', {92, 132, 106, 255}},
     {'D', {48, 46, 60, 255}},
 };
 
-// Fase 1, boss COMPILADOR FECHADO: maquina trancada com chaves "{ }" e saida laranja.
+// Boss azul, COMPILADOR FECHADO: maquina trancada com chaves "{ }".
 const char *const BOSS_COMPILADOR[] = {
     "........KKKKKKKK........", ".......KYYYYYYYYK.......",
     "......KYYKKKKKKYYK......", "......KYK......KYK......",
@@ -79,13 +99,13 @@ const char *const BOSS_COMPILADOR[] = {
     "..KyKyKyKK....KKyKyKyK..", "..KKKKKKKK....KKKKKKKK..",
 };
 const CorPixel CORES_COMPILADOR[] = {
-    {'B', {52, 56, 72, 255}}, {'b', {92, 98, 122, 255}},
-    {'O', {255, 140, 40, 255}}, {'o', {160, 72, 24, 255}},
-    {'Y', {240, 196, 70, 255}}, {'y', {150, 110, 40, 255}},
+    {'B', {39, 79, 163, 255}}, {'b', {72, 139, 224, 255}},
+    {'O', {116, 224, 255, 255}}, {'o', {35, 103, 154, 255}},
+    {'Y', {211, 242, 255, 255}}, {'y', {74, 165, 214, 255}},
 };
 
-// Fase 2, boss REDE ANTISSOCIAL: icone de app com olho vigilante, notificacao e rede.
-const char *const BOSS_REDE[] = {
+// Boss verde, H100 COLOSSUS: servidor de IA com olho, racks e rede neural.
+const char *const H100_COLOSSUS[] = {
     "..................KKKK..", ".................KRWWRK.",
     "...KKKKKKKKKKKKKKKRWWRK.", "..KKBBBBBBBBBBBBBKRRRRK.",
     "..KBbbbKbbbbbbbbKKRWWRK.", "..KBbBBBKKKKKKKKBKKKKKK.",
@@ -99,15 +119,15 @@ const char *const BOSS_REDE[] = {
     "....K....K....K....K....", "....K....K....K....K....",
     "..CKC...CKC..CKC...CKC..", "..CCC...CCC..CCC...CCC..",
 };
-const CorPixel CORES_REDE[] = {
-    {'B', {59, 89, 182, 255}}, {'b', {112, 152, 232, 255}},
-    {'W', {245, 245, 250, 255}}, {'P', {20, 20, 40, 255}},
-    {'I', {90, 200, 255, 255}}, {'R', {230, 50, 60, 255}},
-    {'C', {120, 220, 255, 255}},
+const CorPixel CORES_H100[] = {
+    {'B', {35, 116, 61, 255}}, {'b', {77, 199, 105, 255}},
+    {'W', {230, 250, 233, 255}}, {'P', {15, 35, 22, 255}},
+    {'I', {135, 255, 157, 255}}, {'R', {194, 255, 92, 255}},
+    {'C', {92, 230, 118, 255}},
 };
 
-// Fase 3, boss TELA AZUL DA MORTE: monitor CRT com rosto ":(" e dentes na moldura.
-const char *const BOSS_TELA_AZUL[] = {
+// Boss vermelho, WANNACRY PRIME: cofre-servidor corrompido e acorrentado.
+const char *const WANNACRY_PRIME[] = {
     ".KKKKKKKKKKKKKKKKKKKKKK.", ".KwwwwwwwwwwwwwwwwwwwwK.",
     ".KwddddddddddddddddddwK.", "KKwdSSSSSSSSSSSSSSSSdwKK",
     "KKwdSSSSSSSSSSSSSbbSdwKK", ".KwdSSSWWSSSSSSWWSSSdwK.",
@@ -121,11 +141,11 @@ const char *const BOSS_TELA_AZUL[] = {
     "....KKKKKKKKKKKKKKKK.KY.", "....KddddddddddddddK..KY",
     "....KKKKKKKKKKKKKKKK...K", "........................",
 };
-const CorPixel CORES_TELA_AZUL[] = {
+const CorPixel CORES_WANNACRY[] = {
     {'w', {176, 176, 188, 255}}, {'d', {100, 100, 114, 255}},
-    {'S', {24, 92, 206, 255}}, {'b', {120, 170, 255, 255}},
-    {'W', {244, 246, 255, 255}}, {'R', {230, 60, 60, 255}},
-    {'Y', {240, 196, 70, 255}},
+    {'S', {150, 28, 48, 255}}, {'b', {246, 76, 88, 255}},
+    {'W', {255, 232, 234, 255}}, {'R', {255, 55, 66, 255}},
+    {'Y', {255, 164, 86, 255}},
 };
 
 template <std::size_t N, std::size_t C>
@@ -159,23 +179,31 @@ void desenhar_bitmap(SDL_Renderer *renderizador, const char *const (&linhas)[N],
 }
 }
 
-void SpriteInimigo::desenhar(SDL_Renderer *renderizador, TipoInimigo tipo, int tema,
+void SpriteInimigo::desenhar(SDL_Renderer *renderizador, TipoInimigo tipo, Afinidade afinidade,
                              const SDL_FRect &area)
 {
     if (tipo == TipoInimigo::VIRUS)
     {
-        desenhar_bitmap(renderizador, VIRUS, CORES_VIRUS, area);
+        if (afinidade == Afinidade::VERMELHA)
+            desenhar_bitmap(renderizador, ILOVEYOU, CORES_ILOVEYOU, area);
+        else if (afinidade == Afinidade::AZUL)
+            desenhar_bitmap(renderizador, EULA, CORES_EULA, area);
+        else desenhar_bitmap(renderizador, NPU, CORES_NPU, area);
     }
     else if (tipo == TipoInimigo::BRUTO)
     {
-        if (tema == 2) desenhar_bitmap(renderizador, GUARDIAO_SPAMBOT, CORES_SPAMBOT, area);
-        else if (tema == 3) desenhar_bitmap(renderizador, GUARDIAO_ZUMBI, CORES_ZUMBI, area);
-        else desenhar_bitmap(renderizador, GUARDIAO_SEGFAULT, CORES_SEGFAULT, area);
+        if (afinidade == Afinidade::VERMELHA)
+            desenhar_bitmap(renderizador, MIRAI_SWARM, CORES_MIRAI, area);
+        else if (afinidade == Afinidade::AZUL)
+            desenhar_bitmap(renderizador, SENTINELA_DRM, CORES_DRM, area);
+        else desenhar_bitmap(renderizador, TPU_SENTINEL, CORES_TPU, area);
     }
     else
     {
-        if (tema == 2) desenhar_bitmap(renderizador, BOSS_REDE, CORES_REDE, area);
-        else if (tema == 3) desenhar_bitmap(renderizador, BOSS_TELA_AZUL, CORES_TELA_AZUL, area);
-        else desenhar_bitmap(renderizador, BOSS_COMPILADOR, CORES_COMPILADOR, area);
+        if (afinidade == Afinidade::VERMELHA)
+            desenhar_bitmap(renderizador, WANNACRY_PRIME, CORES_WANNACRY, area);
+        else if (afinidade == Afinidade::AZUL)
+            desenhar_bitmap(renderizador, BOSS_COMPILADOR, CORES_COMPILADOR, area);
+        else desenhar_bitmap(renderizador, H100_COLOSSUS, CORES_H100, area);
     }
 }

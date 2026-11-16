@@ -9,9 +9,9 @@ Todas as medidas abaixo sao em pixels logicos, na resolucao de referencia
 | Categoria | Hitbox (largura x altura) | Quadro PNG ideal | Inicio da hitbox dentro do quadro (x, y) | Estado |
 | --- | --- | --- | --- | --- |
 | Herois (Tux, Android, etc.) | 32x32 | 48x48 | (8, 8) | Perfil usado pelo jogador atual; personagens ainda genericos |
-| Inimigos comuns (virus, malware) | 28x28 | 48x48 | (10, 10) | Perfil usado pelos inimigos atuais |
-| Guarda-costas | 44x44 | 64x64 | (10, 10) | Guardioes; bitmap 16x16 por fase |
-| Bosses | 88x88 | 128x128 | (20, 20) | Boss final de cada fase; bitmap 24x24 por fase |
+| Inimigos basicos | 28x28 | 48x48 | (10, 10) | ILOVEYOU.EXE, EULA-BOT e NPU DRONE |
+| Inimigos medios | 44x44 | 64x64 | (10, 10) | MIRAI SWARM, SENTINELA DRM e TPU SENTINEL |
+| Bosses | 88x88 | 128x128 | (20, 20) | WANNACRY PRIME, COMPILADOR FECHADO e H100 COLOSSUS |
 
 A hitbox e a area solida usada nas colisoes, nao o tamanho minimo do arquivo.
 O quadro e o espaco completo reservado para a figura e a animacao, incluindo
@@ -73,6 +73,8 @@ quadro com outra arte, exporte diretamente no formato ideal da tabela.
 
 `Jogo` possui a textura, carrega uma vez e libera antes de destruir o renderizador.
 Reiniciar o jogador ou trocar de fase nao recarrega a imagem. A arma permanece
-separada e gira com a mira. Inimigos usam bitmaps embutidos em `graficos/SpriteInimigo`; animacoes e folhas de
-sprites ainda nao foram integradas. Os reinicios ainda criam o heroi padrao;
+separada e gira com a mira. As nove combinacoes de classe e afinidade dos
+inimigos usam bitmaps embutidos provisorios em `graficos/SpriteInimigo`; suas
+cores principais devem continuar vermelha, azul e verde ao substituir a arte.
+Animacoes e folhas de sprites ainda nao foram integradas. Os reinicios ainda criam o heroi padrao;
 selecao de personagem fica para a mecanica de selecao futura.

@@ -39,11 +39,16 @@ Uma campanha com **tres fases** ramificadas, todas com salas de 936x516,
 lobby, salas de bau e boss. Cada fase une um tema de computacao a uma referencia
 de jogos, e seu nome aparece por 3 segundos ao entrar nela:
 
-| Fase | Nome | Guardiao (bruta-monte) | Boss |
+| Cor/tipo | Inimigo basico | Inimigo medio | Boss |
 |------|------|------------------------|------|
-| 1 | FASE DOS COMPILADORES - SPEEDRUN DO BUILD | SEGFAULT, bloco de erro rachado | COMPILADOR FECHADO, maquina trancada com chaves `{ }` |
-| 2 | FASE DA REDE - MULTIPLAYER COM LAG | SPAMBOT, envelope com antena | REDE ANTISSOCIAL, icone de app com olho e notificacao |
-| 3 | FASE DO KERNEL - GAME OVER EM TELA AZUL | PROCESSO ZUMBI | TELA AZUL DA MORTE, monitor CRT com rosto `:(` |
+| Vermelho — Malware | ILOVEYOU.EXE | MIRAI SWARM | WANNACRY PRIME |
+| Azul — Software fechado | EULA-BOT | SENTINELA DRM | COMPILADOR FECHADO |
+| Verde — Hardware com IA | NPU DRONE | TPU SENTINEL | H100 COLOSSUS |
+
+As classes basico, medio e boss controlam forca e comportamento. A afinidade de
+cor e independente: armas vermelhas sao eficazes contra inimigos vermelhos,
+azuis contra azuis e verdes contra verdes. Uma combinacao correta causa **2x o
+dano-base**; as demais causam 1x. O soco da mao vazia e neutro e sempre causa 1x.
 
 A fase 1 possui sete salas (Pre-processador, Cache de build, Analise lexica,
 Parser, Linker e Compilador fechado):
@@ -58,7 +63,7 @@ Parser, Linker e Compilador fechado):
                    F (boss)
 ```
 
-A tem 4 virus. C e D possuem, cada uma, 5 virus e 2 bruta-montes. A, C e D recebem
+A tem 4 inimigos basicos e 1 medio. C e D possuem, cada uma, 5 basicos e 2 medios. A, C e D recebem
 uma onda de reforco.
 O lobby e as salas B/E nao possuem inimigos. As portas abrem ao eliminar todos
 os inimigos da sala; atravesse o corredor estreito para chegar a sala seguinte.
@@ -68,7 +73,7 @@ Ao limpar uma sala, seus filhos entram na arvore e sao preparados; seus inimigos
 comecam a agir quando o jogador entra.
 Salas limpas e baus abertos persistem nas revisitas.
 A fase 2 (dificuldade 2) possui nove salas (Roteador, Cache DNS, Caixa de spam,
-Proxy, Botnet, Ping 999, Loot drop e Rede antissocial):
+Proxy, Botnet, Ping 999, Loot drop e H100 Colossus):
 
 ```text
           Lobby
@@ -79,15 +84,15 @@ Proxy, Botnet, Ping 999, Loot drop e Rede antissocial):
           |
           F ------ G (2 baus)
           |
-          H (boss)
+          H (H100 COLOSSUS)
 ```
 
-A tem 5 virus e 1 bruta-monte; C, 6 e 2; D, 5 e 2; E, 7 e 2; F, 6 e 3. D e F
+A tem 5 basicos e 1 medio; C, 6 e 2; D, 5 e 2; E, 7 e 2; F, 6 e 3. D e F
 recebem duas ondas de reforco; as demais salas de combate, uma.
 
 A fase 3 (dificuldade 3) possui onze salas, com lobby no topo (Kernel panic,
 Rootkit, Ransomware, Spyware, Worm, Cofre de memoria, Deadlock, Save point,
-Processos zumbis e Tela azul da morte):
+Processos zumbis e WannaCry Prime):
 
 ```text
           Lobby
@@ -98,10 +103,10 @@ Processos zumbis e Tela azul da morte):
           |
           I
           |
-          J (boss + 3 virus)
+          J (WANNACRY PRIME + 3 basicos)
 ```
 
-A tem 6 virus e 2 bruta-montes; B e C, 7 e 2; D, 8 e 2; E, 8 e 3; G, 7 e 3; I, 7 e 4.
+A tem 6 basicos e 2 medios; B e C, 7 e 2; D, 8 e 2; E, 8 e 3; G, 7 e 3; I, 7 e 4.
 A recebe uma onda de reforco, I recebe tres e as demais, duas.
 Nas tres fases, o boss da ultima sala libera o portal central de saida.
 
@@ -114,13 +119,14 @@ a porta a usar na sala pai para chegar a ele. Os nos ja revelados nao mudam de
 posicao ao descobrir outros ramos. As posicoes e o conteudo das salas continuam
 fixos por fase.
 
-Baus abrem automaticamente a menos de 64 pixels e soltam duas armas aleatorias,
-incluindo pistola e todas as sete outras armas; repeticoes sao possiveis.
+Baus abrem automaticamente a menos de 64 pixels e soltam duas armas: a primeira
+sempre tem a afinidade eficaz contra o boss da fase, e a segunda e sorteada entre
+os nove tipos; repeticoes sao possiveis.
 Use F para coletar, Q para trocar e G para soltar uma arma se o inventario lotar.
 Na fase 1, armas extras vem dos baus, em vez da distribuicao de teste em cada sala.
 
-Virus tem visual de chip infectado; guardioes e boss usam pixel art embutida
-(`graficos/SpriteInimigo`) que muda conforme a fase.
+Cada uma das nove combinacoes de classe e afinidade tem nome e pixel art embutida
+provisoria em `graficos/SpriteInimigo`, pronta para posterior troca por PNG autoral.
 Quando resta no maximo um inimigo, a proxima onda de reforco e anunciada por
 molduras rosas piscando durante 1 segundo, longe do jogador; a sala so libera
 depois de todas as ondas. Os inimigos mantem distancia, circulam o jogador,
@@ -134,7 +140,11 @@ um acerto. Cada inimigo morto deixa um coracao de 10 de vida: coleta automatica
 por contato quando falta vida, expiracao em 10 segundos de jogo (inclusive fora
 da sala; pausa congela o tempo). Morrer reinicia a fase atual sem perder fases concluidas.
 
-A dificuldade aumenta vida e velocidade dos inimigos. Paredes limitam movimento
+A dificuldade aumenta vida e velocidade dos inimigos. Sobre o balanceamento bruto,
+o jogo aplica primeiro uma reducao de 25% e depois outra de 10% sobre o restante,
+tanto na vida final dos inimigos quanto no dano de seus tiros. Na fase 1, as vidas
+sao 2/13/67 e os danos 5/8/11.
+Paredes limitam movimento
 e tiros; a camera acompanha continuamente o jogador pelas salas e corredores de 96 pixels de largura, sem inimigos. O HUD agrupa vida, escudo e energia numa caixa compacta e semitransparente
 no canto superior esquerdo, com barras coloridas e icones. A municao aparece
 apenas como numero no canto inferior direito. Na pausa aparecem apenas a fase e o nome da sala,
@@ -183,8 +193,10 @@ nao o remove. Exemplo apos concluir uma fase com laser, espada e pistola:
 ```
 
 `armas` guarda, na ordem da fila (a primeira e a equipada), as armas com que a
-proxima fase comeca. `tipo` e o indice de `TipoArma`: 0 pistola, 1 shotgun,
-2 laser, 3 dupla, 4 ricochete, 5 espada, 6 arco, 7 boomerang. Saves antigos
+proxima fase comeca. `tipo` e o indice de `TipoArma`: 0 Zapper 8-Bits, 1 Escopeta
+ClamAV, 2 Raio VirusTotal, 3 Garfo Git, 4 Canhao CRT, 5 Lamina de Torvalds,
+6 Arco Apache, 7 Disquete Bumerangue e 8 Pulso Malwarebytes. Os indices 0 a 7
+foram preservados, portanto saves antigos
 (versao 1, sem `armas`) continuam validos e comecam com a pistola.
 
 O salvamento e por fase: sair no meio da fase faz `Continuar` voltar ao inicio
@@ -293,19 +305,20 @@ em quadros de 36x36 pixels com o nome abaixo, incluindo armas dos baus e descart
 Na mao do personagem, a arma equipada usa esse mesmo icone e acompanha a mira.
 Trocar ou soltar a arma atualiza o desenho; sem armas, a mao fica sem icone.
 
-| Arma | Ataque |
-| --- | --- |
-| Pistola inicial | Um projetil reto |
-| Shotgun | Exatamente tres projeteis: reto e laterais a -15 e +15 graus |
-| Laser | Raio instantaneo que atravessa inimigos ate a parede ou 1600 pixels |
-| Dupla | Um projetil para frente e outro para tras |
-| Ricochete | Projetil que rebate ate quatro vezes nas paredes |
-| Espada | Golpe em leque de 90 graus, alcance de 80 pixels, um acerto por inimigo |
-| Arco | Flecha com dano 2 e alcance de 1200 pixels |
-| Boomerang | Vai ate 260 pixels e retorna buscando o jogador; acerta uma vez por inimigo na ida e na volta |
+| Tipo | Alcance | Arma | Ataque |
+| --- | --- | --- | --- |
+| Antivirus (vermelho) | Curto | Escopeta ClamAV | Tres projeteis: reto e laterais a -15 e +15 graus |
+| Antivirus (vermelho) | Medio | Pulso Malwarebytes | Pulso grande e mais lento, com 500 pixels de alcance |
+| Antivirus (vermelho) | Longo | Raio VirusTotal | Raio instantaneo que atravessa inimigos ate a parede ou 1600 pixels |
+| Open Source (azul) | Curto | Lamina de Torvalds | Golpe em leque de 90 graus, alcance de 80 pixels, um acerto por inimigo |
+| Open Source (azul) | Medio | Garfo Git | Um projetil para frente e outro para tras |
+| Open Source (azul) | Longo | Arco Apache | Flecha de dano-base 2 e alcance de 1200 pixels |
+| Hardware retro (verde) | Curto | Disquete Bumerangue | Vai ate 170 pixels e retorna; pode acertar na ida e na volta |
+| Hardware retro (verde) | Medio | Zapper 8-Bits | Um projetil reto com 600 pixels de alcance |
+| Hardware retro (verde) | Longo | Canhao CRT | Projetil que rebate ate quatro vezes nas paredes |
 
-Cada ataque consome uma unidade de municao, inclusive shotgun e dupla.
-As novas armas com municao iniciam com 40 unidades. Espada e boomerang sao
+Cada ataque consome uma unidade de municao, inclusive Escopeta ClamAV e Garfo Git.
+As novas armas com municao iniciam com 40 unidades. Lamina e Disquete Bumerangue sao
 reutilizaveis e mostram `--` no contador. Cada tipo tem sua cadencia; trocar
 arma nao cancela o intervalo do ultimo ataque. Projeteis e efeitos sao
 removidos ao sair da sala, inclusive boomerangs em voo.

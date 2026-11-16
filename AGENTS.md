@@ -37,20 +37,27 @@ As updated on 2026-10-22:
 - The build uses C++17, SDL2, libpng, and a Makefile. Text uses an embedded bitmap font;
   SDL2_ttf is not required.
 - The game starts at a main menu. Three phases remain (reduced from five by user request), all
-  branching graphs of 936x516 rooms with lobby, chest rooms and a final boss. Phase 1 has seven
-  936x516 rooms in a directional graph: Lobby–A, A–B (south), A–C (east),
-  A–D (north), D–E (east), C–E (north), E–F (north).
+  trees of 936x516 rooms with lobby, chest rooms and a final boss. The lobby is at the top.
+  Phase 1 has seven rooms: Lobby–A, A–B/C/D, C–E, E–F. Physical exits from A are
+  west to B, east to C and south to D; C–E and E–F go south.
   A has 4 viruses; C/D each have 5 viruses and 2 brutes; A/C/D each get one reinforcement wave. B has one chest,
   E two chests; lobby/B/E have no enemies. F has one boss.
 - Each room owns its combat and persistent state in ListaSequencial<Sala>.
   Four neighbor indices describe phase 1 connections. Doors lock only while their own room is in active combat; empty/cleared rooms
   stay open, including E–F (the previous A/C/D prerequisite was removed). Defeating F's boss
   creates a central portal; touching it completes the phase. Phase 2 (9 rooms, difficulty 2):
-  Lobby–A, A–B (north, 1 chest), A–C (south), A–D, C–E, D–F, E–G (2 chests), F–G, F–H (north, boss).
-  Phase 3 (11 rooms, difficulty 3) climbs north from the lobby: Lobby–A, A–B/C (west/east),
-  B–D, C–E, C–F (1 chest), D–G, G–E, E–H (2 chests), G–I, I–J (boss + 2 viruses).
+  Lobby–A, A–B/C/D, C–E, D–F, F–G/H (G has 2 chests; H is the boss).
+  Phase 3 (11 rooms, difficulty 3) progresses from the top lobby: Lobby–A, A–B/C,
+  B–D, C–E/F (F has 1 chest), D–G, E–H (2 chests), G–I, I–J (boss + 3 viruses).
   Layouts are constant tables (`PlantaSala`) in Fase.cpp; per-room counts
   (viruses, brutes, extra waves) are initial balancing choices, raised on 2026-10-22.
+- Room navigation correction (2026-11-12): PAIS_FASE_n is the single source of
+  parent-child edges. construir_conexoes derives reciprocal directional neighbors
+  from parents and grid coordinates; no separate authored neighbor table remains.
+  It rejects invalid parents/cycles, overlapping rooms, nonadjacent pairs and occupied
+  door slots. Only parent/child transitions are accepted, even for already revealed
+  nodes. Removed cross-links D–E (phase 1) and E–G (phases 2 and 3). Room positions,
+  enemy/chest counts and canonical parents are unchanged. Tests live outside the repo.
 
 ## Room cover (obstacles)
 
@@ -73,19 +80,21 @@ As updated on 2026-10-22:
 
 ## Phase themes
 
-Each phase combines a computing theme with a game reference (names chosen by Claude
-on user request; open to change). Inimigo carries the phase number as `tema`.
-- 1 FASE DOS COMPILADORES / SPEEDRUN DO BUILD: bodyguard SEGFAULT, boss COMPILADOR FECHADO.
-- 2 FASE DA REDE / MULTIPLAYER COM LAG: bodyguard SPAMBOT, boss REDE ANTISSOCIAL.
-- 3 FASE DO KERNEL / GAME OVER EM TELA AZUL: bodyguard PROCESSO ZUMBI, boss TELA AZUL DA MORTE.
-Rooms have themed names; boss room names equal the boss name. The phase name and
+Each phase combines a computing theme with a game reference. Enemy strength class and color
+affinity are independent. Red malware uses ILOVEYOU.EXE / MIRAI SWARM / WANNACRY PRIME;
+blue closed software uses EULA-BOT / SENTINELA DRM / COMPILADOR FECHADO; green AI hardware
+uses NPU DRONE / TPU SENTINEL / H100 COLOSSUS. Phase 1 introduces single-affinity rooms,
+phase 2 starts mixing affinities, and phase 3 uses mostly mixed encounters. Rooms have themed
+names; the phase name and
 subtitle appear for 3 s (fading) on phase entry/restart; pause and minimap show the name.
 - Pause-menu Restart and player death reset the current phase/player without losing completed
   phases. Cleared enemies/chests never respawn on revisits. Projectiles are
   discarded on leaving. Only active combat updates; hearts in inactive rooms
   still expire. Pause freezes simulation. Room arrivals preserve position across the connecting corridor.
-- Difficulty (= phase number) increases enemy health (virus +1, brute +25%, boss +30% per
-  level), speed (+12%), fire rate (+12%) and hostile shot speed (+8%); counts are per room.
+- Difficulty (= phase number) increases raw enemy health by 20%, speed by 12%, fire rate by
+  12% and hostile shot speed by 8% per level. A global ease adjustment first keeps 75%,
+  then 90% of the remaining calculated health and hostile damage, flooring each step;
+  counts are per room.
   Walls constrain players/enemies and discard projectiles. The camera follows the player continuously within phase bounds, with 12-pixel outer wall margins. The gameplay HUD shows health, shield,
   energy in one compact translucent top-left box, ammunition as a bare
   number in the bottom-right corner, and three weapon slots at top right; phase and room name
@@ -162,7 +171,8 @@ Use the existing `.clang-format` configuration.
   phase. Completing phase three shows victory and records campaign completion.
 - `saves/progresso.json` is relative to the executable directory, resolved via
   SDL_GetBasePath. Schema v2 (written): `versao` = 2, `fases_concluidas` = integer 0..3, `armas` = array of
-  0..3 `{"tipo": TipoArma index 0..7, "municao": int >= 0}` in FIFO order. v1 (no `armas`)
+  0..3 `{"tipo": TipoArma index 0..8, "municao": int >= 0}` in FIFO order. Indices 0..7 retain
+  their previous meanings and PULSO is appended as index 8. v1 (no `armas`)
   is still accepted and starts with the pistol. Saves above phase 3 are rejected.
   A completed campaign disables Continue. New game replaces the old checkpoint.
 - Persistence is SDL-independent and accepts an explicit file path. Its narrow
@@ -188,8 +198,8 @@ Use the existing `.clang-format` configuration.
   and outstanding design questions, not a transcript of every conversation.
 - Distinguish confirmed decisions, proposed ideas, and implemented behavior.
   Replace stale information instead of accumulating contradictory notes.
-- Current open decisions include the final hero/boss/bodyguard rosters, powers,
-  further weapon balancing/variety, branching/procedural stages, further progression, and stamina rules.
+- Current open decisions include powers, final numerical balancing, branching/procedural stages,
+  further progression, animation integration, and stamina rules.
   Procedural generation remains unspecified. Death currently restarts the active phase.
 - This document preserves context; it does not authorize implementing the
   entire roadmap without a corresponding user request.
@@ -259,16 +269,18 @@ Use the existing `.clang-format` configuration.
 
 ## Weapon inventory and combat
 
-- Seven weapon types now extend the existing `Armas` class (the repository name,
-  retained instead of renaming to singular): shotgun (three pellets at 0/+15/-15
-  degrees), piercing instant laser, forward/backward double shot, wall ricochet
-  (up to four bounces), 80-pixel/90-degree sword fan, bow/arrow, and returning boomerang.
+- Nine weapon types form an affinity/range matrix in `Armas`: red antivirus has
+  Escopeta ClamAV / Pulso Malwarebytes / Raio VirusTotal; blue open source has
+  Lamina de Torvalds / Garfo Git / Arco Apache; green retro hardware has
+  Disquete Bumerangue / Zapper 8-Bits / Canhao CRT. Each trio is short/medium/long.
+  Matching weapon and enemy affinity doubles base damage; mismatches and the neutral
+  empty-hand punch retain base damage.
 - `FilaArmas` holds three weapons. F collects the nearest floor weapon within
   54 pixels into the tail; full inventory leaves it untouched. Q moves the front
   to the tail through FIFO operations; G drops the front with its remaining ammo.
   These supplementary controls and floor distribution are initial implementation choices.
-- All phases use proximity-opened chests in their chest rooms, each dropping two random weapons
-  uniformly from all eight types (duplicates allowed), with no inventory insertion. `Sala` owns floor
+- All phases use proximity-opened chests in their chest rooms. The first drop matches the phase
+  boss affinity and the second is uniform across all nine types (duplicates allowed), with no inventory insertion. `Sala` owns floor
   items and preserves collections/drops on revisits. Phase reset/advancement recreates
   the player and items. Existing phase checkpoint semantics remain unchanged.
 - Each finite-ammo attack costs one unit, regardless of projectile count. New weapons
@@ -287,20 +299,31 @@ Use the existing `.clang-format` configuration.
 - M toggles a phase minimap during gameplay or pause; M/Esc closes it and preserves
   the prior gameplay/pause state. While open, simulation and gameplay actions stop,
   held fire is cleared, and repeated keydown events do not toggle it. Entry resets it.
-- interface/Minimapa draws all rooms and actual directional connections using
-  read-only Fase room/neighbor queries for every branching phase.
+- interface/Minimapa draws the revealed progression tree using the real room origins
+  exposed read-only by Fase::get_origemSala. Positive axis scales preserve all
+  left/right/up/down relations and alignments. Full-phase bounds keep revealed nodes
+  stationary as exploration progresses. Pre-order selects visible nodes only; it
+  must not order siblings geometrically. Each parent-child edge is drawn straight
+  between the corresponding real doors, and the child label includes the same
+  ESQ/DIR/CIMA/BAIXO direction. In phase 1 B is left of A, C right, D below;
+  inserting labels alone did not fix the former misleading hierarchical layout.
+  The root exists on phase construction; clearing a room inserts/prepares its fixed
+  children before visiting them. M never inserts nodes. All physical corridors are
+  exactly parent-child edges of the same canonical tree.
   Current room has a gold border and a position marker; cleared/unvisited/combat
-  rooms are green/gray/red, with chest/boss labels. No exploration fog is applied.
+  rooms are green/gray/red, with chest/boss labels. Unrevealed nodes are not displayed.
 
 - The user limited inventory to three weapons. `MAX_ARMAS` controls capacity,
   HUD slot count and the pause counter. Full inventory still refuses collection.
 - Top-right HUD uses a 64x64 equipped slot on the left with a double gold border,
   then two 48x48 reserve slots in FIFO order, vertically centered, with 8-pixel
-  gaps and 16-pixel window margins. Empty slots stay visible without an icon.
+  gaps and 16-pixel window margins. Empty slots stay visible without an icon. A thick
+  counterclockwise white cycle arrow with a filled head, subtle shadow and centered Q
+  appears immediately to the left of the hotbar.
 - `FilaArmas::consultar` delegates read-only logical indexing to `Fila`; no mutable
   indexing or backing storage is exposed. Collect/drop/rotate update the HUD directly.
 - `graficos/IconeArma` draws distinct embedded 12x12 pixel-art bitmap sprites for
-  all eight weapon types, scaled inside slots. No new external asset dependency.
+  all nine weapon types, scaled inside slots. No new external asset dependency.
 - The player now holds the equipped weapon's same bitmap icon, drawn at 3x scale
   near the hand and rotated with the current aim. Local vertical mirroring keeps grips
   upright when facing left; sword/bow/boomerang use appropriate grip/orientation
@@ -310,7 +333,8 @@ Use the existing `.clang-format` configuration.
 
 ## Combat, enemy AI and rewards
 
-- Viruses, brutes and boss have base health 2/12/65 and shots dealing 8/12/18 damage at
+- Basic, medium and boss enemies have effective phase-1 health 2/13/67 and shots dealing
+  5/8/11 damage after the 25%-then-10% ease adjustment. They fire at
   2.4/1.8/0.85-second base intervals (+-15% jitter; random 1.1-2.1 s first delay); the
   boss speeds up to 0.62 s below half health. Hostile shots travel at 230 px/s (base).
 - AI (user request 2026-10-22): enemies keep preferred distances (virus 150, brute 110,
@@ -324,7 +348,7 @@ Use the existing `.clang-format` configuration.
   wave (2/3 of the viruses, min 2, and half the brutes) is announced by pink frames for
   1 s at points >= 260 px from the player and clear of cover. A room clears only when
   `Combate::concluido()` (no living enemies, pending waves or announcements).
-  Bodyguard/boss artwork follows the phase theme (see Phase themes).
+  Each strength/affinity combination has provisional embedded artwork (see Phase themes).
 - Every enemy drops one heart once, including instant-attack deaths. Hearts heal
   10 health on contact if health is missing and expire after 10 seconds of gameplay,
   including time in other rooms. They blink in the final two seconds.

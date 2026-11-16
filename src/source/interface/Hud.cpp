@@ -46,47 +46,70 @@ void desenhar_icone(SDL_Renderer *renderizador, int x, int y, Icone icone, SDL_C
 void desenhar_cicloFila(SDL_Renderer *renderizador)
 {
     // Uma unica seta circular anti-horaria, sem fundo, ao lado da hotbar.
+    // O arco espesso, a sombra e a ponta preenchida preservam a leitura em pixel art.
     constexpr int CENTRO_X = 728;
     constexpr int CENTRO_Y = 49;
     constexpr float PI = 3.14159265358979323846f;
-    SDL_SetRenderDrawColor(renderizador, 235, 242, 250, 225);
-    for (int raio : {24, 25})
+
+    auto desenhar_arco = [&](int deslocamentoX, int deslocamentoY, int raioInicial,
+                             int raioFinal, SDL_Color cor)
     {
-        float anguloAnterior = -150.0f * PI / 180.0f;
-        int xAnterior = CENTRO_X + static_cast<int>(raio * std::cos(anguloAnterior));
-        int yAnterior = CENTRO_Y - static_cast<int>(raio * std::sin(anguloAnterior));
-        for (int graus = -140; graus <= 150; graus += 10)
+        SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, cor.a);
+        const int minimoQuadrado = raioInicial * raioInicial;
+        const int maximoQuadrado = raioFinal * raioFinal;
+        for (int y = -raioFinal; y <= raioFinal; ++y)
         {
-            const float angulo = graus * PI / 180.0f;
-            const int x = CENTRO_X + static_cast<int>(raio * std::cos(angulo));
-            const int y = CENTRO_Y - static_cast<int>(raio * std::sin(angulo));
-            SDL_RenderDrawLine(renderizador, xAnterior, yAnterior, x, y);
-            xAnterior = x;
-            yAnterior = y;
+            for (int x = -raioFinal; x <= raioFinal; ++x)
+            {
+                const int distanciaQuadrada = x * x + y * y;
+                if (distanciaQuadrada < minimoQuadrado || distanciaQuadrada > maximoQuadrado)
+                {
+                    continue;
+                }
+                const float angulo = std::atan2(static_cast<float>(-y), static_cast<float>(x)) *
+                                     180.0f / PI;
+                if (angulo >= -125.0f && angulo <= 140.0f)
+                {
+                    SDL_RenderDrawPoint(renderizador, CENTRO_X + deslocamentoX + x,
+                                       CENTRO_Y + deslocamentoY + y);
+                }
+            }
         }
-    }
+    };
 
-    // Ponta tangente ao fim do arco: da esquerda superior para a esquerda
-    // inferior, deixando inequivoco o sentido anti-horario.
-    const float pontaAngulo = 150.0f * PI / 180.0f;
-    const int pontaX = CENTRO_X + static_cast<int>(25.0f * std::cos(pontaAngulo));
-    const int pontaY = CENTRO_Y - static_cast<int>(25.0f * std::sin(pontaAngulo));
-    const float direcaoX = -std::sin(pontaAngulo);
-    const float direcaoY = -std::cos(pontaAngulo);
-    const float baseX = pontaX - direcaoX * 11.0f;
-    const float baseY = pontaY - direcaoY * 11.0f;
-    const float perpendicularX = -direcaoY;
-    const float perpendicularY = direcaoX;
-    SDL_RenderDrawLine(renderizador, pontaX, pontaY,
-                       static_cast<int>(baseX + perpendicularX * 6.0f),
-                       static_cast<int>(baseY + perpendicularY * 6.0f));
-    SDL_RenderDrawLine(renderizador, pontaX, pontaY,
-                       static_cast<int>(baseX - perpendicularX * 6.0f),
-                       static_cast<int>(baseY - perpendicularY * 6.0f));
+    auto desenhar_ponta = [&](float deslocamentoX, float deslocamentoY, SDL_Color cor)
+    {
+        const float angulo = 140.0f * PI / 180.0f;
+        const float fimX = CENTRO_X + 25.0f * std::cos(angulo);
+        const float fimY = CENTRO_Y - 25.0f * std::sin(angulo);
+        // Tangente do arco no sentido anti-horario.
+        const SDL_FPoint direcao = {-std::sin(angulo), -std::cos(angulo)};
+        const SDL_FPoint perpendicular = {-direcao.y, direcao.x};
+        const SDL_FPoint ponta = {fimX + direcao.x * 7.0f + deslocamentoX,
+                                  fimY + direcao.y * 7.0f + deslocamentoY};
+        // A base volta sobre o arco: isso une as duas formas sem uma quina solta.
+        const SDL_FPoint base = {ponta.x - direcao.x * 14.0f,
+                                 ponta.y - direcao.y * 14.0f};
+        const SDL_Vertex vertices[] = {
+            {ponta, cor, {0, 0}},
+            {{base.x + perpendicular.x * 7.0f, base.y + perpendicular.y * 7.0f}, cor, {0, 0}},
+            {{base.x - perpendicular.x * 7.0f, base.y - perpendicular.y * 7.0f}, cor, {0, 0}},
+        };
+        SDL_RenderGeometry(renderizador, nullptr, vertices, 3, nullptr, 0);
+    };
 
+    desenhar_arco(2, 3, 21, 29, {5, 10, 18, 150});
+    desenhar_ponta(2, 3, {5, 10, 18, 150});
+    desenhar_arco(0, 0, 22, 28, {224, 236, 247, 255});
+    desenhar_arco(0, 0, 22, 23, {255, 255, 255, 255});
+    desenhar_ponta(0, 0, {235, 245, 253, 255});
+
+    Texto::desenhar_centralizado(renderizador, "Q", CENTRO_X + 1,
+                                CENTRO_Y - Texto::altura(2) / 2 + 2, 2,
+                                {5, 10, 18, 190});
     Texto::desenhar_centralizado(renderizador, "Q", CENTRO_X,
                                 CENTRO_Y - Texto::altura(2) / 2, 2,
-                                {235, 242, 250, 255});
+                                {255, 255, 255, 255});
 }
 
 void desenhar_inventario(SDL_Renderer *renderizador, const FilaArmas &armas)

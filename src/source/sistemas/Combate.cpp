@@ -8,6 +8,17 @@
 #include "config/CampanhaConfig.h"
 #include "config/Config.h"
 
+namespace
+{
+SDL_Color cor_afinidade(Afinidade afinidade)
+{
+    if (afinidade == Afinidade::VERMELHA) return {244, 70, 82, 255};
+    if (afinidade == Afinidade::AZUL) return {76, 156, 255, 255};
+    if (afinidade == Afinidade::VERDE) return {96, 230, 118, 255};
+    return {235, 240, 248, 255};
+}
+}
+
 bool Combate::buscar_alvoMaisProximo(const Jogador &jogador, SDL_FPoint &alvo) const
 {
     bool encontrado = false;
@@ -45,7 +56,8 @@ int Combate::get_inimigosVivos() const
 }
 
 void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, int brutos, bool boss,
-                        int tema, int ondasExtras)
+                        int tema, int ondasExtras, Afinidade afinidadePrincipal,
+                        bool misturarAfinidades)
 {
     this->limites = area;
     this->inimigos.limpar();
@@ -55,6 +67,10 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, 
     this->limpar_projeteis();
     this->dificuldade = std::max(1, dificuldade);
     this->tema = tema;
+    this->afinidadePrincipal = afinidadePrincipal == Afinidade::NEUTRA ? Afinidade::VERDE :
+                                                                       afinidadePrincipal;
+    this->misturarAfinidades = misturarAfinidades;
+    this->proximaAfinidade = 0;
     this->pontosComuns = 0;
     this->pontosBoss = 0;
     this->temPosicaoAnterior = false;
@@ -74,25 +90,38 @@ void Combate::reiniciar(const SDL_FRect &area, int quantidade, int dificuldade, 
         const float y = area.y + area.h * (i / colunas + 1) / (linhas + 1);
         const auto tipo = i < virus ? TipoInimigo::VIRUS :
             (i < virus + brutos ? TipoInimigo::BRUTO : TipoInimigo::BOSS);
+        const Afinidade afinidade = tipo == TipoInimigo::BOSS ? this->afinidadePrincipal :
+            (this->misturarAfinidades ? this->obter_proximaAfinidade() :
+                                       this->afinidadePrincipal);
         // Mantem a posicao historica: (x, y) era o canto da hitbox.
         const auto &dimensoes = tipo == TipoInimigo::VIRUS ? DIMENSOES_INIMIGO_COMUM :
             (tipo == TipoInimigo::BRUTO ? DIMENSOES_GUARDA_COSTAS : DIMENSOES_BOSS);
-        this->criar_inimigo(tipo, x + dimensoes.larguraHitbox / 2.0f, y + dimensoes.alturaHitbox / 2.0f);
+        this->criar_inimigo(tipo, afinidade, x + dimensoes.larguraHitbox / 2.0f,
+                            y + dimensoes.alturaHitbox / 2.0f);
     }
 }
 
-void Combate::criar_inimigo(TipoInimigo tipo, float centroX, float centroY)
+Afinidade Combate::obter_proximaAfinidade()
+{
+    constexpr Afinidade AFINIDADES[] = {Afinidade::VERMELHA, Afinidade::AZUL, Afinidade::VERDE};
+    const int inicio = static_cast<int>(this->afinidadePrincipal);
+    const Afinidade resultado = AFINIDADES[(inicio + this->proximaAfinidade) % 3];
+    ++this->proximaAfinidade;
+    return resultado;
+}
+
+void Combate::criar_inimigo(TipoInimigo tipo, Afinidade afinidade, float centroX, float centroY)
 {
     const auto dimensoes = tipo == TipoInimigo::VIRUS ? DIMENSOES_INIMIGO_COMUM :
         (tipo == TipoInimigo::BRUTO ? DIMENSOES_GUARDA_COSTAS : DIMENSOES_BOSS);
-    // Vida cresce mais nos inimigos fortes para as fases finais exigirem mais.
+    // Classe define a forca; afinidade define apenas fraqueza, visual e identidade.
     const float fator = static_cast<float>(dificuldade - 1);
-    const int vida = tipo == TipoInimigo::VIRUS ? VIDA_INIMIGO + dificuldade - 1 :
-        static_cast<int>(std::lround(tipo == TipoInimigo::BRUTO ? 12 * (1 + 0.25f * fator) :
-                                                                  65 * (1 + 0.3f * fator)));
+    const int vidaBase = tipo == TipoInimigo::VIRUS ? 4 : (tipo == TipoInimigo::BRUTO ? 20 : 100);
+    const int vidaOriginal = static_cast<int>(std::lround(vidaBase * (1.0f + 0.2f * fator)));
+    const int vida = ajustar_atributoInimigo(vidaOriginal);
     Inimigo inimigo(centroX - dimensoes.larguraHitbox / 2.0f, centroY - dimensoes.alturaHitbox / 2.0f,
                    vida, VELOCIDADE_INIMIGO * (tipo == TipoInimigo::VIRUS ? 1.0f : 0.65f) *
-                   (1.0f + 0.12f * fator), dimensoes, tipo, tema, dificuldade);
+                   (1.0f + 0.12f * fator), dimensoes, tipo, tema, dificuldade, afinidade);
     inimigo.limitar_a(limites);
     this->inimigos.inserir(inimigo);
 }
@@ -132,8 +161,10 @@ void Combate::agendar_onda(const Jogador &jogador)
         // Se faltarem pontos, repete com um pequeno desvio.
         const SDL_FPoint p = pontos[i % pontos.size()];
         const float desvio = static_cast<float>(i / pontos.size()) * 36;
+        const Afinidade afinidade = this->misturarAfinidades ? this->obter_proximaAfinidade() :
+                                                               this->afinidadePrincipal;
         avisos.inserir({p.x + desvio, p.y, 1.0f, 1.0f,
-                        i < reforcoVirus ? TipoInimigo::VIRUS : TipoInimigo::BRUTO});
+                        i < reforcoVirus ? TipoInimigo::VIRUS : TipoInimigo::BRUTO, afinidade});
     }
 }
 
@@ -146,7 +177,7 @@ void Combate::atualizar_avisos(float dt)
         {
             continue;
         }
-        this->criar_inimigo(aviso.tipo, aviso.x, aviso.y);
+        this->criar_inimigo(aviso.tipo, aviso.afinidade, aviso.x, aviso.y);
         Inimigo &novo = this->inimigos.obter(this->inimigos.get_quantidade() - 1);
         for (const Obstaculo &obstaculo : this->obstaculos)
         {
@@ -176,7 +207,7 @@ void Combate::invocar_lacaios(const Inimigo &boss)
         const float x = std::clamp(boss.get_centroX() + lado * 100.0f, limites.x + 40,
                                    limites.x + limites.w - 40);
         const float y = std::clamp(boss.get_centroY(), limites.y + 40, limites.y + limites.h - 40);
-        avisos.inserir({x, y, 0.8f, 0.8f, TipoInimigo::VIRUS});
+        avisos.inserir({x, y, 0.8f, 0.8f, TipoInimigo::VIRUS, boss.get_afinidade()});
     }
 }
 
@@ -200,10 +231,11 @@ bool Combate::linha_livre(SDL_FPoint origem, SDL_FPoint destino) const
     return true;
 }
 
-void Combate::disparar_hostil(SDL_FPoint origem, float angulo, float velocidade, int dano)
+void Combate::disparar_hostil(SDL_FPoint origem, float angulo, float velocidade, int dano,
+                              Afinidade afinidade)
 {
     tirosInimigos.inserir({origem.x, origem.y, std::cos(angulo), std::sin(angulo), dano, true,
-                           velocidade});
+                           velocidade, afinidade});
 }
 
 void Combate::estimar_velocidadeJogador(float dt, const Jogador &jogador)
@@ -432,7 +464,8 @@ void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
             float ax = x1, ay = y1, bx = x2, by = y2;
             if (SDL_IntersectFRectAndLine(&area, &ax, &ay, &bx, &by))
             {
-                inimigo.levar_dano(arma.get_dano());
+                inimigo.levar_dano(calcular_danoAfinidade(
+                    arma.get_dano(), arma.get_afinidade(), inimigo.get_afinidade()));
                 atingidos[j] = true;
             }
         }
@@ -507,7 +540,8 @@ void Combate::resolver_colisoes()
 
             if (SDL_HasIntersectionF(&areaProjetil, &areaInimigo) && projetil.atingir(indice))
             {
-                inimigo.levar_dano(projetil.get_dano());
+                inimigo.levar_dano(calcular_danoAfinidade(
+                    projetil.get_dano(), projetil.get_afinidade(), inimigo.get_afinidade()));
                 if (!projetil.get_ativo())
                 {
                     break;
@@ -611,9 +645,11 @@ void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
         const float meio = (aviso.tipo == TipoInimigo::VIRUS ? 24.0f : 32.0f) * (1.6f - 0.6f * progresso);
         const Uint8 alfa = static_cast<Uint8>(170 + 85 * (static_cast<int>(progresso * 10) % 2));
         const SDL_FRect fundo = {pos.x - meio, pos.y - meio, 2 * meio, 2 * meio};
-        SDL_SetRenderDrawColor(renderizador, 255, 40, 100, static_cast<Uint8>(40 + 50 * progresso));
+        const SDL_Color cor = cor_afinidade(aviso.afinidade);
+        SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b,
+                               static_cast<Uint8>(40 + 50 * progresso));
         SDL_RenderFillRectF(renderizador, &fundo);
-        SDL_SetRenderDrawColor(renderizador, 255, 90, 140, alfa);
+        SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, alfa);
         for (int borda = 0; borda < 3; ++borda)
         {
             const SDL_FRect moldura = {pos.x - meio + borda, pos.y - meio + borda,
@@ -627,7 +663,8 @@ void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
     {
         const auto pos = camera.para_tela(tiro.x, tiro.y);
         const SDL_FRect ret{pos.x - 4, pos.y - 4, 8, 8};
-        SDL_SetRenderDrawColor(renderizador, 255, 115, 80, 255);
+        const SDL_Color cor = cor_afinidade(tiro.afinidade);
+        SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, 255);
         SDL_RenderFillRectF(renderizador, &ret);
     }
     for (const auto &coracao : coracoes)
@@ -648,7 +685,8 @@ void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
     {
         const auto a = camera.para_tela(rastro.inicio.x, rastro.inicio.y);
         const auto b = camera.para_tela(rastro.fim.x, rastro.fim.y);
-        SDL_SetRenderDrawColor(renderizador, 120, 255, rastro.tipo == TipoArma::LASER ? 160 : 255, 255);
+        const SDL_Color cor = cor_afinidade(Armas(rastro.tipo).get_afinidade());
+        SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, 255);
         SDL_RenderDrawLineF(renderizador, a.x, a.y, b.x, b.y);
     }
     for (const auto &rastro : rastrosSoco)
@@ -693,6 +731,7 @@ void Combate::atualizar_hostis(float dt, Jogador &jogador)
         if (!inimigo.preparar_tiro(dt)) continue;
         const int ataque = inimigo.registrar_ataque();
         const auto tipo = inimigo.get_tipo();
+        const Afinidade afinidade = inimigo.get_afinidade();
         const SDL_FPoint origem = {inimigo.get_centroX(), inimigo.get_centroY()};
         // Mira antecipada: preve onde o jogador estara quando o tiro chegar.
         const float antecipacao = tipo == TipoInimigo::VIRUS ? 0.3f :
@@ -714,23 +753,24 @@ void Combate::atualizar_hostis(float dt, Jogador &jogador)
             {
                 for (int i = 0; i < 12; ++i)
                     disparar_hostil(origem, i * static_cast<float>(M_PI) / 6 + ataque * 0.13f,
-                                    velocidadeTiro * 0.75f, dano);
+                                    velocidadeTiro * 0.75f, dano, afinidade);
             }
             else
             {
                 for (int i = -1; i <= 1; ++i)
-                    disparar_hostil(origem, angulo + i * 0.21f, velocidadeTiro, dano);
+                    disparar_hostil(origem, angulo + i * 0.21f, velocidadeTiro, dano,
+                                    afinidade);
             }
         }
         else if (tipo == TipoInimigo::BRUTO && ataque % 3 == 2)
         {
             // A cada tres ataques o bruta-monte abre um leque para cortar a fuga.
             for (int i = -1; i <= 1; ++i)
-                disparar_hostil(origem, angulo + i * 0.3f, velocidadeTiro, dano);
+                disparar_hostil(origem, angulo + i * 0.3f, velocidadeTiro, dano, afinidade);
         }
         else
         {
-            disparar_hostil(origem, angulo, velocidadeTiro, dano);
+            disparar_hostil(origem, angulo, velocidadeTiro, dano, afinidade);
         }
     }
     auto corpo = jogador.get_retangulo();

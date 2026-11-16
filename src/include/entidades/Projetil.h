@@ -38,6 +38,8 @@ public:
     bool get_ativo() const;
     void desativar();
     int get_dano() const;
+    TipoArma get_tipo() const;
+    Afinidade get_afinidade() const;
 
     float get_x() const;
     float get_y() const;

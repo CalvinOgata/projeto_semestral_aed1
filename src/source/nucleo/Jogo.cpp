@@ -16,7 +16,7 @@
 
 namespace
 {
-static_assert(static_cast<int>(TipoArma::BOOMERANG) + 1 == QUANTIDADE_TIPOS_ARMA,
+static_assert(static_cast<int>(TipoArma::PULSO) + 1 == QUANTIDADE_TIPOS_ARMA,
               "O save precisa conhecer todos os tipos de arma");
 static_assert(MAX_ARMAS == CAPACIDADE_INVENTARIO, "O save precisa caber no inventario");
 

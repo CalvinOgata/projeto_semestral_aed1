@@ -6,7 +6,7 @@ constexpr int QUANTIDADE_FASES = 3;
 constexpr int QUANTIDADE_SLOTS_SAVE = 3;
 constexpr int VIDAS_INICIAIS = 3;
 // Limites do inventario salvo; conferidos contra TipoArma e FilaArmas em Campanha.
-constexpr int QUANTIDADE_TIPOS_ARMA = 8;
+constexpr int QUANTIDADE_TIPOS_ARMA = 9;
 constexpr int CAPACIDADE_INVENTARIO = 3;
 
 // Pontuacao. O bonus de rapidez usa BASE * TEMPO_REFERENCIA / tempo_real.

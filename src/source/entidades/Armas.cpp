@@ -7,7 +7,8 @@ Armas::Armas() : Armas(TipoArma::PISTOLA)
 Armas::Armas(TipoArma tipo) : tipo(tipo)
 {
     set_municao(tipo == TipoArma::PISTOLA ? 50 : 40);
-    set_dano(tipo == TipoArma::ESPADA ? 3 : (tipo == TipoArma::ARCO || tipo == TipoArma::LASER ? 2 : 1));
+    set_dano(tipo == TipoArma::ESPADA ? 3 :
+        (tipo == TipoArma::ARCO || tipo == TipoArma::LASER || tipo == TipoArma::PULSO ? 2 : 1));
     set_quantidadeDisparos(tipo == TipoArma::SHOTGUN ? 3 : (tipo == TipoArma::DUPLA ? 2 : 1));
 }
 
@@ -20,22 +21,64 @@ const char *Armas::get_nome() const
     switch (tipo)
     {
     case TipoArma::SHOTGUN:
-        return "SHOTGUN";
+        return "ESCOPETA CLAMAV";
     case TipoArma::LASER:
-        return "LASER";
+        return "RAIO VIRUSTOTAL";
     case TipoArma::DUPLA:
-        return "DUPLA";
+        return "GARFO GIT";
     case TipoArma::RICOCHETE:
-        return "RICOCHETE";
+        return "CANHAO CRT";
     case TipoArma::ESPADA:
-        return "ESPADA";
+        return "LAMINA DE TORVALDS";
     case TipoArma::ARCO:
-        return "ARCO";
+        return "ARCO APACHE";
     case TipoArma::BOOMERANG:
-        return "BOOMERANG";
+        return "DISQUETE BUMERANGUE";
+    case TipoArma::PULSO:
+        return "PULSO MALWAREBYTES";
     default:
-        return "PISTOLA";
+        return "ZAPPER 8-BITS";
     }
+}
+
+Afinidade Armas::get_afinidade() const
+{
+    switch (tipo)
+    {
+    case TipoArma::SHOTGUN:
+    case TipoArma::LASER:
+    case TipoArma::PULSO:
+        return Afinidade::VERMELHA;
+    case TipoArma::DUPLA:
+    case TipoArma::ESPADA:
+    case TipoArma::ARCO:
+        return Afinidade::AZUL;
+    case TipoArma::PISTOLA:
+    case TipoArma::RICOCHETE:
+    case TipoArma::BOOMERANG:
+        return Afinidade::VERDE;
+    }
+    return Afinidade::NEUTRA;
+}
+
+AlcanceArma Armas::get_alcance() const
+{
+    switch (tipo)
+    {
+    case TipoArma::SHOTGUN:
+    case TipoArma::ESPADA:
+    case TipoArma::BOOMERANG:
+        return AlcanceArma::CURTO;
+    case TipoArma::PISTOLA:
+    case TipoArma::DUPLA:
+    case TipoArma::PULSO:
+        return AlcanceArma::MEDIO;
+    case TipoArma::LASER:
+    case TipoArma::RICOCHETE:
+    case TipoArma::ARCO:
+        return AlcanceArma::LONGO;
+    }
+    return AlcanceArma::MEDIO;
 }
 float Armas::get_intervalo() const
 {
@@ -51,6 +94,8 @@ float Armas::get_intervalo() const
         return 0.6f;
     case TipoArma::BOOMERANG:
         return 0.7f;
+    case TipoArma::PULSO:
+        return 0.45f;
     default:
         return 0.14f;
     }

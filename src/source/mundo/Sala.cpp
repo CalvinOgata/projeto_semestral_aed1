@@ -46,6 +46,17 @@ const PecaCobertura COBERTURA_DEPOSITO[] = {
     {C, 110, 426, false}, {C, 826, 426, false}, {C, 786, 426, false},
 };
 
+TipoArma sortear_contraBoss(int fase, std::mt19937 &sorteio)
+{
+    const TipoArma vermelhas[] = {TipoArma::SHOTGUN, TipoArma::PULSO, TipoArma::LASER};
+    const TipoArma azuis[] = {TipoArma::ESPADA, TipoArma::DUPLA, TipoArma::ARCO};
+    const TipoArma verdes[] = {TipoArma::BOOMERANG, TipoArma::PISTOLA, TipoArma::RICOCHETE};
+    const int indice = std::uniform_int_distribution<int>(0, 2)(sorteio);
+    if (fase == 1) return azuis[indice];
+    if (fase == 2) return verdes[indice];
+    return vermelhas[indice];
+}
+
 template <std::size_t N>
 void adicionar_pecas(Combate &combate, const PecaCobertura (&pecas)[N], float escalaX, float escalaY)
 {
@@ -84,7 +95,8 @@ void Sala::preparar()
     {
         this->combate.reiniciar(this->get_limites(), this->configuracao.quantidadeInimigos,
                                this->configuracao.dificuldade, configuracao.brutos, configuracao.boss,
-                               configuracao.tema, configuracao.ondasExtras);
+                               configuracao.tema, configuracao.ondasExtras,
+                               configuracao.afinidadePrincipal, configuracao.misturarAfinidades);
         const float escalaX = configuracao.largura / 936, escalaY = configuracao.altura / 516;
         switch (configuracao.cobertura)
         {
@@ -96,8 +108,9 @@ void Sala::preparar()
         default: break;
         }
         const TipoArma tipos[] = {TipoArma::SHOTGUN, TipoArma::LASER, TipoArma::DUPLA,
-            TipoArma::RICOCHETE, TipoArma::ESPADA, TipoArma::ARCO, TipoArma::BOOMERANG};
-        for (int i = 0; configuracao.armasIniciais && i < 7; ++i)
+            TipoArma::RICOCHETE, TipoArma::ESPADA, TipoArma::ARCO, TipoArma::BOOMERANG,
+            TipoArma::PULSO};
+        for (int i = 0; configuracao.armasIniciais && i < 8; ++i)
             armasChao.inserir({Armas(tipos[i]), 160.0f + (i % 2) * 130.0f,
                               configuracao.altura * (i / 2 + 1) / 5.0f, false});
         for (int i = 0; i < configuracao.baus; ++i)
@@ -141,7 +154,8 @@ void Sala::atualizar(float dt, Jogador &jogador)
     this->combate.atualizar(dt, jogador);
     static std::mt19937 sorteio(std::random_device{}());
     const TipoArma tipos[] = {TipoArma::PISTOLA, TipoArma::SHOTGUN, TipoArma::LASER,
-        TipoArma::DUPLA, TipoArma::RICOCHETE, TipoArma::ESPADA, TipoArma::ARCO, TipoArma::BOOMERANG};
+        TipoArma::DUPLA, TipoArma::RICOCHETE, TipoArma::ESPADA, TipoArma::ARCO,
+        TipoArma::BOOMERANG, TipoArma::PULSO};
     for (auto &bau : baus)
     {
         if (!bau.aberto && std::hypot(jogador.get_centroX() - bau.x,
@@ -149,8 +163,12 @@ void Sala::atualizar(float dt, Jogador &jogador)
         {
             bau.aberto = true;
             for (int i = 0; i < 2; ++i)
-                armasChao.inserir({Armas(tipos[std::uniform_int_distribution<int>(0, 7)(sorteio)]),
+            {
+                const TipoArma tipo = i == 0 ? sortear_contraBoss(configuracao.tema, sorteio) :
+                    tipos[std::uniform_int_distribution<int>(0, 8)(sorteio)];
+                armasChao.inserir({Armas(tipo),
                                   bau.x + (i == 0 ? -40 : 40), bau.y + 48, false});
+            }
         }
     }
     if (this->estado == EstadoSala::EM_COMBATE)
@@ -284,13 +302,13 @@ void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAn
         const char *linhas[] = {"WASD OU SETAS - MOVER", "MOUSE - MIRAR",
                                 "BOTAO ESQUERDO - ATACAR", "F - COLETAR ARMA",
                                 "Q - CICLAR FILA", "G - SOLTAR ARMA",
-                                "M - MAPA", "ESC - PAUSAR"};
+                                "M - MAPA", "CORES IGUAIS - DANO 2X", "ESC - PAUSAR"};
         const auto titulo = camera.para_tela(configuracao.largura / 2, 126);
         Texto::desenhar_centralizado(renderizador, "COMANDOS", titulo.x + 1, titulo.y + 1, 2,
                                     {8, 12, 20, 150});
         Texto::desenhar_centralizado(renderizador, "COMANDOS", titulo.x, titulo.y, 2,
                                     {165, 210, 225, 190});
-        for (int i = 0; i < 8; ++i)
+        for (int i = 0; i < 9; ++i)
         {
             const auto pos = camera.para_tela(configuracao.largura / 2, 166 + i * 24);
             Texto::desenhar_centralizado(renderizador, linhas[i], pos.x + 1, pos.y + 1, 1,

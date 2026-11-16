@@ -5,10 +5,11 @@
 
 #include "entidades/Inimigo.h"
 
-// Bitmaps embutidos dos inimigos. Guardioes e boss variam com o tema da fase.
+// Bitmaps embutidos temporarios das nove combinacoes de classe e afinidade.
 namespace SpriteInimigo
 {
-void desenhar(SDL_Renderer *renderizador, TipoInimigo tipo, int tema, const SDL_FRect &area);
+void desenhar(SDL_Renderer *renderizador, TipoInimigo tipo, Afinidade afinidade,
+              const SDL_FRect &area);
 }
 
 #endif

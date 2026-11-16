@@ -1,6 +1,8 @@
 #ifndef ARMAS_H
 #define ARMAS_H
 
+#include "entidades/Afinidade.h"
+
 enum class TipoArma
 {
     PISTOLA,
@@ -10,8 +12,12 @@ enum class TipoArma
     RICOCHETE,
     ESPADA,
     ARCO,
-    BOOMERANG
+    BOOMERANG,
+    // Acrescentada no fim para preservar os indices 0..7 dos saves antigos.
+    PULSO
 };
+
+enum class AlcanceArma { CURTO, MEDIO, LONGO };
 
 class Armas
 {
@@ -26,6 +32,8 @@ public:
     explicit Armas(TipoArma tipo);
     TipoArma get_tipo() const;
     const char *get_nome() const;
+    Afinidade get_afinidade() const;
+    AlcanceArma get_alcance() const;
     float get_intervalo() const;
     bool municao_infinita() const;
     ~Armas();
