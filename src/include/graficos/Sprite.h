@@ -1,6 +1,8 @@
 #ifndef SPRITE_H
 #define SPRITE_H
 
+#include "graficos/AssetsEmbutidos.h"
+
 #include <SDL2/SDL.h>
 #include <string>
 
@@ -19,7 +21,8 @@ public:
     Sprite(const Sprite &) = delete;
     Sprite &operator=(const Sprite &) = delete;
 
-    bool carregar(SDL_Renderer *renderizador, const std::string &caminho);
+    // Decodifica um PNG embutido no executavel (ver AssetsEmbutidos.h).
+    bool carregar(SDL_Renderer *renderizador, const AssetEmbutido &png);
     void liberar(); // chamar antes de destruir o renderizador
     const std::string &get_erro() const;
     bool desenhar(SDL_Renderer *renderizador, const SDL_FRect &quadro) const;

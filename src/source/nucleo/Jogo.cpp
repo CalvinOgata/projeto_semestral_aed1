@@ -124,19 +124,15 @@ bool Jogo::inicializar()
         return false;
     }
 
-    const auto caminhoSprite =
-        diretorio_jogo() / "assets" / "sprites" / "personagens" / "tux-pixel-v2.png";
-    if (!this->spriteJogador.carregar(this->renderizador, caminhoSprite.string()))
+    if (!this->spriteJogador.carregar(this->renderizador, AssetsEmbutidos::SPRITE_JOGADOR))
     {
-        std::fprintf(stderr, "Erro ao carregar %s: %s\n", caminhoSprite.string().c_str(),
+        std::fprintf(stderr, "Erro ao carregar o sprite do jogador: %s\n",
                      this->spriteJogador.get_erro().c_str());
         return false;
     }
-    const auto caminhoGameOver =
-        diretorio_jogo() / "assets" / "sprites" / "personagens" / "tux-gameover-v2.png";
-    if (!this->spriteGameOver.carregar(this->renderizador, caminhoGameOver.string()))
+    if (!this->spriteGameOver.carregar(this->renderizador, AssetsEmbutidos::SPRITE_GAME_OVER))
     {
-        std::fprintf(stderr, "Erro ao carregar %s: %s\n", caminhoGameOver.string().c_str(),
+        std::fprintf(stderr, "Erro ao carregar o sprite de fim de jogo: %s\n",
                      this->spriteGameOver.get_erro().c_str());
         return false;
     }

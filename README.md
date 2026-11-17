@@ -4,15 +4,49 @@ Roguelike top-down em C++ com SDL2.
 
 ## Compilar e rodar
 
-Precisa de SDL2 e libpng (sem SDL2_ttf: o texto usa uma fonte de bitmap embutida).
+SDL2, libpng e zlib **nao precisam estar instaladas**: o codigo-fonte delas (versoes
+fixadas) fica em `externo/` e o Makefile as compila como bibliotecas estaticas na
+primeira compilacao (cerca de 1 minuto). Os sprites usados sao copiados para dentro
+do executavel. O resultado e um unico arquivo, sem `.so`/DLL nem pasta `assets/`.
+Nao ha SDL2_ttf: o texto usa uma fonte de bitmap embutida.
 
 ```sh
-make        # gera ./jogo
-make run    # compila e executa
-make clean  # apaga build/ e o executavel
+make            # gera ./jogo
+make run        # compila e executa
+make clean      # apaga o codigo compilado do jogo e os executaveis
+make clean-tudo # tambem apaga as bibliotecas ja compiladas (recompila o SDL2)
 ```
 
-Arch: `sudo pacman -S sdl2 libpng` · Debian/Ubuntu: `sudo apt install libsdl2-dev libpng-dev`
+Ferramentas necessarias: `g++`, `make`, `cmake`, `pkg-config` e `python3`. No Linux o
+SDL2 so ativa o suporte a X11/Wayland/audio cujos cabecalhos (`-dev`) existirem ao
+compilar. No Arch eles ja vem nos pacotes normais; no Debian/Ubuntu instale os
+listados em `ferramentas/docker/linux.Dockerfile`, ou use `make dist-linux`.
+
+### Executaveis para distribuir (Linux e Windows)
+
+Precisa apenas do Docker; cada build roda num container com as ferramentas certas:
+
+```sh
+make dist-linux     # gera dist/jogo      (Linux x86-64, glibc 2.35+)
+make dist-windows   # gera dist/jogo.exe  (Windows 64 bits, compilado com MinGW-w64)
+make dist           # os dois
+```
+
+- `dist/jogo` e compilado no Ubuntu 22.04 e roda nele e em distros mais novas
+  (Debian 12+, Fedora 36+, Arch...). So depende da libc; X11, Wayland, OpenGL e
+  audio sao abertos pelo SDL a partir do sistema, como em qualquer jogo Linux.
+- `dist/jogo.exe` so usa DLLs que acompanham o proprio Windows.
+- Basta enviar o arquivo. Os saves sao criados em `saves/` ao lado dele.
+
+Sem Docker, `make ALVO_SO=windows` compila o `.exe` localmente se o
+`x86_64-w64-mingw32-g++` estiver instalado.
+
+### Assets embutidos
+
+`ferramentas/embutir_assets.py` converte os PNGs listados em `ASSETS_EMBUTIDOS` no
+Makefile em um `.cpp` gerado dentro de `build/`. Para usar uma nova imagem:
+declare-a em `src/include/graficos/AssetsEmbutidos.h`, adicione `NOME=caminho` em
+`ASSETS_EMBUTIDOS` e carregue com `Sprite::carregar(renderizador, AssetsEmbutidos::NOME)`.
 
 ### Versao web (opcional)
 
@@ -26,7 +60,7 @@ source ~/emsdk/emsdk_env.sh   # em cada terminal (ou no ~/.zshrc / ~/.bashrc)
 ```
 
 ```sh
-make web       # gera build-web/index.html (unico arquivo, codigo e assets embutidos)
+make web       # gera build-web/index.html (unico arquivo, codigo e sprites embutidos)
 make web-zip   # gera jogo-web.zip para o itch.io
 ```
 
@@ -201,8 +235,8 @@ Movimento, tiros e temporizadores ficam congelados durante a consulta.
 
 O jogo salva automaticamente ao iniciar uma nova campanha e ao concluir cada
 fase. O arquivo `saves/progresso.json` fica ao lado do executavel, mesmo quando
-o jogo e iniciado de outro diretorio. Ele nao e incluido no Git e `make clean`
-nao o remove. Exemplo apos concluir uma fase com laser, espada e pistola:
+o jogo e iniciado de outro diretorio. Ele nao e incluido no Git e nem
+`make clean` nem `make clean-tudo` o removem. Exemplo apos concluir uma fase com laser, espada e pistola:
 
 ```json
 {
@@ -305,14 +339,13 @@ Os dois ultimos sao usados pelos guardioes e bosses, com pixel art por fase.
 Veja o [guia de sprites](docs/sprites.md) para medidas, alinhamento e exportacao.
 `F2` mostra a hitbox verde sobre os sprites.
 
-O jogador agora usa `assets/sprites/personagens/tux.png`. A imagem original de
-48x61 e encaixada proporcionalmente no quadro de 48x48, sem recorte ou distorcao,
+O jogador usa `assets/sprites/personagens/tux-pixel-v2.png` (1254x1254), encaixada
+proporcionalmente no quadro de 48x48, sem recorte ou distorcao,
 com transparencia e filtro de pixel art. A hitbox continua 32x32 e a arma gira
 separadamente. O sprite e estatico, ainda sem animacao.
 
-Mantenha a pasta `assets/` ao lado de `jogo` ao copiar o executavel. Os recursos
-sao localizados pelo diretorio do executavel, independentemente do diretorio do
-terminal. Se o PNG estiver ausente ou invalido, o jogo informa o erro ao iniciar.
+Os PNGs usados sao embutidos no executavel durante a compilacao (veja
+"Assets embutidos"); a pasta `assets/` so e necessaria para compilar.
 
 ## Armas e inventario
 

@@ -1,5 +1,7 @@
 build/
 jogo
+jogo.exe
+dist/
 *.o
 *.d
 claude-session.txt

@@ -211,11 +211,13 @@ Detalhes e medidas para artistas estao no [guia de sprites](sprites.md).
 
 ## Recursos graficos
 
-`Sprite` possui uma textura SDL, carrega PNG RGBA via libpng e desenha a imagem
+`Sprite` possui uma textura SDL, decodifica PNG RGBA via libpng e desenha a imagem
 centralizada dentro de um quadro, preservando proporcoes e transparencia.
 `Jogo` possui o sprite do Tux e o fornece ao desenho de `Jogador`. A textura
 nao faz parte das entidades copiadas/reiniciadas, e e liberada antes do renderizador.
-O arquivo fica em `assets/sprites/personagens/tux.png`, relativo ao executavel.
+Os bytes dos PNGs vem de `graficos/AssetsEmbutidos.h`: o Makefile gera, a partir de
+`assets/`, um `.cpp` com esses bytes, e `Sprite` os le da memoria
+(`png_image_begin_read_from_memory`). Assim o executavel nao depende de arquivos externos.
 
 ## Tipos de armas e objetos de sala
 

@@ -10,7 +10,7 @@ Sprite::~Sprite()
     this->liberar();
 }
 
-bool Sprite::carregar(SDL_Renderer *renderizador, const std::string &caminho)
+bool Sprite::carregar(SDL_Renderer *renderizador, const AssetEmbutido &png)
 {
     this->liberar();
     this->erro.clear();
@@ -21,7 +21,12 @@ bool Sprite::carregar(SDL_Renderer *renderizador, const std::string &caminho)
     }
     png_image imagem{};
     imagem.version = PNG_IMAGE_VERSION;
-    if (!png_image_begin_read_from_file(&imagem, caminho.c_str()))
+    if (png.dados == nullptr || png.tamanho == 0)
+    {
+        this->erro = "PNG embutido vazio";
+        return false;
+    }
+    if (!png_image_begin_read_from_memory(&imagem, png.dados, png.tamanho))
     {
         this->erro = imagem.message;
         png_image_free(&imagem);

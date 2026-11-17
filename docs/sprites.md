@@ -65,10 +65,10 @@ margem visual, pois quem limita movimento e a hitbox.
 Pressione **F2 durante o jogo** para mostrar/esconder o contorno verde das
 hitboxes. O retangulo colorido maior representa o quadro visual futuro.
 
-O jogador usa agora `assets/sprites/personagens/tux.png`, carregado por
-`graficos/Sprite` via libpng. O PNG original mede 48x61 e foi preservado: o desenho
-e encaixado proporcionalmente no quadro 48x48 (aproximadamente 37,8x48),
-centralizado e com transparencia. A hitbox permanece 32x32. Para ocupar todo o
+O jogador usa `assets/sprites/personagens/tux-pixel-v2.png`, embutido no executavel
+durante a compilacao (lista `ASSETS_EMBUTIDOS` no Makefile) e decodificado por
+`graficos/Sprite` via libpng. O PNG mede 1254x1254 e e reduzido proporcionalmente
+para o quadro 48x48, centralizado, com transparencia e filtro de pixel art. A hitbox permanece 32x32. Para ocupar todo o
 quadro com outra arte, exporte diretamente no formato ideal da tabela.
 
 `Jogo` possui a textura, carrega uma vez e libera antes de destruir o renderizador.

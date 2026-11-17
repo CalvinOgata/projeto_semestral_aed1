@@ -34,7 +34,8 @@ brainstorming examples into approved mechanics, characters, or assets.
 
 As updated on 2026-10-22:
 
-- The build uses C++17, SDL2, libpng, and a Makefile. Text uses an embedded bitmap font;
+- The build uses C++17, SDL2, libpng, zlib and a Makefile. The libraries are vendored and
+  linked statically (see "Native distribution builds"). Text uses an embedded bitmap font;
   SDL2_ttf is not required.
 - The game starts at a main menu. Three phases remain (reduced from five by user request), all
   trees of 936x516 rooms with lobby, chest rooms and a final boss. The lobby is at the top.
@@ -71,10 +72,35 @@ As updated on 2026-10-22:
 - `Plataforma::PERMITE_SAIR` hides the last menu option (SAIR) on the web.
 - `web/shell.html` is a minimal page that scales the canvas to the largest 16:9 box
   (SDL then matches the backbuffer to the CSS size) and shows abort errors instead of
-  a stuck loading message. `-sSINGLE_FILE=1` plus `--embed-file assets` produce one
-  self-contained `index.html` (~6 MB) because the user opens it directly via file://,
-  where browsers block fetching separate .wasm/.data files. SDL already prevents browser defaults for F-keys, so F5 does not reload.
+  a stuck loading message. `-sSINGLE_FILE=1` produces one
+  self-contained `index.html` because the user opens it directly via file://,
+  where browsers block fetching separate .wasm/.data files. Since 2026-11-17 the sprites come
+  from the generated embedded-asset source (no `--embed-file`), so it shrank from ~6 to ~3.3 MB. SDL already prevents browser defaults for F-keys, so F5 does not reload.
 - Browser checks live in `~/.codex/web-teste/` (Playwright scripts `pw_*.mjs` using system Chromium).
+
+## Native distribution builds (2026-11-17)
+
+- User request: single-file executables for Linux and Windows, with libraries and assets
+  inside, nothing to install or download; saves stay in `saves/` next to the executable.
+- `externo/` holds the pinned upstream tarballs (SDL2 2.32.10, libpng 1.6.59, zlib 1.3.2;
+  ~10 MB, verified by `SHA256SUMS`) instead of 80 MB of extracted sources. `externo/compilar.sh
+  <linux|windows> <dir>` builds them with CMake as static libraries into
+  `build/<target>/externo/instalado` on the first `make`; the game never uses system SDL2/libpng.
+  The web build still uses Emscripten ports.
+- Sprites are embedded: `ferramentas/embutir_assets.py` turns the Makefile list
+  `ASSETS_EMBUTIDOS` (NAME=path) into a generated `.cpp` under the build dir; names are declared
+  in `graficos/AssetsEmbutidos.h`, and `Sprite::carregar` decodes them from memory. `assets/` is
+  only needed to compile. Native, Windows and web builds share this mechanism.
+- Linux: `-static-libstdc++ -static-libgcc`; only libc/libm remain dynamic, and SDL dlopens
+  X11/Wayland/GL/audio at runtime. `make dist-linux` builds `dist/jogo` in Docker (Ubuntu 22.04,
+  glibc 2.35 baseline). Windows: MinGW-w64 cross-compilation, `-static -mwindows`,
+  `-D_USE_MATH_DEFINES` (M_PI); `make dist-windows` builds `dist/jogo.exe` in Docker (Ubuntu
+  24.04), importing only Windows system DLLs. Dockerfiles live in `ferramentas/docker/`.
+  `make ALVO_SO=windows` builds locally if MinGW is installed.
+- `make clean` keeps compiled libraries; `make clean-tudo` removes all of `build/`.
+- Verified with a clean Ubuntu 22.04 container (Xvfb) and Wine: menu, embedded Tux, movement and
+  save creation work. Test container/scripts: `~/.codex/dist-teste/`. Not yet tested on real
+  Windows hardware. No exe icon or GitHub Actions workflow yet.
 
 ## Room cover (obstacles)
 
@@ -150,11 +176,15 @@ implementation changes make it stale.
 
 Run commands from the repository root:
 
-- `make`: build `./jogo` and object files under `build/`.
+- `make`: build `./jogo` and object files under `build/linux/` (first run compiles SDL2,
+  libpng and zlib from `externo/`; needs g++, make, cmake, pkg-config, python3).
 - `make run`: build and launch the game.
 - `make format-check`: check source formatting using clang-format.
 - `make format`: apply `.clang-format`; avoid unrelated formatting changes.
-- `make clean`: remove generated build objects, the executable and web outputs.
+- `make clean`: remove game objects, executables, `dist/` and web outputs (keeps compiled
+  vendored libraries); `make clean-tudo` also removes them.
+- `make dist-linux` / `make dist-windows` / `make dist`: single-file executables in `dist/`
+  via Docker.
 - `make web` / `make web-zip`: browser build in `build-web/` via Emscripten `em++`
   (emsdk installed by each developer outside the repo; optional for desktop builds),
   and `jogo-web.zip` for itch.io upload.
@@ -280,12 +310,12 @@ Use the existing `.clang-format` configuration.
   `assets/sprites/personagens/tux.png`. It is a 48x61 RGBA PNG, rendered with
   preserved aspect ratio inside the 48x48 hero visual frame (about 37.8x48).
   Hitbox remains 32x32; weapon aiming/drawing remains separate.
-- `graficos/Sprite` loads PNG via libpng into an SDL texture, with alpha blending
-  and nearest-neighbor scaling. Makefile now requires pkg-config sdl2 libpng.
+- `graficos/Sprite` decodes an embedded PNG via libpng into an SDL texture, with alpha
+  blending and nearest-neighbor scaling.
 - Jogo owns the noncopyable texture resource; load once at startup and free before
   destroying the renderer. Player resets must not own/copy/reload textures.
-- Assets resolve relative to SDL_GetBasePath, alongside the executable. Missing
-  or invalid required Tux assets produce a startup error. Distribute assets/ with jogo.
+- Sprites are embedded in the executable (see "Native distribution builds"); invalid
+  embedded PNG data produces a startup error. Saves still resolve via SDL_GetBasePath.
 
 ## Weapon inventory and combat
 
