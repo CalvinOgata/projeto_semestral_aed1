@@ -73,20 +73,25 @@ sudo mkdir -p /var/www/meujogo && sudo chown deploy: /var/www/meujogo
 ssh-keygen -t ed25519 -N "" -C "deploy MCGA" -f ~/.ssh/mcga_deploy
 # no servidor, em /home/deploy/.ssh/authorized_keys, uma linha:
 #   restrict ssh-ed25519 AAAA... deploy MCGA
-ssh-keyscan -p 22 SEU_SERVIDOR > /tmp/known_hosts_mcga   # confira as chaves exibidas
+ssh-keyscan -p 22 SEU_SERVIDOR > /tmp/known_hosts_mcga   # opcional, veja abaixo
 ```
 
 **3. No GitHub** (*Settings → Secrets and variables → Actions*), ou pelo terminal:
 
 ```sh
 gh secret set DEPLOY_SSH_KEY      < ~/.ssh/mcga_deploy
-gh secret set DEPLOY_KNOWN_HOSTS  < /tmp/known_hosts_mcga
+gh secret set DEPLOY_KNOWN_HOSTS  < /tmp/known_hosts_mcga   # opcional
 gh variable set DEPLOY_HOST --body "SEU_SERVIDOR"
 gh variable set DEPLOY_USER --body "deploy"
 gh variable set DEPLOY_DIR  --body "/var/www/meujogo"
 gh variable set DEPLOY_URL  --body "https://meudominio.com.br/meujogo/"
 gh variable set DEPLOY_PORT --body "22"        # opcional, padrao 22
 ```
+
+`DEPLOY_KNOWN_HOSTS` e opcional. Com ele, o deploy so conecta se a identidade do
+servidor for a cadastrada. Sem ele, o workflow le a identidade do proprio servidor a
+cada execucao (`ssh-keyscan`) e mostra um aviso: funciona, mas nao detecta alguem se
+passando pelo servidor.
 
 **4. No nginx**, dentro do `server { ... }` do dominio:
 

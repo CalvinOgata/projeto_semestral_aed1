@@ -140,7 +140,9 @@ jobs:
           python3 -m zipfile -e web/MCGA-web.zip web/
           test -s web/index.html
 
-      # known_hosts fixo: o deploy recusa conectar se a identidade do servidor mudar.
+      # Identidade do servidor: com o secret DEPLOY_KNOWN_HOSTS (opcional) ela fica fixa e
+      # o deploy recusa um servidor diferente. Sem ele, e lida do proprio servidor a cada
+      # execucao (ssh-keyscan), o que nao protege contra alguem se passando por ele.
       - name: Configurar SSH
         env:
           CHAVE: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -149,7 +151,13 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$CHAVE" > ~/.ssh/deploy
           chmod 600 ~/.ssh/deploy
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          if [ -n "$KNOWN_HOSTS" ]; then
+            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::DEPLOY_KNOWN_HOSTS ausente; usando ssh-keyscan sem verificar o servidor."
+            ssh-keyscan -p "$PORTA" "$HOST" > ~/.ssh/known_hosts
+            test -s ~/.ssh/known_hosts
+          fi
           cat > ~/.ssh/config <<EOF
           Host servidor
             HostName $HOST

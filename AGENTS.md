@@ -114,8 +114,9 @@ As updated on 2026-10-22:
   cache hit `pronto` is touched because checkout mtimes would otherwise force a rebuild.
 - Web deploy (user request 2026-11-17): job `deploy-web` (needs web) runs on push to main only when
   repo variable DEPLOY_HOST exists, so upstream without it skips. Uploads index.html via scp to
-  `index.html.novo` then `mv` (atomic), using secrets DEPLOY_SSH_KEY / DEPLOY_KNOWN_HOSTS (strict
-  host checking) and variables DEPLOY_USER/DEPLOY_DIR/DEPLOY_PORT/DEPLOY_URL; then curls DEPLOY_URL
+  `index.html.novo` then `mv` (atomic), using secret DEPLOY_SSH_KEY and optional secret DEPLOY_KNOWN_HOSTS
+  (user chose to run without it on 2026-11-17: the job then ssh-keyscans the host each run and
+  emits a warning; no MITM protection) and variables DEPLOY_USER/DEPLOY_DIR/DEPLOY_PORT/DEPLOY_URL; then curls DEPLOY_URL
   and checks for `id="canvas"`. Target: user's nginx at <domain>/meujogo (alias + no-cache + gzip;
   snippet in README). GitHub environment `servidor-web`. Not yet exercised against the real server.
 
