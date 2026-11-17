@@ -1,0 +1,155 @@
+# Gera os executaveis do jogo (Linux, Windows e web) e os publica no GitHub.
+#
+# - Todo push no main atualiza a pre-release "desenvolvimento" com a versao mais
+#   recente (link fixo: .../releases/tag/desenvolvimento).
+# - Uma tag v* (ex.: git tag v1.0 && git push origin v1.0) cria uma release oficial.
+# - Pull requests e execucoes manuais so compilam e guardam os arquivos na aba
+#   Actions (artifacts), sem publicar release.
+name: Executaveis
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  VERSAO_EMSDK: "7.0.0"
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # SDL2/libpng/zlib de externo/ so mudam quando os pacotes ou o container mudam.
+      - name: Cache das bibliotecas compiladas
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: build/dist-linux/externo
+          key: externo-linux-${{ hashFiles('externo/*', 'ferramentas/docker/linux.Dockerfile') }}
+
+      # O checkout deixa os arquivos de externo/ "mais novos" que o cache; sem isto o
+      # make recompilaria as bibliotecas mesmo com o cache restaurado.
+      - name: Marcar bibliotecas do cache como atualizadas
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: touch build/dist-linux/externo/pronto
+
+      - name: Compilar (Docker, Ubuntu 22.04)
+        run: make dist-linux
+
+      # tar.gz preserva a permissao de execucao do binario.
+      - name: Empacotar
+        run: tar -czf MCGA-linux-x86_64.tar.gz -C dist jogo
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: MCGA-linux
+          path: MCGA-linux-x86_64.tar.gz
+
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache das bibliotecas compiladas
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: build/dist-windows/externo
+          key: externo-windows-${{ hashFiles('externo/*', 'ferramentas/docker/windows.Dockerfile') }}
+
+      - name: Marcar bibliotecas do cache como atualizadas
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: touch build/dist-windows/externo/pronto
+
+      - name: Compilar (Docker, MinGW-w64)
+        run: make dist-windows
+
+      - name: Empacotar
+        run: cp dist/jogo.exe MCGA-windows-x86_64.exe
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: MCGA-windows
+          path: MCGA-windows-x86_64.exe
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Instalar emsdk ${{ env.VERSAO_EMSDK }}
+        run: |
+          git clone --depth 1 --branch "$VERSAO_EMSDK" \
+            https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          "$HOME/emsdk/emsdk" install "$VERSAO_EMSDK"
+          "$HOME/emsdk/emsdk" activate "$VERSAO_EMSDK"
+
+      # Os ports (SDL2, libpng, zlib) do Emscripten sao compilados no primeiro uso.
+      - name: Cache dos ports do Emscripten
+        uses: actions/cache@v6
+        with:
+          path: ~/emsdk/upstream/emscripten/cache
+          key: emscripten-cache-${{ env.VERSAO_EMSDK }}
+
+      - name: Compilar
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          make -j"$(nproc)" web-zip
+          mv jogo-web.zip MCGA-web.zip
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: MCGA-web
+          path: MCGA-web.zip
+
+  publicar:
+    # Pull requests nunca publicam; so pushes no main e tags v*.
+    if: github.event_name == 'push'
+    needs: [linux, windows, web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Dois pushes seguidos no main nao disputam a mesma release.
+    concurrency:
+      group: publicar-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: arquivos
+          merge-multiple: true
+
+      - name: Release oficial (tag ${{ github.ref_name }})
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          gh release create "$GITHUB_REF_NAME" arquivos/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "MCGA $GITHUB_REF_NAME" \
+            --generate-notes
+
+      - name: Pre-release "desenvolvimento" (ultimo commit do main)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          gh release delete desenvolvimento --repo "$GITHUB_REPOSITORY" \
+            --cleanup-tag --yes || true
+          gh release create desenvolvimento arquivos/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "MCGA (versao de desenvolvimento)" \
+            --notes "Gerado automaticamente a partir do commit $GITHUB_SHA do main.
+
+          - **Windows:** baixe \`MCGA-windows-x86_64.exe\` e execute.
+          - **Linux:** baixe \`MCGA-linux-x86_64.tar.gz\`, extraia e rode \`./jogo\`.
+          - **Navegador:** extraia \`MCGA-web.zip\` e abra o \`index.html\`.
+
+          Os saves ficam na pasta \`saves/\` ao lado do executavel."
