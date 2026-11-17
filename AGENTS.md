@@ -80,6 +80,10 @@ As updated on 2026-10-22:
 
 ## Native distribution builds (2026-11-17)
 
+- Git remotes (2026-11-17): `origin` is the user's fork jsantos43/MCGA, where development,
+  Actions and Releases happen; `upstream` is the team repo CalvinOgata/projeto_semestral_aed1,
+  updated by merges/PRs from the fork.
+
 - User request: single-file executables for Linux and Windows, with libraries and assets
   inside, nothing to install or download; saves stay in `saves/` next to the executable.
 - `externo/` holds the pinned upstream tarballs (SDL2 2.32.10, libpng 1.6.59, zlib 1.3.2;
@@ -100,7 +104,14 @@ As updated on 2026-10-22:
 - `make clean` keeps compiled libraries; `make clean-tudo` removes all of `build/`.
 - Verified with a clean Ubuntu 22.04 container (Xvfb) and Wine: menu, embedded Tux, movement and
   save creation work. Test container/scripts: `~/.codex/dist-teste/`. Not yet tested on real
-  Windows hardware. No exe icon or GitHub Actions workflow yet.
+  Windows hardware. No exe icon yet.
+- GitHub Actions (`.github/workflows/executaveis.yml`, user request 2026-11-17): jobs linux,
+  windows (both via `make dist-*`) and web (emsdk pinned to 7.0.0, the developer's local version,
+  `make web-zip`). Push to main replaces the prerelease `desenvolvimento`; tags `v*` create an
+  official release (`gh release create`, generated notes); PRs/manual runs only upload artifacts.
+  Assets: MCGA-linux-x86_64.tar.gz (keeps exec bit), MCGA-windows-x86_64.exe, MCGA-web.zip.
+  Caches `build/dist-*/externo` (key: externo/* + Dockerfile) and the Emscripten cache; after a
+  cache hit `pronto` is touched because checkout mtimes would otherwise force a rebuild.
 
 ## Room cover (obstacles)
 

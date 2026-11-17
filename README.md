@@ -41,6 +41,19 @@ make dist           # os dois
 Sem Docker, `make ALVO_SO=windows` compila o `.exe` localmente se o
 `x86_64-w64-mingw32-g++` estiver instalado.
 
+### Downloads automaticos (GitHub Actions)
+
+O workflow `.github/workflows/executaveis.yml` compila Linux, Windows e web no GitHub:
+
+- **Push no `main`:** atualiza a pre-release `desenvolvimento` (aba *Releases*) com
+  `MCGA-windows-x86_64.exe`, `MCGA-linux-x86_64.tar.gz` e `MCGA-web.zip` do ultimo commit.
+- **Tag `v*`:** cria uma release oficial com os mesmos arquivos:
+  `git tag v1.0 && git push origin v1.0`.
+- **Pull requests:** so compilam (os arquivos ficam em *Actions → execucao → Artifacts*).
+
+As bibliotecas de `externo/` e os ports do Emscripten ficam em cache, entao so a
+primeira execucao (ou uma troca de versao) recompila o SDL2.
+
 ### Assets embutidos
 
 `ferramentas/embutir_assets.py` converte os PNGs listados em `ASSETS_EMBUTIDOS` no
