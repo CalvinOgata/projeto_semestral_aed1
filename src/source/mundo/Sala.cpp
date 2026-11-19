@@ -306,26 +306,6 @@ void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAn
         Ambiente::desenhar_porta(renderizador, porta,
                                 porta_liberada(direcao));
     }
-    if (configuracao.mostrarComandos)
-    {
-        const char *linhas[] = {"WASD OU SETAS - MOVER", "MOUSE - MIRAR",
-                                "BOTAO ESQUERDO - ATACAR", "F - COLETAR ARMA",
-                                "Q - CICLAR FILA", "G - SOLTAR ARMA",
-                                "M - MAPA", "CORES IGUAIS - DANO 2X", "ESC - PAUSAR"};
-        const auto titulo = camera.para_tela(configuracao.largura / 2, 126);
-        Texto::desenhar_centralizado(renderizador, "COMANDOS", titulo.x + 1, titulo.y + 1, 2,
-                                    {8, 12, 20, 150});
-        Texto::desenhar_centralizado(renderizador, "COMANDOS", titulo.x, titulo.y, 2,
-                                    {165, 210, 225, 190});
-        for (int i = 0; i < 9; ++i)
-        {
-            const auto pos = camera.para_tela(configuracao.largura / 2, 166 + i * 24);
-            Texto::desenhar_centralizado(renderizador, linhas[i], pos.x + 1, pos.y + 1, 1,
-                                        {8, 12, 20, 150});
-            Texto::desenhar_centralizado(renderizador, linhas[i], pos.x, pos.y, 1,
-                                        {165, 210, 225, 175});
-        }
-    }
     if (configuracao.portalSaida && liberada())
     {
         const auto centro = camera.para_tela(configuracao.largura / 2, configuracao.altura / 2);

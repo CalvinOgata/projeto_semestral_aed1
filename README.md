@@ -278,7 +278,9 @@ Paredes limitam movimento
 e tiros; a camera acompanha continuamente o jogador pelas salas e corredores de 96 pixels de largura, sem inimigos. O HUD agrupa vida, escudo e energia numa caixa compacta e semitransparente
 no canto superior esquerdo, com barras coloridas e icones. A municao aparece
 apenas como numero no canto inferior direito. Na pausa aparecem apenas a fase e o nome da sala,
-com o titulo PAUSADO e as opcoes Continuar, Reiniciar, Menu inicial e Sair.
+com o titulo PAUSADO e as opcoes Continuar, Manual, Reiniciar, Menu inicial e Sair.
+Manual abre o mesmo manual do menu principal e volta para a pausa. Os comandos nao
+ficam mais escritos no piso do lobby: so aparecem no manual.
 Reiniciar recomeca a fase atual e o jogador, preservando fases concluidas.
 O reinicio manual fica exclusivamente nesse menu; a tecla R nao executa nenhuma acao.
 

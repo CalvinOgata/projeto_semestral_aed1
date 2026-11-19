@@ -164,7 +164,6 @@ Fase::Fase(int numero) : numero(numero)
         config.misturarAfinidades = sala.misturarAfinidades;
         config.cobertura = sala.cobertura;
         config.ondasExtras = sala.ondasExtras;
-        config.mostrarComandos = i == 0;
         salas.inserir(Sala(config));
         origens.inserir({sala.coluna * (largura + Sala::COMPRIMENTO_CORREDOR),
                         sala.linha * (altura + Sala::COMPRIMENTO_CORREDOR)});

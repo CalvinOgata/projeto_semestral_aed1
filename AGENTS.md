@@ -138,8 +138,9 @@ As updated on 2026-10-22:
   temp+rename, invalid lines ignored): music/effects volume 0..10 (defaults 7/8),
   fullscreen (desktop only, `Plataforma::PERMITE_TELA_CHEIA`), show hitboxes (F2 also
   toggles and saves it). Saved on every change.
-- SOBRE lists technologies and team names (`INTEGRANTES` in Menu.cpp). Felipe's full name
-  is unknown (git author is felipebp14-207); confirm with the user. Credits Tux to Larry Ewing.
+- SOBRE lists technologies and team names (`INTEGRANTES` in Menu.cpp): Calvin da Serra Ogata
+  de Paula, Felipe Baratela Pimenta (git author felipebp14-207), Joao Pedro Tomaz dos Santos,
+  Pedro Testa Lourenco. Credits Tux to Larry Ewing.
 - Audio is fully synthesized, no audio files: `audio/Sintetizador` (SDL-independent notes ->
   samples, 44.1 kHz mono), `audio/Repertorio` (effects catalog `EfeitoSonoro` and three looping
   tracks MENU / FASE / CHEFE composed with a small step sequencer), `audio/Som` (SDL mixer:
@@ -286,8 +287,10 @@ Use the existing `.clang-format` configuration.
 - Saves use a temporary file in the same directory followed by rename; failed
   writes preserve the previous checkpoint. Show failures in menus/pause (hidden during gameplay); F5 retries
   pending writes. Saves are ignored by Git and preserved by make clean.
-- Pause shows PAUSADO, phase name and room name (two lines), followed by Continue, Restart,
-  Main menu and Exit. Restart resets the current phase/player and resumes gameplay;
+- Pause shows PAUSADO, phase name and room name (two lines), followed by Continue, Manual, Restart,
+  Main menu and Exit. Manual opens the same player manual over the veiled game and returns
+  to pause (user request 2026-11-18); the lobby floor no longer draws a controls tutorial,
+  controls live only in the manual. Restart resets the current phase/player and resumes gameplay;
   R has no action. Gameplay HUD, inventory details and navigation/checkpoint hints
   are hidden during pause. Keyboard/mouse navigation remains available. Main-menu Continue uses the disk
   checkpoint; returning there abandons unsaved progress within the current phase.

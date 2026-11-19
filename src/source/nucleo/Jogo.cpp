@@ -647,7 +647,13 @@ void Jogo::desenhar()
                                         2, {130, 255, 180, 255});
         }
     }
-    if (this->estado != EstadoJogo::JOGANDO && !this->mensagemSave.empty())
+    // Manual e Sobre ocupam a tela inteira; o aviso de save cobriria o botao VOLTAR.
+    const bool painelInteiro = (this->estado == EstadoJogo::INICIAL ||
+                                this->estado == EstadoJogo::PAUSADO) &&
+                               (this->menu.get_tela() == TelaMenu::MANUAL ||
+                                this->menu.get_tela() == TelaMenu::SOBRE);
+    if (this->estado != EstadoJogo::JOGANDO && this->estado != EstadoJogo::CARREGANDO &&
+        !painelInteiro && !this->mensagemSave.empty())
     {
         SDL_SetRenderDrawColor(this->renderizador, 18, 22, 30, 240);
         const SDL_Rect aviso = {0, ALTURA_TELA - 62, LARGURA_TELA, 26};

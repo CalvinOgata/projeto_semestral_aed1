@@ -279,8 +279,8 @@ afinidade eficaz contra o boss da fase e depois sorteia uma entre os nove tipos,
 com reposicao. B/E possuem um/dois baus. Nenhum TAD depende
 dessas regras de jogo; armazenamento permanece encapsulado.
 
-A pausa apresenta somente o titulo PAUSADO, fase/nome da sala e quatro opcoes:
-Continuar, Reiniciar, Menu inicial e Sair. O menu inicial mantem tres opcoes.
+A pausa apresenta somente o titulo PAUSADO, fase/nome da sala e as opcoes
+Continuar, Manual, Reiniciar, Menu inicial e Sair; o manual aberto pela pausa volta a ela.
 A quantidade de opcoes usada para desenho, teclado e mouse depende do modo.
 
 ### Corredores e continuidade visual

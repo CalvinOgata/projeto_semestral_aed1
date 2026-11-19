@@ -17,7 +17,7 @@ namespace
 {
 const char *OPCOES_PRINCIPAIS[] = {"JOGAR", "MANUAL", "CONFIGURACOES", "SOBRE", "SAIR"};
 const char *OPCOES_JOGAR[] = {"NOVO JOGO", "CONTINUAR", "VOLTAR"};
-const char *OPCOES_PAUSA[] = {"CONTINUAR", "REINICIAR", "MENU INICIAL", "SAIR"};
+const char *OPCOES_PAUSA[] = {"CONTINUAR", "MANUAL", "REINICIAR", "MENU INICIAL", "SAIR"};
 
 constexpr int ALTURA_OPCAO = 40;
 constexpr int ALTURA_OPCAO_SLOT = 64;
@@ -28,7 +28,7 @@ constexpr SDL_Color COR_DOURADO = {255, 210, 100, 255};
 constexpr SDL_Color COR_VERDE_OK = {110, 250, 150, 255};
 
 // Integrantes da equipe, na ordem em que aparecem em "SOBRE".
-const char *INTEGRANTES[] = {"CALVIN DA SERRA OGATA DE PAULA", "FELIPE",
+const char *INTEGRANTES[] = {"CALVIN DA SERRA OGATA DE PAULA", "FELIPE BARATELA PIMENTA",
                              "JOAO PEDRO TOMAZ DOS SANTOS", "PEDRO TESTA LOURENCO"};
 
 struct Tecnologia
@@ -309,6 +309,7 @@ AcaoMenu Menu::ativar_opcao(int indice)
         }
         else if (indice == 1)
         {
+            this->manualDaPausa = false;
             this->abrir_tela(TelaMenu::MANUAL, 0);
         }
         else if (indice == 2)
@@ -344,7 +345,7 @@ AcaoMenu Menu::ativar_opcao(int indice)
         return indice == 0 ? AcaoMenu::SLOT_1 : (indice == 1 ? AcaoMenu::SLOT_2 : AcaoMenu::SLOT_3);
     case TelaMenu::MANUAL:
         Som::tocar(EfeitoSonoro::MENU_VOLTAR);
-        this->abrir_tela(TelaMenu::PRINCIPAL, 1);
+        this->abrir_tela(this->manualDaPausa ? TelaMenu::PAUSA : TelaMenu::PRINCIPAL, 1);
         return AcaoMenu::NENHUMA;
     case TelaMenu::SOBRE:
         Som::tocar(EfeitoSonoro::MENU_VOLTAR);
@@ -377,9 +378,15 @@ AcaoMenu Menu::ativar_opcao(int indice)
         Som::tocar(EfeitoSonoro::MENU_CONFIRMAR);
         if (indice == 1)
         {
-            return AcaoMenu::REINICIAR;
+            this->manualDaPausa = true;
+            this->abrir_tela(TelaMenu::MANUAL, 0);
+            return AcaoMenu::NENHUMA;
         }
         if (indice == 2)
+        {
+            return AcaoMenu::REINICIAR;
+        }
+        if (indice == 3)
         {
             return AcaoMenu::MENU_INICIAL;
         }
@@ -396,7 +403,7 @@ SDL_Rect Menu::retangulo_painel() const
         return {250, 140, 460, 300};
     case TelaMenu::SLOTS_NOVO:
     case TelaMenu::SLOTS_CONTINUAR:
-        return {100, 92, 760, 420};
+        return {100, 96, 760, 380};
     case TelaMenu::MANUAL:
     case TelaMenu::SOBRE:
         return {36, 20, 888, 500};
@@ -615,7 +622,8 @@ void Menu::desenhar(SDL_Renderer *renderizador, const Sprite &tux) const
     }
     SDL_SetRenderDrawBlendMode(renderizador, SDL_BLENDMODE_BLEND);
 
-    if (tela == TelaMenu::PAUSA)
+    // Na pausa (inclusive no manual aberto por ela) a partida continua visivel ao fundo.
+    if (tela == TelaMenu::PAUSA || (tela == TelaMenu::MANUAL && this->manualDaPausa))
     {
         FundoMenu::preencher(renderizador, {0, 0, LARGURA_TELA, ALTURA_TELA}, COR_VEU);
     }
@@ -712,8 +720,6 @@ void Menu::desenhar(SDL_Renderer *renderizador, const Sprite &tux) const
         }
         this->desenhar_botao(renderizador, this->retangulo_opcao(QUANTIDADE_SLOTS_SAVE), "VOLTAR",
                              this->selecionado == QUANTIDADE_SLOTS_SAVE, false, 2);
-        Texto::desenhar_centralizado(renderizador, "SETAS NAVEGAR - ENTER CONFIRMAR - ESC VOLTAR",
-                                     centroX, painel.y + painel.h - 30, 2, COR_TEXTO_APAGADO);
         break;
     }
     case TelaMenu::PRINCIPAL:
@@ -759,9 +765,6 @@ void Menu::desenhar_principal(SDL_Renderer *r, const Sprite &tux) const
         this->desenhar_botao(r, this->retangulo_opcao(i), OPCOES_PRINCIPAIS[i],
                              i == this->selecionado, false, 3);
     }
-    FundoMenu::preencher(r, {0, ALTURA_TELA - 26, LARGURA_TELA, 26}, {4, 2, 12, 190});
-    Texto::desenhar_centralizado(r, "SETAS OU MOUSE NAVEGAM - ENTER CONFIRMA", LARGURA_TELA / 2,
-                                 ALTURA_TELA - 19, 2, {150, 150, 190, 255});
 }
 
 void Menu::desenhar_manual(SDL_Renderer *r, const SDL_Rect &painel) const
@@ -894,8 +897,6 @@ void Menu::desenhar_configuracoes(SDL_Renderer *r, const SDL_Rect &painel) const
                             ligado ? COR_VERDE_OK : SDL_Color{255, 140, 150, 255});
         }
     }
-    Texto::desenhar_centralizado(r, "ESQUERDA/DIREITA AJUSTAM - ENTER ALTERNA", centroX,
-                                 painel.y + painel.h - 18, 1, COR_TEXTO_APAGADO);
 }
 
 void Menu::desenhar_sobre(SDL_Renderer *r, const SDL_Rect &painel) const

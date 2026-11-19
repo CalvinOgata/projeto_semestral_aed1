@@ -47,7 +47,7 @@ public:
     // "SAIR" e sempre a ultima opcao e nao aparece na versao web.
     static constexpr int NUM_OPCOES_PRINCIPAIS = Plataforma::PERMITE_SAIR ? 5 : 4;
     static constexpr int NUM_OPCOES_JOGAR = 3;
-    static constexpr int NUM_OPCOES_PAUSA = Plataforma::PERMITE_SAIR ? 4 : 3;
+    static constexpr int NUM_OPCOES_PAUSA = Plataforma::PERMITE_SAIR ? 5 : 4;
     static constexpr int NUM_OPCOES_SLOTS = QUANTIDADE_SLOTS_SAVE + 1;
 
 private:
@@ -69,7 +69,8 @@ private:
     std::array<bool, QUANTIDADE_SLOTS_SAVE> slotsDisponiveis = {};
     Configuracoes configuracoes;
     int abaManual = 0;
-    float tempo = 0.0f; // anima selecao, fundo e personagens
+    bool manualDaPausa = false; // o manual aberto na pausa volta para ela
+    float tempo = 0.0f;         // anima selecao, fundo e personagens
 
 public:
     Menu();
