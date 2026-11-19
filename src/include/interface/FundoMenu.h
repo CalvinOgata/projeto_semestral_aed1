@@ -19,6 +19,9 @@ void desenhar_logo(SDL_Renderer *renderizador, int centroX, int y, int escala, f
 // Painel translucido de vidro com cantos destacados.
 void desenhar_painel(SDL_Renderer *renderizador, const SDL_Rect &area, float tempo);
 
+// Numero pseudoaleatorio estavel (0 a 1) a partir de uma semente inteira.
+float sorteio(int semente);
+
 // Retangulo preenchido com transparencia, usado por varios efeitos.
 void preencher(SDL_Renderer *renderizador, const SDL_Rect &area, SDL_Color cor);
 } // namespace FundoMenu

@@ -8,6 +8,8 @@
 #include "graficos/Sprite.h"
 #include "interface/Menu.h"
 #include "interface/TelaCarregamento.h"
+#include "interface/TelaDerrota.h"
+#include "interface/TelaVitoria.h"
 #include "mundo/Campanha.h"
 #include "persistencia/ArquivoConfiguracoes.h"
 #include "persistencia/ArquivoProgresso.h"
@@ -20,6 +22,7 @@ enum class EstadoJogo
     RESUMO_FASE,
     GAME_OVER,
     JOGANDO,
+    DERROTA, // animacao do sistema invadido antes de reiniciar a fase
     PAUSADO,
     SAINDO
 };
@@ -34,6 +37,8 @@ private:
     Jogador jogador;
     Menu menu;
     TelaCarregamento carregamento;
+    TelaDerrota derrota;
+    TelaVitoria vitoria;
     Configuracoes configuracoes;
     ArquivoConfiguracoes arquivoConfiguracoes;
     Camera camera;
@@ -116,6 +121,8 @@ private:
     void iniciar_partida(bool continuar, int slot);
     void salvar_progresso();
     void concluir_fase();
+    void iniciar_derrota();
+    void concluir_derrota();
     void iniciar_gameOver();
     void aceitar_continue();
     void encerrar_gameOver();

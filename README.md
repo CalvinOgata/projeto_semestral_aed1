@@ -329,6 +329,12 @@ durante a tela de carregamento, em fatias de 8 ms por quadro.
   bruto e chefe, tiros inimigos, alerta de reforcos, invocacao, dano no escudo e na
   vida, coracao, portas trancando, sala liberada, bau, coletar/soltar/trocar arma,
   portal, fase concluida, morte, game over, continue, vitoria e navegacao dos menus.
+- Ao morrer, uma animacao mostra o sistema sendo invadido por virus e janelas de erro,
+  seguida de "NAO DESISTA, GUERREIRO!", um trocadilho de programacao e as vidas restantes
+  (Enter acelera). So entao a fase recomeca ou aparece o game over.
+- Ao vencer a campanha: celebracao com fogos, um texto reflexivo que sobe devagar com
+  trocadilhos de programacao (segure Espaco para acelerar, Esc pula) e os creditos, com
+  trilha propria de encerramento.
 - Repeticoes rapidas do mesmo efeito tem intervalo minimo e no maximo 4 copias
   simultaneas. Sem dispositivo de audio, o jogo continua mudo.
 

@@ -187,3 +187,40 @@ void Texto::desenhar_centralizado(SDL_Renderer *renderizador, const std::string 
     const int x = centroX - Texto::largura(texto, escala) / 2;
     Texto::desenhar(renderizador, texto, x, y, escala, cor);
 }
+
+std::vector<std::string> Texto::quebrar_linhas(const std::string &texto, int larguraMaxima,
+                                               int escala)
+{
+    std::vector<std::string> linhas;
+    std::string atual;
+    std::size_t inicio = 0;
+    while (inicio < texto.size())
+    {
+        std::size_t fim = texto.find(' ', inicio);
+        if (fim == std::string::npos)
+        {
+            fim = texto.size();
+        }
+        const std::string palavra = texto.substr(inicio, fim - inicio);
+        inicio = fim + 1;
+        if (palavra.empty())
+        {
+            continue;
+        }
+        const std::string tentativa = atual.empty() ? palavra : atual + " " + palavra;
+        if (!atual.empty() && Texto::largura(tentativa, escala) > larguraMaxima)
+        {
+            linhas.push_back(atual);
+            atual = palavra;
+        }
+        else
+        {
+            atual = tentativa;
+        }
+    }
+    if (!atual.empty())
+    {
+        linhas.push_back(atual);
+    }
+    return linhas;
+}

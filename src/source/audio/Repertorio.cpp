@@ -411,6 +411,43 @@ Repertorio::Partitura musica_chefe()
     }
     return {c.notas, c.duracao(16)};
 }
+// Encerramento: do maior com setimas, lento e reflexivo, sem bateria.
+Repertorio::Partitura musica_final()
+{
+    Compositor c(76);
+    const std::vector<std::vector<int>> acordes = {
+        {midi("C3"), midi("E3"), midi("G3"), midi("B3")},
+        {midi("A2"), midi("C3"), midi("E3"), midi("G3")},
+        {midi("F2"), midi("A2"), midi("C3"), midi("E3")},
+        {midi("G2"), midi("B2"), midi("D3"), midi("G3")},
+        {midi("E2"), midi("G2"), midi("B2"), midi("D3")},
+        {midi("A2"), midi("C3"), midi("E3"), midi("G3")},
+        {midi("D2"), midi("F2"), midi("A2"), midi("C3")},
+        {midi("G2"), midi("B2"), midi("D3"), midi("F3")}};
+    const char *melodias[] = {
+        "E5:6 D5:2 C5:4 G5:4", "A5:8 G5:4 E5:4", "F5:6 E5:2 C5:4 A4:4", "B4:8 D5:8",
+        "G5:6 E5:2 B4:4 D5:4", "C5:8 E5:4 A5:4", "F5:6 E5:2 D5:4 A5:4", "G5:12 -:4"};
+    for (int compasso = 0; compasso < 16; ++compasso)
+    {
+        const int i = compasso % 8;
+        const auto &acorde = acordes[static_cast<std::size_t>(i)];
+        std::vector<int> alto;
+        for (int nota : acorde)
+        {
+            alto.push_back(nota + 12);
+        }
+        c.colchao(compasso, alto, 0.04f);
+        std::vector<int> subida = {acorde[0] + 24, acorde[1] + 24, acorde[2] + 24,
+                                   acorde[3] + 24, acorde[2] + 24, acorde[1] + 24};
+        c.arpejo_acorde(compasso, subida, Onda::TRIANGULO, 0.075f, 0.5f, 2);
+        c.baixo(compasso, acorde[0], "r.......r.......", Onda::TRIANGULO, 0.2f, 1.0f);
+        if (compasso >= 8)
+        {
+            c.melodia(compasso, melodias[i], Onda::QUADRADA, 0.065f, 0.5f, 0, 0.45f, 0.35f);
+        }
+    }
+    return {c.notas, c.duracao(16)};
+}
 } // namespace
 
 // ---------------------------------------------------------------- efeitos
@@ -669,6 +706,29 @@ std::vector<Nota> Repertorio::compor_efeito(EfeitoSonoro efeito)
         n.push_back(N(1.0f, 0.6f, 9000, 0.12f, R).queda(5));
         break;
     }
+    case EfeitoSonoro::ERRO_SISTEMA:
+        // Bipes de erro em cascata, cada vez mais graves e desafinados.
+        for (int i = 0; i < 5; ++i)
+        {
+            const float t = i * 0.16f;
+            n.push_back(N(t, 0.12f, 880 - i * 110.0f, 0.09f).ciclo(0.5f).filtro(0.5f).queda(10));
+            n.push_back(N(t, 0.12f, 1320 - i * 190.0f, 0.05f).ciclo(0.25f).filtro(0.5f).queda(10));
+        }
+        n.push_back(N(0.2f, 1.2f, 70, 0.14f, S).ate(40).filtro(0.15f).picote(9).queda(1.5f));
+        break;
+    case EfeitoSonoro::ENCORAJAR:
+        arpejo(n, 0, 0.12f, {midi("C5"), midi("E5"), midi("G5"), midi("C6")}, 1.2f, 0.07f, T);
+        for (int nota : {midi("C4"), midi("G4"), midi("E5")})
+        {
+            n.push_back(N(0.36f, 1.4f, hz(nota), 0.04f, T).ataque(0.2f).liberacao(0.7f));
+        }
+        n.push_back(N(0.36f, 1.2f, hz(midi("G6")), 0.02f, SEN).vibrato(0.01f, 6).ataque(0.2f));
+        break;
+    case EfeitoSonoro::FOGOS:
+        n = {N(0, 0.45f, 2600, 0.18f, R).ate(300).filtro(0.35f).queda(7),
+             N(0, 0.12f, 140, 0.18f, SEN).ate(50).queda(14),
+             N(0.12f, 0.5f, 7000, 0.04f, R).queda(5).picote(30)};
+        break;
     case EfeitoSonoro::CHEAT:
         arpejo(n, 0, 0.045f,
                {midi("C5"), midi("G5"), midi("C6"), midi("D5"), midi("A5"), midi("D6"), midi("E5"),
@@ -691,6 +751,8 @@ Repertorio::Partitura Repertorio::compor_musica(Musica musica)
         return musica_fase();
     case Musica::CHEFE:
         return musica_chefe();
+    case Musica::FINAL:
+        return musica_final();
     default:
         return {};
     }

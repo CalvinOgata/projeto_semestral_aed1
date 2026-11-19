@@ -9,15 +9,7 @@
 
 namespace
 {
-// Numero pseudoaleatorio estavel a partir de um inteiro: o cenario e sempre igual.
-float sorteio(int semente)
-{
-    unsigned int x = static_cast<unsigned int>(semente) * 2654435761u;
-    x ^= x >> 13;
-    x *= 0x5bd1e995u;
-    x ^= x >> 15;
-    return static_cast<float>(x % 10000u) / 10000.0f;
-}
+using FundoMenu::sorteio;
 
 Uint8 canal(float valor)
 {
@@ -210,6 +202,16 @@ void desenhar_particulas(SDL_Renderer *r, float tempo, float intensidade)
     }
 }
 } // namespace
+
+// O cenario e sempre igual porque o sorteio depende so da semente.
+float FundoMenu::sorteio(int semente)
+{
+    unsigned int x = static_cast<unsigned int>(semente) * 2654435761u;
+    x ^= x >> 13;
+    x *= 0x5bd1e995u;
+    x ^= x >> 15;
+    return static_cast<float>(x % 10000u) / 10000.0f;
+}
 
 void FundoMenu::preencher(SDL_Renderer *renderizador, const SDL_Rect &area, SDL_Color cor)
 {

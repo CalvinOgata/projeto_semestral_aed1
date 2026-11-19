@@ -204,6 +204,25 @@ void Jogo::passo()
     {
         this->atualizar_gameOver(dt);
     }
+    else if (this->estado == EstadoJogo::DERROTA)
+    {
+        this->derrota.atualizar(dt);
+        if (this->derrota.terminou())
+        {
+            this->concluir_derrota();
+        }
+    }
+    else if (this->estado == EstadoJogo::VITORIA)
+    {
+        const Uint8 *teclas = SDL_GetKeyboardState(nullptr);
+        const bool acelerar = teclas[SDL_SCANCODE_SPACE] ||
+                              (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_LMASK);
+        this->vitoria.atualizar(dt, acelerar);
+        if (this->vitoria.terminou())
+        {
+            this->abrir_inicio();
+        }
+    }
 
     this->atualizar_musica();
     this->desenhar();
@@ -232,7 +251,11 @@ void Jogo::atualizar_musica()
     Musica musica = Musica::MENU;
     switch (this->estado)
     {
+    case EstadoJogo::VITORIA:
+        musica = Musica::FINAL;
+        break;
     case EstadoJogo::CARREGANDO:
+    case EstadoJogo::DERROTA:
     case EstadoJogo::GAME_OVER:
     case EstadoJogo::SAINDO:
         musica = Musica::NENHUMA;
@@ -367,6 +390,7 @@ void Jogo::tratar_eventos()
                 if (this->campanha.concluida())
                 {
                     this->estado = EstadoJogo::VITORIA;
+                    this->vitoria.iniciar(this->pontuacaoTotal);
                     Som::tocar(EfeitoSonoro::VITORIA);
                 }
                 else
@@ -389,10 +413,28 @@ void Jogo::tratar_eventos()
         }
         if (this->estado == EstadoJogo::VITORIA)
         {
-            if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
-                (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_ESCAPE))
+            if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0)
             {
-                this->abrir_inicio();
+                if (evento.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    this->vitoria.pular();
+                }
+                else if (evento.key.keysym.sym == SDLK_RETURN ||
+                         evento.key.keysym.sym == SDLK_KP_ENTER)
+                {
+                    this->vitoria.avancar();
+                }
+            }
+            continue;
+        }
+        if (this->estado == EstadoJogo::DERROTA)
+        {
+            if ((evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
+                 (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_KP_ENTER ||
+                  evento.key.keysym.sym == SDLK_SPACE)) ||
+                (evento.type == SDL_MOUSEBUTTONDOWN && evento.button.button == SDL_BUTTON_LEFT))
+            {
+                this->derrota.pular();
             }
             continue;
         }
@@ -513,15 +555,7 @@ void Jogo::atualizar(float dt)
     this->atualizar_pontuacaoInimigos();
     if (this->jogador.morto())
     {
-        Som::tocar(EfeitoSonoro::MORTE_JOGADOR);
-        this->vidas = std::max(0, this->vidas - 1);
-        this->campanha.reiniciar_fase(this->jogador);
-        this->preparar_entrada();
-        this->salvar_progresso();
-        if (this->vidas == 0)
-        {
-            this->iniciar_gameOver();
-        }
+        this->iniciar_derrota();
         return;
     }
     if (this->campanha.atualizar_transicao(this->jogador))
@@ -601,15 +635,7 @@ void Jogo::desenhar()
     }
     else if (this->estado == EstadoJogo::VITORIA)
     {
-        const float tempo = static_cast<float>(SDL_GetTicks()) / 1000.0f;
-        FundoMenu::desenhar(this->renderizador, tempo);
-        FundoMenu::desenhar_painel(this->renderizador, {180, 170, 600, 230}, tempo);
-        Texto::desenhar_centralizado(this->renderizador, "CAMPANHA CONCLUIDA!", 480, 200, 4, COR_TEXTO);
-        Texto::desenhar_centralizado(this->renderizador, "VOCE COMPLETOU AS " + std::to_string(Campanha::TOTAL_FASES) + " FASES", 480, 270, 2, COR_TEXTO);
-        Texto::desenhar_centralizado(this->renderizador, "PONTUACAO FINAL: " +
-                                     std::to_string(this->pontuacaoTotal), 480, 310, 3,
-                                     {255, 222, 110, 255});
-        Texto::desenhar_centralizado(this->renderizador, "ENTER: MENU INICIAL", 480, 360, 2, COR_TEXTO);
+        this->vitoria.desenhar(this->renderizador, this->spriteJogador);
     }
     else
     {
@@ -619,7 +645,11 @@ void Jogo::desenhar()
         this->jogador.desenhar(this->renderizador, this->camera,
                                this->configuracoes.mostrarHitboxes,
                                &this->spriteJogador);
-        if (this->estado != EstadoJogo::PAUSADO)
+        if (this->estado == EstadoJogo::DERROTA)
+        {
+            this->derrota.desenhar(this->renderizador);
+        }
+        else if (this->estado != EstadoJogo::PAUSADO)
         {
             Hud::desenhar(this->renderizador, this->jogador, this->spriteJogador, this->vidas,
                           this->pontosComunsFase + this->pontosBossFase,
@@ -652,8 +682,10 @@ void Jogo::desenhar()
                                 this->estado == EstadoJogo::PAUSADO) &&
                                (this->menu.get_tela() == TelaMenu::MANUAL ||
                                 this->menu.get_tela() == TelaMenu::SOBRE);
-    if (this->estado != EstadoJogo::JOGANDO && this->estado != EstadoJogo::CARREGANDO &&
-        !painelInteiro && !this->mensagemSave.empty())
+    const bool animacao = this->estado == EstadoJogo::CARREGANDO ||
+                          this->estado == EstadoJogo::DERROTA ||
+                          this->estado == EstadoJogo::VITORIA;
+    if (this->estado != EstadoJogo::JOGANDO && !animacao && !painelInteiro && !this->mensagemSave.empty())
     {
         SDL_SetRenderDrawColor(this->renderizador, 18, 22, 30, 240);
         const SDL_Rect aviso = {0, ALTURA_TELA - 62, LARGURA_TELA, 26};
@@ -920,6 +952,33 @@ void Jogo::concluir_fase()
     this->salvar_progresso();
     this->atirando = false;
     this->estado = EstadoJogo::RESUMO_FASE;
+}
+
+void Jogo::iniciar_derrota()
+{
+    // Perde a vida e grava ja; a fase so e recriada quando a animacao terminar,
+    // para a invasao acontecer sobre a cena congelada do momento da queda.
+    Som::tocar(EfeitoSonoro::MORTE_JOGADOR);
+    this->vidas = std::max(0, this->vidas - 1);
+    this->salvar_progresso();
+    this->atirando = false;
+    this->mostrarMinimapa = false;
+    this->derrota.iniciar(this->vidas, static_cast<int>(SDL_GetTicks() % 100000));
+    this->estado = EstadoJogo::DERROTA;
+}
+
+void Jogo::concluir_derrota()
+{
+    this->campanha.reiniciar_fase(this->jogador);
+    this->preparar_entrada();
+    if (this->vidas == 0)
+    {
+        this->iniciar_gameOver();
+    }
+    else
+    {
+        this->estado = EstadoJogo::JOGANDO;
+    }
 }
 
 void Jogo::iniciar_gameOver()

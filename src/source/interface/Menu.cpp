@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <sstream>
 #include <vector>
 
 #include "audio/Som.h"
@@ -101,32 +100,6 @@ const Secao SECOES_COMO_JOGAR[] = {
 Uint8 canal(float valor)
 {
     return static_cast<Uint8>(std::clamp(valor, 0.0f, 255.0f));
-}
-
-std::vector<std::string> quebrar_linhas(const std::string &texto, int larguraMaxima, int escala)
-{
-    std::vector<std::string> linhas;
-    std::istringstream palavras(texto);
-    std::string palavra;
-    std::string atual;
-    while (palavras >> palavra)
-    {
-        const std::string tentativa = atual.empty() ? palavra : atual + " " + palavra;
-        if (!atual.empty() && Texto::largura(tentativa, escala) > larguraMaxima)
-        {
-            linhas.push_back(atual);
-            atual = palavra;
-        }
-        else
-        {
-            atual = tentativa;
-        }
-    }
-    if (!atual.empty())
-    {
-        linhas.push_back(atual);
-    }
-    return linhas;
 }
 
 // Tecla desenhada como um "keycap" com sombra. Devolve a largura usada.
@@ -827,7 +800,7 @@ void Menu::desenhar_manual(SDL_Renderer *r, const SDL_Rect &painel) const
                 }
             }
             y += 20;
-            for (const std::string &linha : quebrar_linhas(secao.texto, painel.w - 100, 2))
+            for (const std::string &linha : Texto::quebrar_linhas(secao.texto, painel.w - 100, 2))
             {
                 Texto::desenhar(r, linha, painel.x + 56, y, 2, {205, 212, 232, 255});
                 y += 18;

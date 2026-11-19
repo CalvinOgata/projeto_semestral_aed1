@@ -51,7 +51,10 @@ enum class EfeitoSonoro
     CONTINUE,
     VITORIA,
     CHEAT,
-    TOTAL // quantidade de efeitos; nao e um som
+    ERRO_SISTEMA, // janelas de erro da invasao quando o Tux cai
+    ENCORAJAR,    // acorde de esperanca do "nao desista"
+    FOGOS,        // estouro de fogos da tela de vitoria
+    TOTAL         // quantidade de efeitos; nao e um som
 };
 
 enum class Musica
@@ -60,6 +63,7 @@ enum class Musica
     MENU,
     FASE,
     CHEFE,
+    FINAL, // tela de vitoria e texto de encerramento
     TOTAL
 };
 
