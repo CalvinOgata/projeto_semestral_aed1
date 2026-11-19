@@ -357,7 +357,7 @@ void Combate::disparar(Jogador &jogador)
     }
     Som::tocar(efeito_disparo(arma->get_tipo()));
 
-    if (arma->get_tipo() == TipoArma::LASER || arma->get_tipo() == TipoArma::ESPADA)
+    if (arma->get_tipo() == TipoArma::LASER || arma->get_alcance() == AlcanceArma::CURTO)
     {
         atacar_instantaneo(jogador, *arma);
         return;
@@ -371,10 +371,6 @@ void Combate::disparar(Jogador &jogador)
         if (arma->get_tipo() == TipoArma::SHOTGUN)
         {
             desvio = (i - 1) * static_cast<float>(M_PI) / 12;
-        }
-        if (arma->get_tipo() == TipoArma::DUPLA)
-        {
-            desvio = i * static_cast<float>(M_PI);
         }
         const float dx = std::cos(angulo + desvio), dy = std::sin(angulo + desvio);
         // Origem no corpo evita nascer alem da parede ao encostar nela.
@@ -439,22 +435,26 @@ void Combate::atacar_soco(const Jogador &jogador)
 
 void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
 {
-    const bool espada = arma.get_tipo() == TipoArma::ESPADA;
+    const bool espada = arma.get_alcance() == AlcanceArma::CURTO;
     const auto direcao = jogador.get_direcaoMira();
     const float angulo = std::atan2(direcao.y, direcao.x);
     const SDL_FPoint origem = {jogador.get_centroX(), jogador.get_centroY()};
-    // Nove segmentos formam o leque de 90 graus da espada.
-    const int raios = espada ? 9 : 1;
+    // Raios proximos amostram o setor do golpe. Cada alvo recebe dano uma unica vez.
+    const int raios = espada ? 25 : 1;
+    const float abertura = arma.get_aberturaGraus() * static_cast<float>(M_PI) / 180.0f;
+    if (espada)
+        rastrosSoco.inserir({origem, angulo, DURACAO_RASTRO_SOCO,
+                            arma.get_alcancePixels(), abertura, cor_afinidade(arma.get_afinidade())});
     std::vector<bool> atingidos(inimigos.get_quantidade(), false);
     // Cada ataque danifica so a peca mais proxima entre os raios que a tocam.
     int pecaAtingida = -1;
     float distanciaPeca = 0;
     for (int i = 0; i < raios; ++i)
     {
-        const float a = angulo + (espada ? (i - 4) * static_cast<float>(M_PI) / 16 : 0);
+        const float a = angulo + (espada ? (static_cast<float>(i) / (raios - 1) - 0.5f) * abertura : 0);
         float x1 = origem.x, y1 = origem.y;
-        float x2 = x1 + std::cos(a) * (espada ? 80 : 1600);
-        float y2 = y1 + std::sin(a) * (espada ? 80 : 1600);
+        float x2 = x1 + std::cos(a) * arma.get_alcancePixels();
+        float y2 = y1 + std::sin(a) * arma.get_alcancePixels();
         SDL_IntersectFRectAndLine(&limites, &x1, &y1, &x2, &y2);
         // O primeiro obstaculo no caminho interrompe o raio.
         int pecaMaisProxima = -1;
@@ -485,7 +485,7 @@ void Combate::atacar_instantaneo(const Jogador &jogador, const Armas &arma)
             pecaAtingida = pecaMaisProxima;
             distanciaPeca = menorDistancia;
         }
-        rastros.inserir({{x1, y1}, {x2, y2}, 0.12f, arma.get_tipo()});
+        if (!espada) rastros.inserir({{x1, y1}, {x2, y2}, 0.12f, arma.get_tipo()});
         for (std::size_t j = 0; j < inimigos.get_quantidade(); ++j)
         {
             auto &inimigo = inimigos.obter(j);
@@ -733,14 +733,14 @@ void Combate::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
         // Duas linhas poligonais proximas formam um risco branco curvado.
         for (int camada = 0; camada < 2; ++camada)
         {
-            const float raio = 43.0f + camada * 4.0f;
-            SDL_SetRenderDrawColor(renderizador, 245, 250, 255,
+            const float raio = rastro.raio - camada * 4.0f;
+            SDL_SetRenderDrawColor(renderizador, rastro.cor.r, rastro.cor.g, rastro.cor.b,
                                    static_cast<Uint8>(alfa - camada * 45));
-            SDL_FPoint anterior = {centro.x + std::cos(rastro.angulo - 0.7f) * raio,
-                                   centro.y + std::sin(rastro.angulo - 0.7f) * raio};
+            SDL_FPoint anterior = {centro.x + std::cos(rastro.angulo - rastro.abertura / 2) * raio,
+                                   centro.y + std::sin(rastro.angulo - rastro.abertura / 2) * raio};
             for (int segmento = 1; segmento <= 10; ++segmento)
             {
-                const float angulo = rastro.angulo - 0.7f + segmento * 1.4f / 10.0f;
+                const float angulo = rastro.angulo - rastro.abertura / 2 + segmento * rastro.abertura / 10.0f;
                 const SDL_FPoint atual = {centro.x + std::cos(angulo) * raio,
                                           centro.y + std::sin(angulo) * raio};
                 SDL_RenderDrawLineF(renderizador, anterior.x, anterior.y, atual.x, atual.y);

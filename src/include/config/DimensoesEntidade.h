@@ -21,9 +21,9 @@ struct DimensoesEntidade
 // Assim a arte cresce sem mudar a dificuldade das colisoes e dos tiros.
 constexpr DimensoesEntidade DIMENSOES_HEROI = {32, 32, 64, 64};
 constexpr DimensoesEntidade DIMENSOES_INIMIGO_COMUM = {28, 28, 48, 48};
-// Bruta-montes e boss usam estes perfis com visuais provisorios.
-constexpr DimensoesEntidade DIMENSOES_GUARDA_COSTAS = {44, 44, 64, 64};
-constexpr DimensoesEntidade DIMENSOES_BOSS = {88, 88, 128, 128};
+// Arte ampliada; as hitboxes anteriores preservam corredores e dificuldade.
+constexpr DimensoesEntidade DIMENSOES_GUARDA_COSTAS = {44, 44, 128, 128};
+constexpr DimensoesEntidade DIMENSOES_BOSS = {88, 88, 256, 256};
 
 static_assert(DIMENSOES_HEROI.valida() && DIMENSOES_INIMIGO_COMUM.valida() &&
               DIMENSOES_GUARDA_COSTAS.valida() && DIMENSOES_BOSS.valida());

@@ -32,7 +32,7 @@ const PlantaSala PLANTA_FASE_1[] = {
     {"C - ANALISE LEXICA", 1, 1, 5, 2, 0, false, 2, 1, Afinidade::VERMELHA},
     {"D - PARSER", 0, 2, 5, 2, 0, false, 4, 1, Afinidade::VERDE},
     {"E - LINKER", 1, 2, 0, 0, 2, false, 5, 0},
-    {"F - COMPILADOR FECHADO", 1, 3, 0, 0, 0, true, 3, 0, Afinidade::AZUL},
+    {"F - WINDOWS UPDATE", 1, 3, 0, 0, 0, true, 3, 0, Afinidade::AZUL},
 };
 
 // Fase 2: C leva a E; D leva a F, que ramifica para G e para o boss H.
@@ -45,7 +45,7 @@ const PlantaSala PLANTA_FASE_2[] = {
     {"E - BOTNET", 1, 2, 7, 2, 0, false, 2, 1, Afinidade::VERMELHA, true},
     {"F - PING 999", 0, 3, 6, 3, 0, false, 4, 2, Afinidade::VERDE, true},
     {"G - LOOT DROP", 1, 3, 0, 0, 2, false, 5, 0},
-    {"H - H100 COLOSSUS", 0, 4, 0, 0, 0, true, 3, 0, Afinidade::VERDE},
+    {"H - DATACENTER", 0, 4, 0, 0, 0, true, 3, 0, Afinidade::VERDE},
 };
 
 // Fase 3: lobby no topo, ramos B/C e caminho B-D-G-I-J ate o boss.
@@ -148,6 +148,7 @@ Fase::Fase(int numero) : numero(numero)
     const PlantaFase &planta = PLANTAS[numero - 1];
     const auto conexoes = construir_conexoes(planta);
     const float largura = 936, altura = 516;
+    int indicePiso = numero == 1 ? 0 : (numero == 2 ? 5 : 12);
     for (std::size_t i = 0; i < planta.quantidade; ++i)
     {
         const PlantaSala &sala = planta.salas[i];
@@ -164,6 +165,7 @@ Fase::Fase(int numero) : numero(numero)
         config.misturarAfinidades = sala.misturarAfinidades;
         config.cobertura = sala.cobertura;
         config.ondasExtras = sala.ondasExtras;
+        config.indicePiso = sala.baus > 0 ? 21 : indicePiso++;
         salas.inserir(Sala(config));
         origens.inserir({sala.coluna * (largura + Sala::COMPRIMENTO_CORREDOR),
                         sala.linha * (altura + Sala::COMPRIMENTO_CORREDOR)});

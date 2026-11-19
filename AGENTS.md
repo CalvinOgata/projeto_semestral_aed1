@@ -1,5 +1,30 @@
 # Project context and working instructions
 
+## Final integration, 2026-11-19 (current behavior)
+
+The approved art is now embedded from `assets/sprites/final` and
+`assets/sprites/pisos`. Character strips contain three equal horizontal frames;
+the loop is 0,1,0,2. Tux uses a blue cap, a 64px visual frame and the existing
+32px hitbox. Common/brute/boss visual frames are 48/128/256px; hitboxes remain
+28/44/88px. `CatalogoSprites` owns shared enemy, weapon and floor textures.
+
+The current arsenal replaces the older names below without changing save IDs:
+0 Zapper (green/medium), 1 ClamAV (red/medium), 2 Avira (red/long),
+3 Fork (blue/melee), 4 CRT (green/long), 5 Malwarebytes (red/melee),
+6 Apache feathers (blue/medium), 7 Macintosh mouse whip (green/melee),
+8 Wireshark (blue/long). Melee weapons have infinite ammunition and limited
+forward sectors. Avira is hitscan; Apache pierces two distinct enemies; CRT
+bounces four times. All traveling shots have explicit distance limits.
+Matching affinity still doubles damage; empty-hand punch remains neutral.
+
+Enemies by red/blue/green affinity: ILOVEYOU/Mirai/WannaCry,
+EULA/DRM/Windows Update, NPU/GPU H100/hyperscale datacenter. The physical stage
+trees, save formats and existing synthesized SDL audio were preserved.
+`make USAR_LIBS_SISTEMA=1` is an offline Linux alternative using installed
+SDL2/libpng development packages when the bundled static build cannot run.
+The default vendored build is unchanged. These facts supersede older roster,
+sprite, stamina and weapon notes below; energy is not implemented in the HUD.
+
 ## Purpose and direction
 
 This is a semester project for Algorithms and Data Structures 1 (AED1): a

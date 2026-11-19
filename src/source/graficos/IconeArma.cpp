@@ -1,4 +1,5 @@
 #include "graficos/IconeArma.h"
+#include "graficos/CatalogoSprites.h"
 
 #include <algorithm>
 #include <cmath>
@@ -103,6 +104,7 @@ SDL_Color cor_do_pixel(const SpriteArma &sprite, char pixel)
 
 void IconeArma::desenhar(SDL_Renderer *renderizador, TipoArma tipo, const SDL_FRect &area)
 {
+    if (CatalogoSprites::desenhar_arma(renderizador, tipo, area)) return;
     if (renderizador == nullptr || area.w <= 0 || area.h <= 0)
     {
         return;
@@ -131,6 +133,7 @@ void IconeArma::desenhar(SDL_Renderer *renderizador, TipoArma tipo, const SDL_FR
 void IconeArma::desenhar_empunhada(SDL_Renderer *renderizador, TipoArma tipo, SDL_FPoint mao,
                                 float anguloGraus)
 {
+    if (CatalogoSprites::desenhar_empunhada(renderizador, tipo, mao, anguloGraus)) return;
     const auto &sprite = obter_sprite(tipo);
     constexpr float ESCALA = 3.0f;
     SDL_FPoint apoio = {3.5f, 6.5f};

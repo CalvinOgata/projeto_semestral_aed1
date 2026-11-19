@@ -61,6 +61,9 @@ private:
         SDL_FPoint centro;
         float angulo;
         float tempo;
+        float raio = 43.0f;
+        float abertura = 1.4f;
+        SDL_Color cor = {245, 250, 255, 255};
     };
     ListaSequencial<RastroSoco> rastrosSoco;
     void atacar_instantaneo(const Jogador &jogador, const Armas &arma);

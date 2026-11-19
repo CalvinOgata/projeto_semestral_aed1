@@ -7,9 +7,9 @@ Armas::Armas() : Armas(TipoArma::PISTOLA)
 Armas::Armas(TipoArma tipo) : tipo(tipo)
 {
     set_municao(tipo == TipoArma::PISTOLA ? 50 : 40);
-    set_dano(tipo == TipoArma::ESPADA ? 3 :
-        (tipo == TipoArma::ARCO || tipo == TipoArma::LASER || tipo == TipoArma::PULSO ? 2 : 1));
-    set_quantidadeDisparos(tipo == TipoArma::SHOTGUN ? 3 : (tipo == TipoArma::DUPLA ? 2 : 1));
+    const int danos[] = {1, 1, 3, 4, 3, 3, 2, 3, 4};
+    set_dano(danos[static_cast<int>(tipo)]);
+    set_quantidadeDisparos(tipo == TipoArma::SHOTGUN ? 3 : 1);
 }
 
 TipoArma Armas::get_tipo() const
@@ -21,21 +21,21 @@ const char *Armas::get_nome() const
     switch (tipo)
     {
     case TipoArma::SHOTGUN:
-        return "ESCOPETA CLAMAV";
+        return "CLAMS DO CLAMAV";
     case TipoArma::LASER:
-        return "RAIO VIRUSTOTAL";
+        return "RAIO AVIRA";
     case TipoArma::DUPLA:
-        return "GARFO GIT";
+        return "FORK OPEN SOURCE";
     case TipoArma::RICOCHETE:
         return "CANHAO CRT";
     case TipoArma::ESPADA:
-        return "LAMINA DE TORVALDS";
+        return "LAMINAS MALWAREBYTES";
     case TipoArma::ARCO:
-        return "ARCO APACHE";
+        return "PENAS APACHE";
     case TipoArma::BOOMERANG:
-        return "DISQUETE BUMERANGUE";
+        return "CHICOTE MACINTOSH";
     case TipoArma::PULSO:
-        return "PULSO MALWAREBYTES";
+        return "RIFLE WIRESHARK";
     default:
         return "ZAPPER 8-BITS";
     }
@@ -47,10 +47,10 @@ Afinidade Armas::get_afinidade() const
     {
     case TipoArma::SHOTGUN:
     case TipoArma::LASER:
-    case TipoArma::PULSO:
+    case TipoArma::ESPADA:
         return Afinidade::VERMELHA;
     case TipoArma::DUPLA:
-    case TipoArma::ESPADA:
+    case TipoArma::PULSO:
     case TipoArma::ARCO:
         return Afinidade::AZUL;
     case TipoArma::PISTOLA:
@@ -65,44 +65,49 @@ AlcanceArma Armas::get_alcance() const
 {
     switch (tipo)
     {
-    case TipoArma::SHOTGUN:
+    case TipoArma::DUPLA:
     case TipoArma::ESPADA:
     case TipoArma::BOOMERANG:
         return AlcanceArma::CURTO;
     case TipoArma::PISTOLA:
-    case TipoArma::DUPLA:
-    case TipoArma::PULSO:
+    case TipoArma::SHOTGUN:
+    case TipoArma::ARCO:
         return AlcanceArma::MEDIO;
     case TipoArma::LASER:
     case TipoArma::RICOCHETE:
-    case TipoArma::ARCO:
+    case TipoArma::PULSO:
         return AlcanceArma::LONGO;
     }
     return AlcanceArma::MEDIO;
 }
 float Armas::get_intervalo() const
 {
-    switch (tipo)
-    {
-    case TipoArma::SHOTGUN:
-        return 0.5f;
-    case TipoArma::LASER:
-        return 0.35f;
-    case TipoArma::ESPADA:
-        return 0.4f;
-    case TipoArma::ARCO:
-        return 0.6f;
-    case TipoArma::BOOMERANG:
-        return 0.7f;
-    case TipoArma::PULSO:
-        return 0.45f;
-    default:
-        return 0.14f;
-    }
+    const float intervalos[] = {0.20f, 0.50f, 0.65f, 0.50f, 0.65f, 0.38f, 0.45f, 0.65f, 0.75f};
+    return intervalos[static_cast<int>(tipo)];
+}
+float Armas::get_alcancePixels() const
+{
+    const float alcances[] = {420, 320, 900, 116, 1050, 96, 480, 150, 900};
+    return alcances[static_cast<int>(tipo)];
+}
+float Armas::get_aberturaGraus() const
+{
+    if (tipo == TipoArma::ESPADA) return 120;
+    if (tipo == TipoArma::DUPLA) return 40;
+    if (tipo == TipoArma::BOOMERANG) return 70;
+    return 0;
+}
+float Armas::get_velocidadeProjetil() const
+{
+    if (get_alcance() == AlcanceArma::CURTO || tipo == TipoArma::LASER) return 0;
+    if (tipo == TipoArma::SHOTGUN) return 420;
+    if (tipo == TipoArma::ARCO) return 580;
+    if (tipo == TipoArma::PULSO) return 850;
+    return 520;
 }
 bool Armas::municao_infinita() const
 {
-    return tipo == TipoArma::ESPADA || tipo == TipoArma::BOOMERANG;
+    return get_alcance() == AlcanceArma::CURTO;
 }
 
 Armas::~Armas()

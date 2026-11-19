@@ -33,6 +33,7 @@ struct ConfiguracaoSala
     bool misturarAfinidades = false;
     int cobertura = 0; // modelo de caixotes/barreiras; 0 deixa a sala livre
     int ondasExtras = 0; // ondas de reforco apos a primeira
+    int indicePiso = -1; // indice no catalogo de fundos; 21 = bau compartilhado
 };
 
 enum class EstadoSala

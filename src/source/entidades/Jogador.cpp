@@ -116,8 +116,10 @@ void Jogador::mover(int dirX, int dirY, float dt)
 {
     if (dirX == 0 && dirY == 0)
     {
+        tempoAnimacao = 0;
         return;
     }
+    tempoAnimacao = std::fmod(tempoAnimacao + dt, 0.64f);
 
     float dx = static_cast<float>(dirX);
     float dy = static_cast<float>(dirY);
@@ -249,7 +251,9 @@ void Jogador::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
 
     const SDL_FRect corpo = camera.para_tela(this->get_retanguloVisual());
 
-    if (sprite == nullptr || !sprite->desenhar(renderizador, corpo))
+    const int poses[] = {0, 1, 0, 2};
+    const int pose = poses[static_cast<int>(tempoAnimacao / 0.16f) % 4];
+    if (sprite == nullptr || !sprite->desenhar_quadro(renderizador, corpo, pose))
     {
         SDL_SetRenderDrawColor(renderizador, COR_JOGADOR.r, COR_JOGADOR.g, COR_JOGADOR.b,
                                COR_JOGADOR.a);

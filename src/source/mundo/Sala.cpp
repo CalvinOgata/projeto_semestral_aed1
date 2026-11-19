@@ -1,4 +1,5 @@
 #include "mundo/Sala.h"
+#include "graficos/CatalogoSprites.h"
 
 #include <algorithm>
 #include <cmath>
@@ -292,7 +293,8 @@ void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAn
 {
     const SDL_FRect piso = camera.para_tela(this->get_limites());
     (void)temAnterior;
-    Ambiente::desenhar_piso(renderizador, piso);
+    if (!CatalogoSprites::desenhar_piso(renderizador, configuracao.indicePiso, piso))
+        Ambiente::desenhar_piso(renderizador, piso);
     Ambiente::desenhar_paredes(renderizador, piso);
     for (int d = 0; d < 4; ++d)
     {

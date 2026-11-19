@@ -56,6 +56,15 @@ CXXFLAGS   = -std=c++17 -Wall -Wextra -O2 -I$(DIR_INC) $(CXXFLAGS_SO) $(shell $(
 LDLIBS     = $(PREFIXO)/lib/libpng16.a $(PREFIXO)/lib/libz.a \
              $(shell $(PKG_SDL) --static --libs sdl2)
 
+# Alternativa local/offline se SDL2 e libpng de desenvolvimento ja estao instalados.
+# Nao gera a distribuicao autonoma. O build padrao continua usando externo/.
+ifeq ($(USAR_LIBS_SISTEMA),1)
+EXTERNO_PRONTO :=
+PKG_SDL = pkg-config
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -I$(DIR_INC) $(shell pkg-config --cflags sdl2 libpng)
+LDLIBS = $(shell pkg-config --libs sdl2 libpng)
+endif
+
 CABECALHOS := $(shell find $(DIR_INC) -name '*.h')
 FONTES     := $(shell find $(DIR_SRC) -name '*.cpp')
 OBJETOS    := $(patsubst $(DIR_SRC)/%.cpp,$(DIR_BUILD)/obj/%.o,$(FONTES))
@@ -63,8 +72,48 @@ DEPS       := $(OBJETOS:.o=.d)
 
 # Assets copiados para dentro do executavel: NOME=caminho. Cada NOME tambem
 # precisa estar declarado em src/include/graficos/AssetsEmbutidos.h.
-ASSETS_EMBUTIDOS := SPRITE_JOGADOR=assets/sprites/personagens/tux-pixel-v2.png \
-                    SPRITE_GAME_OVER=assets/sprites/personagens/tux-gameover-v2.png
+ASSETS_EMBUTIDOS := SPRITE_JOGADOR=assets/sprites/final/00_tux.png \
+                    SPRITE_GAME_OVER=assets/sprites/personagens/tux-gameover-v2.png \
+                    INIMIGO_0=assets/sprites/final/01_iloveyou.png \
+                    INIMIGO_1=assets/sprites/final/02_mirai.png \
+                    INIMIGO_2=assets/sprites/final/03_wannacry.png \
+                    INIMIGO_3=assets/sprites/final/04_eula.png \
+                    INIMIGO_4=assets/sprites/final/05_drm.png \
+                    INIMIGO_5=assets/sprites/final/06_windows_update.png \
+                    INIMIGO_6=assets/sprites/final/07_npu.png \
+                    INIMIGO_7=assets/sprites/final/08_h100.png \
+                    INIMIGO_8=assets/sprites/final/09_datacenter.png \
+                    ARMA_0=assets/sprites/final/17_zapper.png \
+                    ARMA_1=assets/sprites/final/11_clamav.png \
+                    ARMA_2=assets/sprites/final/12_avira.png \
+                    ARMA_3=assets/sprites/final/13_fork.png \
+                    ARMA_4=assets/sprites/final/18_crt.png \
+                    ARMA_5=assets/sprites/final/10_malwarebytes.png \
+                    ARMA_6=assets/sprites/final/14_apache.png \
+                    ARMA_7=assets/sprites/final/16_macintosh.png \
+                    ARMA_8=assets/sprites/final/15_wireshark.png \
+                    PISO_0=assets/sprites/pisos/fase1_00.png \
+                    PISO_1=assets/sprites/pisos/fase1_01.png \
+                    PISO_2=assets/sprites/pisos/fase1_02.png \
+                    PISO_3=assets/sprites/pisos/fase1_03.png \
+                    PISO_4=assets/sprites/pisos/fase1_04.png \
+                    PISO_5=assets/sprites/pisos/fase2_00.png \
+                    PISO_6=assets/sprites/pisos/fase2_01.png \
+                    PISO_7=assets/sprites/pisos/fase2_02.png \
+                    PISO_8=assets/sprites/pisos/fase2_03.png \
+                    PISO_9=assets/sprites/pisos/fase2_04.png \
+                    PISO_10=assets/sprites/pisos/fase2_05.png \
+                    PISO_11=assets/sprites/pisos/fase2_06.png \
+                    PISO_12=assets/sprites/pisos/fase3_00.png \
+                    PISO_13=assets/sprites/pisos/fase3_01.png \
+                    PISO_14=assets/sprites/pisos/fase3_02.png \
+                    PISO_15=assets/sprites/pisos/fase3_03.png \
+                    PISO_16=assets/sprites/pisos/fase3_04.png \
+                    PISO_17=assets/sprites/pisos/fase3_05.png \
+                    PISO_18=assets/sprites/pisos/fase3_06.png \
+                    PISO_19=assets/sprites/pisos/fase3_07.png \
+                    PISO_20=assets/sprites/pisos/fase3_08.png \
+                    PISO_21=assets/sprites/pisos/bau_compartilhado.png
 ARQUIVOS_EMBUTIDOS := $(foreach par,$(ASSETS_EMBUTIDOS),$(word 2,$(subst =, ,$(par))))
 EMBUTIR            := python3 ferramentas/embutir_assets.py
 GERADO             := $(DIR_BUILD)/gerado/AssetsEmbutidos.cpp

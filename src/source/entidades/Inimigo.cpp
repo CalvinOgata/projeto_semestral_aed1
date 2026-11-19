@@ -9,6 +9,7 @@
 #include "config/Config.h"
 #include "graficos/Desenho.h"
 #include "graficos/SpriteInimigo.h"
+#include "graficos/CatalogoSprites.h"
 
 namespace
 {
@@ -36,6 +37,9 @@ void Inimigo::perseguir(float alvoX, float alvoY, float dt)
     }
 
     float dx = alvoX - this->get_centroX();
+    const float duracaoPose = tipo == TipoInimigo::VIRUS ? 0.16f :
+                               (tipo == TipoInimigo::BRUTO ? 0.22f : 0.28f);
+    tempoAnimacao = std::fmod(tempoAnimacao + dt, 4 * duracaoPose);
     float dy = alvoY - this->get_centroY();
     const float distancia = std::max(0.001f, std::sqrt(dx * dx + dy * dy));
     mira = std::atan2(dy, dx) * 180.0f / static_cast<float>(M_PI);
@@ -189,7 +193,8 @@ void Inimigo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
 
     const SDL_FRect naTela = camera.para_tela(this->get_retanguloVisual());
 
-    SpriteInimigo::desenhar(renderizador, tipo, afinidade, naTela);
+    if (!CatalogoSprites::desenhar_inimigo(renderizador, tipo, afinidade, naTela, tempoAnimacao))
+        SpriteInimigo::desenhar(renderizador, tipo, afinidade, naTela);
     const auto centro = camera.para_tela(get_centroX(), get_centroY());
     SDL_Color corAfinidade = afinidade == Afinidade::VERMELHA ? SDL_Color{244, 70, 82, 255} :
         (afinidade == Afinidade::AZUL ? SDL_Color{76, 156, 255, 255} :
@@ -302,11 +307,11 @@ const char *Inimigo::get_nome() const
     {
         if (tipo == TipoInimigo::VIRUS) return "EULA-BOT";
         if (tipo == TipoInimigo::BRUTO) return "SENTINELA DRM";
-        return "COMPILADOR FECHADO";
+        return "WINDOWS UPDATE";
     }
     if (tipo == TipoInimigo::VIRUS) return "NPU DRONE";
-    if (tipo == TipoInimigo::BRUTO) return "TPU SENTINEL";
-    return "H100 COLOSSUS";
+    if (tipo == TipoInimigo::BRUTO) return "GPU H100";
+    return "DATACENTER HIPERESCALA";
 }
 
 int Inimigo::get_tema() const

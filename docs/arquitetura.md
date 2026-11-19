@@ -234,10 +234,13 @@ Os bytes dos PNGs vem de `graficos/AssetsEmbutidos.h`: o Makefile gera, a partir
 `Armas` guarda `TipoArma`, municao, dano, quantidade de projeteis, cadencia,
 afinidade e classe de alcance; continua independente de SDL. Os nove tipos
 formam uma matriz de tres afinidades por tres alcances. `Combate` implementa
-escopeta, pulso, laser, tiro duplo, ricochete, espada, arco e bumerangue. Laser e espada aplicam dano imediato e
-armazenam rastros visuais breves. Projeteis usam passos de no maximo 1/240 s
-para evitar saltar sobre hitboxes. Boomerangs registram indices atingidos por
-trajeto; inimigos mortos permanecem inativos na lista ate reiniciar a sala,
+os tres setores corpo a corpo (Malwarebytes, Fork e Mouse Macintosh), os disparos
+medios (ClamAV, Apache e Zapper) e os longos (Avira, Wireshark e CRT).
+Corpo a corpo e Avira aplicam dano imediato e armazenam rastros visuais breves.
+Cada golpe acerta um alvo apenas uma vez; cobertura interrompe os raios do setor.
+Projeteis usam passos de no maximo 1/240 s para evitar saltar sobre hitboxes.
+Apache registra ate dois indices atingidos e CRT rebate quatro vezes; o alcance
+restante limita o trajeto total. Inimigos mortos permanecem inativos na lista ate reiniciar a sala,
 preservando esses indices. Apenas projeteis inativos e rastros vencidos sao removidos.
 
 `Sala` possui `ListaSequencial<ArmaChao>` com armas coletaveis e descartadas.

@@ -24,35 +24,14 @@ Projetil::Projetil(float origemX, float origemY, float dirX, float dirY, int dan
         return;
     }
 
-    if (tipo == TipoArma::BOOMERANG)
-    {
-        alcanceRestante = 170;
-        lado = 18;
-    }
-    else if (tipo == TipoArma::SHOTGUN)
-    {
-        alcanceRestante = 280;
-    }
-    else if (tipo == TipoArma::PISTOLA || tipo == TipoArma::DUPLA)
-    {
-        alcanceRestante = 600;
-    }
-    else if (tipo == TipoArma::PULSO)
-    {
-        alcanceRestante = 500;
-        lado = 22;
-    }
-    else if (tipo == TipoArma::ARCO)
-    {
-        alcanceRestante = 1200;
-    }
-    else if (tipo == TipoArma::RICOCHETE)
-    {
-        alcanceRestante = 1300;
-    }
-    const float fatorVelocidade = tipo == TipoArma::PULSO ? 0.65f : 1.0f;
-    this->velX = (dirX / comprimento) * VELOCIDADE_PROJETIL * fatorVelocidade;
-    this->velY = (dirY / comprimento) * VELOCIDADE_PROJETIL * fatorVelocidade;
+    const Armas arma(tipo);
+    alcanceRestante = arma.get_alcancePixels();
+    const float velocidade = arma.get_velocidadeProjetil();
+    // Corpo a corpo e Avira sao resolvidos em Combate, sem criar tiros viajantes.
+    if (velocidade <= 0) { ativo = false; return; }
+    lado = tipo == TipoArma::RICOCHETE ? 12 : (tipo == TipoArma::PULSO ? 5 : LADO_PROJETIL);
+    this->velX = (dirX / comprimento) * velocidade;
+    this->velY = (dirY / comprimento) * velocidade;
 }
 
 void Projetil::atualizar(float dt)
@@ -62,8 +41,10 @@ void Projetil::atualizar(float dt)
         return;
     }
 
-    const float passoX = this->velX * dt;
-    const float passoY = this->velY * dt;
+    const float velocidade = std::hypot(velX, velY);
+    const float passo = std::min(std::max(dt, 0.0f), alcanceRestante / velocidade);
+    const float passoX = this->velX * passo;
+    const float passoY = this->velY * passo;
 
     this->x += passoX;
     this->y += passoY;
@@ -171,26 +152,9 @@ void Projetil::atualizar(float dt, const SDL_FRect &limites, SDL_FPoint alvo)
     {
         return;
     }
-    if (tipo == TipoArma::BOOMERANG && retornando)
-    {
-        float dx = alvo.x - x, dy = alvo.y - y;
-        const float distancia = std::hypot(dx, dy);
-        if (distancia <= 20 + VELOCIDADE_PROJETIL * dt)
-        {
-            desativar();
-            return;
-        }
-        velX = dx / distancia * VELOCIDADE_PROJETIL;
-        velY = dy / distancia * VELOCIDADE_PROJETIL;
-    }
+    (void)alvo; // Mantido na interface para os chamadores de Combate.
     atualizar(dt);
-    if (tipo == TipoArma::BOOMERANG && !retornando && !ativo)
-    {
-        ativo = true;
-        retornando = true;
-        alcanceRestante = 3000;
-        atingidos.clear();
-    }
+    if (!ativo) return;
     const float margem = lado / 2;
     const bool foraX = x < limites.x + margem || x > limites.x + limites.w - margem;
     const bool foraY = y < limites.y + margem || y > limites.y + limites.h - margem;
@@ -210,15 +174,6 @@ void Projetil::atualizar(float dt, const SDL_FRect &limites, SDL_FPoint alvo)
         }
         --ricochetes;
     }
-    else if (tipo == TipoArma::BOOMERANG)
-    {
-        if (!retornando)
-        {
-            retornando = true;
-            alcanceRestante = 3000;
-            atingidos.clear();
-        }
-    }
     else
     {
         desativar();
@@ -234,9 +189,11 @@ bool Projetil::atingir(std::size_t indice)
     {
         return false;
     }
-    if (tipo == TipoArma::BOOMERANG)
+    if (tipo == TipoArma::ARCO)
     {
         atingidos.push_back(indice);
+        // A pena Apache atravessa no maximo dois inimigos distintos.
+        if (atingidos.size() >= 2) desativar();
     }
     else
     {
@@ -251,18 +208,6 @@ bool Projetil::colidir_obstaculo(const SDL_FRect &area)
     if (!ativo || !SDL_HasIntersectionF(&corpo, &area))
     {
         return false;
-    }
-    if (tipo == TipoArma::BOOMERANG)
-    {
-        // Bate e volta, como na parede; na volta atravessa sem novo dano.
-        if (retornando)
-        {
-            return false;
-        }
-        retornando = true;
-        alcanceRestante = 3000;
-        atingidos.clear();
-        return true;
     }
     if (tipo == TipoArma::RICOCHETE && ricochetes > 0)
     {

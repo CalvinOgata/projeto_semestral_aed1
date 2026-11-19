@@ -1,4 +1,5 @@
 #include "nucleo/Jogo.h"
+#include "graficos/CatalogoSprites.h"
 
 #include <algorithm>
 #include <array>
@@ -135,7 +136,7 @@ bool Jogo::inicializar()
         return false;
     }
 
-    if (!this->spriteJogador.carregar(this->renderizador, AssetsEmbutidos::SPRITE_JOGADOR))
+    if (!this->spriteJogador.carregar(this->renderizador, AssetsEmbutidos::SPRITE_JOGADOR, 3))
     {
         std::fprintf(stderr, "Erro ao carregar o sprite do jogador: %s\n",
                      this->spriteJogador.get_erro().c_str());
@@ -148,6 +149,11 @@ bool Jogo::inicializar()
         return false;
     }
 
+    if (!CatalogoSprites::carregar(this->renderizador))
+    {
+        std::fprintf(stderr, "Erro ao carregar o catalogo de sprites\n");
+        return false;
+    }
     // Sem audio o jogo segue mudo; a tela de carregamento continua igual.
     Som::inicializar();
     this->configuracoes = this->arquivoConfiguracoes.carregar();
@@ -790,6 +796,7 @@ void Jogo::finalizar()
     Som::finalizar();
     this->spriteJogador.liberar();
     this->spriteGameOver.liberar();
+    CatalogoSprites::liberar();
     Desenho::finalizar();
 
     if (this->renderizador != nullptr)

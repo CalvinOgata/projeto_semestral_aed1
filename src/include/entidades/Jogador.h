@@ -26,6 +26,7 @@ private:
     DimensoesEntidade dimensoes;
     float velocidade; // pixels por segundo
     float anguloMira; // graus, 0 = apontando para a direita
+    float tempoAnimacao = 0;
 
     FilaArmas armas;
 

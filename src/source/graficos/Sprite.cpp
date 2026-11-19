@@ -10,7 +10,7 @@ Sprite::~Sprite()
     this->liberar();
 }
 
-bool Sprite::carregar(SDL_Renderer *renderizador, const AssetEmbutido &png)
+bool Sprite::carregar(SDL_Renderer *renderizador, const AssetEmbutido &png, int quadros)
 {
     this->liberar();
     this->erro.clear();
@@ -50,6 +50,12 @@ bool Sprite::carregar(SDL_Renderer *renderizador, const AssetEmbutido &png)
     this->largura = static_cast<int>(imagem.width);
     this->altura = static_cast<int>(imagem.height);
     png_image_free(&imagem);
+    if (quadros < 1 || largura % quadros != 0)
+    {
+        erro = "Faixa de animacao invalida";
+        return false;
+    }
+    this->quadros = quadros;
 
     SDL_Surface *superficie = SDL_CreateRGBSurfaceWithFormatFrom(
         pixels.data(), this->largura, this->altura, 32, this->largura * 4, SDL_PIXELFORMAT_RGBA32);
@@ -93,17 +99,27 @@ const std::string &Sprite::get_erro() const
 
 bool Sprite::desenhar(SDL_Renderer *renderizador, const SDL_FRect &quadro) const
 {
+    return desenhar_quadro(renderizador, quadro, 0);
+}
+
+bool Sprite::desenhar_quadro(SDL_Renderer *renderizador, const SDL_FRect &quadro, int indice,
+                             double angulo, SDL_RendererFlip flip) const
+{
     if (renderizador == nullptr || this->textura == nullptr || quadro.w <= 0 || quadro.h <= 0)
     {
         return false;
     }
     // Encaixa a imagem no quadro, centralizada, sem esticar ou recortar.
-    const float escala = std::min(quadro.w / this->largura, quadro.h / this->altura);
-    const float w = this->largura * escala;
+    const int larguraQuadro = largura / quadros;
+    const SDL_Rect origem{std::clamp(indice, 0, quadros - 1) * larguraQuadro, 0,
+                          larguraQuadro, altura};
+    const float escala = std::min(quadro.w / larguraQuadro, quadro.h / this->altura);
+    const float w = larguraQuadro * escala;
     const float h = this->altura * escala;
     const SDL_FRect destino = {quadro.x + (quadro.w - w) / 2.0f,
                               quadro.y + (quadro.h - h) / 2.0f, w, h};
-    return SDL_RenderCopyF(renderizador, this->textura, nullptr, &destino) == 0;
+    return SDL_RenderCopyExF(renderizador, this->textura, &origem, &destino,
+                             angulo, nullptr, flip) == 0;
 }
 
 bool Sprite::desenhar_recorte(SDL_Renderer *renderizador, const SDL_FRect &quadro,
@@ -117,9 +133,9 @@ bool Sprite::desenhar_recorte(SDL_Renderer *renderizador, const SDL_FRect &quadr
         return false;
     }
     const SDL_Rect origem = {
-        static_cast<int>(recorteNormalizado.x * this->largura),
+        static_cast<int>(recorteNormalizado.x * (this->largura / quadros)),
         static_cast<int>(recorteNormalizado.y * this->altura),
-        std::max(1, static_cast<int>(recorteNormalizado.w * this->largura)),
+        std::max(1, static_cast<int>(recorteNormalizado.w * (this->largura / quadros))),
         std::max(1, static_cast<int>(recorteNormalizado.h * this->altura))};
     const float escala = std::min(quadro.w / origem.w, quadro.h / origem.h);
     const float w = origem.w * escala;

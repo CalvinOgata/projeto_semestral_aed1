@@ -172,8 +172,8 @@ de jogos, e seu nome aparece por 3 segundos ao entrar nela:
 | Cor/tipo | Inimigo basico | Inimigo medio | Boss |
 |------|------|------------------------|------|
 | Vermelho — Malware | ILOVEYOU.EXE | MIRAI SWARM | WANNACRY PRIME |
-| Azul — Software fechado | EULA-BOT | SENTINELA DRM | COMPILADOR FECHADO |
-| Verde — Hardware com IA | NPU DRONE | TPU SENTINEL | H100 COLOSSUS |
+| Azul — Software fechado | EULA-BOT | SENTINELA DRM | WINDOWS UPDATE |
+| Verde — Computacao com IA | NPU DRONE | GPU H100 | DATACENTER HIPERESCALA |
 
 As classes basico, medio e boss controlam forca e comportamento. A afinidade de
 cor e independente: armas vermelhas sao eficazes contra inimigos vermelhos,
@@ -356,9 +356,9 @@ o jogo e iniciado de outro diretorio. Ele nao e incluido no Git e nem
 ```
 
 `armas` guarda, na ordem da fila (a primeira e a equipada), as armas com que a
-proxima fase comeca. `tipo` e o indice de `TipoArma`: 0 Zapper 8-Bits, 1 Escopeta
-ClamAV, 2 Raio VirusTotal, 3 Garfo Git, 4 Canhao CRT, 5 Lamina de Torvalds,
-6 Arco Apache, 7 Disquete Bumerangue e 8 Pulso Malwarebytes. Os indices 0 a 7
+proxima fase comeca. `tipo` e o indice de `TipoArma`: 0 Zapper 8-Bits, 1 Clams do
+ClamAV, 2 Raio Avira, 3 Fork Open Source, 4 Canhao CRT, 5 Laminas Malwarebytes,
+6 Penas Apache, 7 Chicote Macintosh e 8 Rifle Wireshark. Os indices 0 a 8
 foram preservados, portanto saves antigos
 (versao 1, sem `armas`) continuam validos e comecam com a pistola.
 
@@ -460,8 +460,8 @@ fim, a frente fica equipada. Q retira a frente e a reinsere no fim; G retira
 somente a frente e preserva sua municao no chao. F com fila cheia nao coleta
 nem substitui nada. Em todas as fases, as armas vem dos baus. Coletas e
 descartes persistem ao revisitar a sala.
-As armas e a municao acompanham o jogador ao avancar de fase; vida, escudo e
-estamina recomecam cheios. Reiniciar ou morrer devolve as armas com que a fase
+As armas e a municao acompanham o jogador ao avancar de fase; vida e escudo
+recomecam cheios. Reiniciar ou morrer devolve as armas com que a fase
 comecou. Se o inventario chegar vazio, a pistola inicial e entregue.
 `Continuar` restaura as armas e a municao salvas no checkpoint. As armas no chao usam os mesmos icones do inventario,
 em quadros de 36x36 pixels com o nome abaixo, incluindo armas dos baus e descartadas.
@@ -470,20 +470,30 @@ Trocar ou soltar a arma atualiza o desenho; sem armas, a mao fica sem icone.
 
 | Tipo | Alcance | Arma | Ataque |
 | --- | --- | --- | --- |
-| Antivirus (vermelho) | Curto | Escopeta ClamAV | Tres projeteis: reto e laterais a -15 e +15 graus |
-| Antivirus (vermelho) | Medio | Pulso Malwarebytes | Pulso grande e mais lento, com 500 pixels de alcance |
-| Antivirus (vermelho) | Longo | Raio VirusTotal | Raio instantaneo que atravessa inimigos ate a parede ou 1600 pixels |
-| Open Source (azul) | Curto | Lamina de Torvalds | Golpe em leque de 90 graus, alcance de 80 pixels, um acerto por inimigo |
-| Open Source (azul) | Medio | Garfo Git | Um projetil para frente e outro para tras |
-| Open Source (azul) | Longo | Arco Apache | Flecha de dano-base 2 e alcance de 1200 pixels |
-| Hardware retro (verde) | Curto | Disquete Bumerangue | Vai ate 170 pixels e retorna; pode acertar na ida e na volta |
-| Hardware retro (verde) | Medio | Zapper 8-Bits | Um projetil reto com 600 pixels de alcance |
-| Hardware retro (verde) | Longo | Canhao CRT | Projetil que rebate ate quatro vezes nas paredes |
+| Antivirus (vermelho) | Curto | Laminas Malwarebytes | Setor de 120 graus, 96 px, dano 3, intervalo 0,38 s |
+| Antivirus (vermelho) | Medio | Clams do ClamAV | Tres tiros a -15/0/+15 graus, 320 px, dano 1 por tiro, 0,50 s |
+| Antivirus (vermelho) | Longo | Raio Avira | Raio instantaneo que atravessa inimigos, para na cobertura, 900 px, dano 3, 0,65 s |
+| Open Source (azul) | Curto | Fork Open Source | Estocada em setor de 40 graus, 116 px, dano 4, 0,50 s |
+| Open Source (azul) | Medio | Penas Apache | Atravessa ate dois inimigos diferentes, 480 px, dano 2, 0,45 s |
+| Open Source (azul) | Longo | Rifle Wireshark | Projetil preciso de 850 px/s, alcance 900 px, dano 4, 0,75 s |
+| Hardware retro (verde) | Curto | Chicote Macintosh | Setor de 70 graus, 150 px, dano 3, 0,65 s |
+| Hardware retro (verde) | Medio | Zapper 8-Bits | Tiro reto, 420 px, dano 1, 0,20 s |
+| Hardware retro (verde) | Longo | Canhao CRT | Ate quatro ricochetes; 1050 px de trajeto total, dano 3, 0,65 s |
 
-Cada ataque consome uma unidade de municao, inclusive Escopeta ClamAV e Garfo Git.
-As novas armas com municao iniciam com 40 unidades. Lamina e Disquete Bumerangue sao
+Cada ataque a distancia consome uma unidade de municao, inclusive os tres tiros do ClamAV.
+As novas armas com municao iniciam com 40 unidades (Zapper: 50). As tres armas corpo a corpo sao
 reutilizaveis e mostram `--` no contador. Cada tipo tem sua cadencia; trocar
 arma nao cancela o intervalo do ultimo ataque. Projeteis e efeitos sao
-removidos ao sair da sala, inclusive boomerangs em voo.
+removidos ao sair da sala. Cada golpe corpo a corpo acerta cada inimigo no maximo uma vez.
 
-O cenario usa placas texturizadas com circuitos discretos, paredes segmentadas e portais escuros com bordas violetas nas saidas de fase, desenhados em SDL sem novos arquivos de textura.
+O cenario usa os pisos PNG de baixo contraste de `assets/sprites/pisos`, com identidade
+propria por fase e sala; todas as salas de bau usam a mesma textura. Paredes,
+obstaculos e portais continuam desenhados por SDL. Personagens possuem tres poses
+em faixas PNG de `assets/sprites/final`; armas e HUD usam os mesmos icones.
+
+### Compilacao local alternativa (Linux)
+
+Se CMake nao estiver instalado, mas SDL2 e libpng de desenvolvimento estiverem
+disponiveis via pkg-config, use `make USAR_LIBS_SISTEMA=1` e depois `./jogo`.
+Esta opcao nao baixa dependencias e gera um binario ligado as bibliotecas locais.
+O modo padrao continua usando as dependencias empacotadas em `externo/`.

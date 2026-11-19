@@ -205,7 +205,7 @@ void Hud::desenhar(SDL_Renderer *renderizador, const Jogador &jogador,
     for (int i = 0; i < std::clamp(vidas, 0, 3); ++i)
     {
         const SDL_FRect quadro = {70.0f + i * 46.0f, 2.0f, 42.0f, 38.0f};
-        spriteJogador.desenhar_recorte(renderizador, quadro, {0.25f, 0.08f, 0.58f, 0.42f});
+        spriteJogador.desenhar_recorte(renderizador, quadro, {0.20f, 0.0f, 0.60f, 0.46f});
     }
 
     // Vida e escudo ficam diretamente sobre a gameplay, sem painel de fundo.

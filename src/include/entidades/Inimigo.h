@@ -16,6 +16,7 @@ private:
     Afinidade afinidade = Afinidade::VERDE;
     int tema = 1; // fase de origem; o visual agora depende da afinidade
     float mira = 0;
+    float tempoAnimacao = 0;
     float esperaTiro = 1.5f;
     int dificuldade = 1;
     int ataques = 0; // contador usado pelos padroes de tiro do boss

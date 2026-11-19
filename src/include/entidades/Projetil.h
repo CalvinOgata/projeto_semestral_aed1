@@ -19,7 +19,6 @@ private:
     int dano;
     bool ativo;
     TipoArma tipo = TipoArma::PISTOLA;
-    bool retornando = false;
     int ricochetes = 4;
     std::vector<std::size_t> atingidos;
 

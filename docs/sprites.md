@@ -1,5 +1,18 @@
 # Medidas para sprites e hitboxes
 
+## Integracao atual (19/11/2026)
+
+O guia anterior abaixo fica como historico. Para a versao integrada, consulte
+`integracao_final.md`: Tux usa quadro 64x64, brutos 128x128, chefes 256x256;
+hitboxes continuam 32x32, 44x44 e 88x88. Comuns usam quadro 48x48/hitbox 28x28.
+As animacoes ja estao integradas em faixas de tres quadros PNG, sem espacamento,
+em `assets/sprites/final`, ciclo 0,1,0,2. Pisos estao em `assets/sprites/pisos`.
+Os novos inimigos medios verdes sao GPU H100; chefes azul/verde sao Windows
+Update e Datacenter Hiperescala. As afirmacoes antigas de ausencia de animacoes
+ou de outros caminhos/tamanhos nao descrevem mais a versao atual.
+
+## Guia anterior de producao
+
 Todas as medidas abaixo sao em pixels logicos, na resolucao de referencia
 960x540. O redimensionamento da janela escala o jogo inteiro. Um quadro de
 48x48 e desenhado com 48x48 no mundo; nao depende do tamanho fisico do monitor.

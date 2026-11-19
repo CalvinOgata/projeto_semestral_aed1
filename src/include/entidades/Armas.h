@@ -35,6 +35,9 @@ public:
     Afinidade get_afinidade() const;
     AlcanceArma get_alcance() const;
     float get_intervalo() const;
+    float get_alcancePixels() const;
+    float get_aberturaGraus() const; // leque do golpe corpo a corpo
+    float get_velocidadeProjetil() const;
     bool municao_infinita() const;
     ~Armas();
 
