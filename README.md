@@ -54,6 +54,63 @@ O workflow `.github/workflows/executaveis.yml` compila Linux, Windows e web no G
 As bibliotecas de `externo/` e os ports do Emscripten ficam em cache, entao so a
 primeira execucao (ou uma troca de versao) recompila o SDL2.
 
+### Deploy automatico da versao web (nginx)
+
+O job `deploy-web` envia o `index.html` de cada push no `main` para um servidor por
+SSH (`scp` para `index.html.novo` e depois `mv`, sem deixar o site pela metade). Ele so
+roda se a variavel `DEPLOY_HOST` existir no repositorio.
+
+**1. No servidor**, crie um usuario so para o deploy e a pasta do jogo:
+
+```sh
+sudo useradd -m -s /bin/sh deploy
+sudo mkdir -p /var/www/meujogo && sudo chown deploy: /var/www/meujogo
+```
+
+**2. No seu computador**, gere uma chave exclusiva (sem senha) e autorize-a no servidor:
+
+```sh
+ssh-keygen -t ed25519 -N "" -C "deploy MCGA" -f ~/.ssh/mcga_deploy
+# no servidor, em /home/deploy/.ssh/authorized_keys, uma linha:
+#   restrict ssh-ed25519 AAAA... deploy MCGA
+ssh-keyscan -p 22 SEU_SERVIDOR > /tmp/known_hosts_mcga   # opcional, veja abaixo
+```
+
+**3. No GitHub** (*Settings → Secrets and variables → Actions*), ou pelo terminal:
+
+```sh
+gh secret set DEPLOY_SSH_KEY      < ~/.ssh/mcga_deploy
+gh secret set DEPLOY_KNOWN_HOSTS  < /tmp/known_hosts_mcga   # opcional
+gh variable set DEPLOY_HOST --body "SEU_SERVIDOR"
+gh variable set DEPLOY_USER --body "deploy"
+gh variable set DEPLOY_DIR  --body "/var/www/meujogo"
+gh variable set DEPLOY_URL  --body "https://meudominio.com.br/meujogo/"
+gh variable set DEPLOY_PORT --body "22"        # opcional, padrao 22
+```
+
+`DEPLOY_KNOWN_HOSTS` e opcional. Com ele, o deploy so conecta se a identidade do
+servidor for a cadastrada. Sem ele, o workflow le a identidade do proprio servidor a
+cada execucao (`ssh-keyscan`) e mostra um aviso: funciona, mas nao detecta alguem se
+passando pelo servidor.
+
+**4. No nginx**, dentro do `server { ... }` do dominio:
+
+```nginx
+location = /meujogo { return 301 /meujogo/; }
+
+location /meujogo/ {
+    alias /var/www/meujogo/;
+    index index.html;
+    # Sempre confere se ha versao nova, para o deploy aparecer na hora.
+    add_header Cache-Control "no-cache";
+    gzip on;
+    gzip_types text/html;
+}
+```
+
+Depois `sudo nginx -t && sudo systemctl reload nginx`. Ao final, o job baixa
+`DEPLOY_URL` e confere se a pagina do jogo esta no ar.
+
 ### Assets embutidos
 
 `ferramentas/embutir_assets.py` converte os PNGs listados em `ASSETS_EMBUTIDOS` no

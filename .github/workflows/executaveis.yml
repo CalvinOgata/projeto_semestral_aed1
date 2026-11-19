@@ -109,6 +109,84 @@ jobs:
           name: MCGA-web
           path: MCGA-web.zip
 
+  # Envia a versao web do main para o servidor nginx por SSH. So roda no repositorio
+  # que tiver a variavel DEPLOY_HOST configurada (Settings > Secrets and variables >
+  # Actions); no repositorio original da equipe, sem ela, o job e pulado.
+  deploy-web:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_HOST != ''
+    needs: web
+    runs-on: ubuntu-latest
+    environment:
+      name: servidor-web
+      url: ${{ vars.DEPLOY_URL }}
+    # Deploys nunca rodam ao mesmo tempo; um novo espera o anterior terminar.
+    concurrency:
+      group: deploy-web
+      cancel-in-progress: false
+    env:
+      HOST: ${{ vars.DEPLOY_HOST }}
+      USUARIO: ${{ vars.DEPLOY_USER }}
+      PORTA: ${{ vars.DEPLOY_PORT || '22' }}
+      DESTINO: ${{ vars.DEPLOY_DIR }}
+      URL: ${{ vars.DEPLOY_URL }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: MCGA-web
+          path: web
+
+      - name: Extrair index.html
+        run: |
+          python3 -m zipfile -e web/MCGA-web.zip web/
+          test -s web/index.html
+
+      # Identidade do servidor: com o secret DEPLOY_KNOWN_HOSTS (opcional) ela fica fixa e
+      # o deploy recusa um servidor diferente. Sem ele, e lida do proprio servidor a cada
+      # execucao (ssh-keyscan), o que nao protege contra alguem se passando por ele.
+      - name: Configurar SSH
+        env:
+          CHAVE: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$CHAVE" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          if [ -n "$KNOWN_HOSTS" ]; then
+            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::DEPLOY_KNOWN_HOSTS ausente; usando ssh-keyscan sem verificar o servidor."
+            ssh-keyscan -p "$PORTA" "$HOST" > ~/.ssh/known_hosts
+            test -s ~/.ssh/known_hosts
+          fi
+          cat > ~/.ssh/config <<EOF
+          Host servidor
+            HostName $HOST
+            User $USUARIO
+            Port $PORTA
+            IdentityFile ~/.ssh/deploy
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+          EOF
+
+      # Envia com outro nome e depois troca (mv), para quem estiver acessando nunca
+      # receber um index.html pela metade.
+      - name: Enviar para o servidor
+        run: |
+          scp web/index.html "servidor:$DESTINO/index.html.novo"
+          ssh servidor "mv -f '$DESTINO/index.html.novo' '$DESTINO/index.html'"
+
+      - name: Conferir o site
+        if: env.URL != ''
+        run: |
+          curl -fsSL --retry 3 "$URL" -o pagina.html
+          if ! grep -q 'id="canvas"' pagina.html; then
+            titulo=$(grep -o '<title>[^<]*' pagina.html | head -1 | sed 's/<title>//')
+            echo "::error::O envio funcionou, mas $URL nao serve o jogo (titulo encontrado: '${titulo:-nenhum}'). Confira o location do nginx para essa pasta."
+            exit 1
+          fi
+          echo "Publicado em $URL ($(wc -c < pagina.html) bytes)"
+
   publicar:
     # Pull requests nunca publicam; so pushes no main e tags v*.
     if: github.event_name == 'push'
