@@ -180,7 +180,11 @@ jobs:
         if: env.URL != ''
         run: |
           curl -fsSL --retry 3 "$URL" -o pagina.html
-          grep -q 'id="canvas"' pagina.html
+          if ! grep -q 'id="canvas"' pagina.html; then
+            titulo=$(grep -o '<title>[^<]*' pagina.html | head -1 | sed 's/<title>//')
+            echo "::error::O envio funcionou, mas $URL nao serve o jogo (titulo encontrado: '${titulo:-nenhum}'). Confira o location do nginx para essa pasta."
+            exit 1
+          fi
           echo "Publicado em $URL ($(wc -c < pagina.html) bytes)"
 
   publicar:
