@@ -4,7 +4,7 @@
 
 namespace
 {
-constexpr int NUM_GLIFOS = 45;
+constexpr int NUM_GLIFOS = 53;
 
 // Cada linha usa os 5 bits menos significativos (bit 4 = coluna da esquerda).
 const unsigned char FONTE[NUM_GLIFOS][Texto::ALTURA_GLIFO] = {
@@ -52,7 +52,15 @@ const unsigned char FONTE[NUM_GLIFOS][Texto::ALTURA_GLIFO] = {
     {0x0E, 0x11, 0x01, 0x02, 0x04, 0x00, 0x04}, // ?
     {0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10}, // /
     {0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C, 0x08}, // ,
-    {0x00, 0x04, 0x04, 0x1F, 0x04, 0x04, 0x00}  // +
+    {0x00, 0x04, 0x04, 0x1F, 0x04, 0x04, 0x00}, // +
+    {0x0E, 0x08, 0x08, 0x08, 0x08, 0x08, 0x0E}, // [
+    {0x0E, 0x02, 0x02, 0x02, 0x02, 0x02, 0x0E}, // ]
+    {0x02, 0x04, 0x08, 0x08, 0x08, 0x04, 0x02}, // (
+    {0x08, 0x04, 0x02, 0x02, 0x02, 0x04, 0x08}, // )
+    {0x02, 0x04, 0x08, 0x10, 0x08, 0x04, 0x02}, // <
+    {0x08, 0x04, 0x02, 0x01, 0x02, 0x04, 0x08}, // >
+    {0x19, 0x19, 0x02, 0x04, 0x08, 0x13, 0x13}, // %
+    {0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00}  // =
 };
 
 constexpr int INDICE_ESPACO = 36;
@@ -87,6 +95,22 @@ int indice_glifo(char c)
         return 43;
     case '+':
         return 44;
+    case '[':
+        return 45;
+    case ']':
+        return 46;
+    case '(':
+        return 47;
+    case ')':
+        return 48;
+    case '<':
+        return 49;
+    case '>':
+        return 50;
+    case '%':
+        return 51;
+    case '=':
+        return 52;
     default:
         return INDICE_ESPACO;
     }
@@ -162,4 +186,41 @@ void Texto::desenhar_centralizado(SDL_Renderer *renderizador, const std::string 
 {
     const int x = centroX - Texto::largura(texto, escala) / 2;
     Texto::desenhar(renderizador, texto, x, y, escala, cor);
+}
+
+std::vector<std::string> Texto::quebrar_linhas(const std::string &texto, int larguraMaxima,
+                                               int escala)
+{
+    std::vector<std::string> linhas;
+    std::string atual;
+    std::size_t inicio = 0;
+    while (inicio < texto.size())
+    {
+        std::size_t fim = texto.find(' ', inicio);
+        if (fim == std::string::npos)
+        {
+            fim = texto.size();
+        }
+        const std::string palavra = texto.substr(inicio, fim - inicio);
+        inicio = fim + 1;
+        if (palavra.empty())
+        {
+            continue;
+        }
+        const std::string tentativa = atual.empty() ? palavra : atual + " " + palavra;
+        if (!atual.empty() && Texto::largura(tentativa, escala) > larguraMaxima)
+        {
+            linhas.push_back(atual);
+            atual = palavra;
+        }
+        else
+        {
+            atual = tentativa;
+        }
+    }
+    if (!atual.empty())
+    {
+        linhas.push_back(atual);
+    }
+    return linhas;
 }

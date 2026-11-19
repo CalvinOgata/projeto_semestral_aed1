@@ -33,7 +33,6 @@ struct ConfiguracaoSala
     bool misturarAfinidades = false;
     int cobertura = 0; // modelo de caixotes/barreiras; 0 deixa a sala livre
     int ondasExtras = 0; // ondas de reforco apos a primeira
-    bool mostrarComandos = false; // tutorial desenhado no piso do lobby
 };
 
 enum class EstadoSala

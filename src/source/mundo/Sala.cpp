@@ -6,6 +6,7 @@
 #include "interface/Texto.h"
 #include <stdexcept>
 
+#include "audio/Som.h"
 #include "config/Config.h"
 #include "graficos/IconeArma.h"
 #include "graficos/Ambiente.h"
@@ -127,6 +128,10 @@ void Sala::ativar()
     {
         estado = configuracao.requisito.eliminarInimigos && combate.get_inimigosVivos() > 0
                      ? EstadoSala::EM_COMBATE : EstadoSala::LIBERADA;
+        if (estado == EstadoSala::EM_COMBATE)
+        {
+            Som::tocar(EfeitoSonoro::PORTAS_TRANCAM);
+        }
     }
 }
 
@@ -162,6 +167,7 @@ void Sala::atualizar(float dt, Jogador &jogador)
                                      jogador.get_centroY() - bau.y) < 64)
         {
             bau.aberto = true;
+            Som::tocar(EfeitoSonoro::BAU_ABRE);
             for (int i = 0; i < 2; ++i)
             {
                 const TipoArma tipo = i == 0 ? sortear_contraBoss(configuracao.tema, sorteio) :
@@ -178,6 +184,9 @@ void Sala::atualizar(float dt, Jogador &jogador)
         if (eliminados)
         {
             this->estado = EstadoSala::LIBERADA;
+            // Na sala do chefe o portal de saida aparece junto com a explosao.
+            Som::tocar(this->configuracao.boss ? EfeitoSonoro::PORTAL_SURGE :
+                                                 EfeitoSonoro::SALA_LIBERADA);
         }
     }
 }
@@ -297,26 +306,6 @@ void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAn
         Ambiente::desenhar_porta(renderizador, porta,
                                 porta_liberada(direcao));
     }
-    if (configuracao.mostrarComandos)
-    {
-        const char *linhas[] = {"WASD OU SETAS - MOVER", "MOUSE - MIRAR",
-                                "BOTAO ESQUERDO - ATACAR", "F - COLETAR ARMA",
-                                "Q - CICLAR FILA", "G - SOLTAR ARMA",
-                                "M - MAPA", "CORES IGUAIS - DANO 2X", "ESC - PAUSAR"};
-        const auto titulo = camera.para_tela(configuracao.largura / 2, 126);
-        Texto::desenhar_centralizado(renderizador, "COMANDOS", titulo.x + 1, titulo.y + 1, 2,
-                                    {8, 12, 20, 150});
-        Texto::desenhar_centralizado(renderizador, "COMANDOS", titulo.x, titulo.y, 2,
-                                    {165, 210, 225, 190});
-        for (int i = 0; i < 9; ++i)
-        {
-            const auto pos = camera.para_tela(configuracao.largura / 2, 166 + i * 24);
-            Texto::desenhar_centralizado(renderizador, linhas[i], pos.x + 1, pos.y + 1, 1,
-                                        {8, 12, 20, 150});
-            Texto::desenhar_centralizado(renderizador, linhas[i], pos.x, pos.y, 1,
-                                        {165, 210, 225, 175});
-        }
-    }
     if (configuracao.portalSaida && liberada())
     {
         const auto centro = camera.para_tela(configuracao.largura / 2, configuracao.altura / 2);
@@ -377,6 +366,7 @@ bool Sala::coletar_arma(Jogador &jogador)
         return false;
     }
     maisProxima->coletada = true;
+    Som::tocar(EfeitoSonoro::ARMA_COLETA);
     return true;
 }
 
@@ -384,7 +374,10 @@ void Sala::soltar_arma(Jogador &jogador)
 {
     Armas arma;
     if (jogador.get_armas().retirar(arma))
+    {
         armasChao.inserir({arma, jogador.get_centroX(), jogador.get_centroY(), false});
+        Som::tocar(EfeitoSonoro::ARMA_SOLTA);
+    }
 }
 
 void Sala::entrar(Jogador &jogador, Direcao entrada)

@@ -37,7 +37,7 @@ As updated on 2026-10-22:
 - The build uses C++17, SDL2, libpng, zlib and a Makefile. The libraries are vendored and
   linked statically (see "Native distribution builds"). Text uses an embedded bitmap font;
   SDL2_ttf is not required.
-- The game starts at a main menu. Three phases remain (reduced from five by user request), all
+- The game starts at a loading screen, then a main menu (see "Startup, menus and audio"). Three phases remain (reduced from five by user request), all
   trees of 936x516 rooms with lobby, chest rooms and a final boss. The lobby is at the top.
   Phase 1 has seven rooms: Lobby–A, A–B/C/D, C–E, E–F. Physical exits from A are
   west to B, east to C and south to D; C–E and E–F go south.
@@ -76,7 +76,9 @@ As updated on 2026-10-22:
   self-contained `index.html` because the user opens it directly via file://,
   where browsers block fetching separate .wasm/.data files. Since 2026-11-17 the sprites come
   from the generated embedded-asset source (no `--embed-file`), so it shrank from ~6 to ~3.3 MB. SDL already prevents browser defaults for F-keys, so F5 does not reload.
-- Browser checks live in `~/.codex/web-teste/` (Playwright scripts `pw_*.mjs` using system Chromium).
+- Browser checks live in the agent folder's `web-teste/` (e.g. `~/.codex/web-teste/`, Playwright
+  scripts `pw_*.mjs` using system Chromium). If emsdk is not activated, `make web` works with
+  `EM_CONFIG=<agent folder>/emsdk/emconfig.py PATH=$HOME/emsdk/upstream/emscripten:$PATH`.
 
 ## Native distribution builds (2026-11-17)
 
@@ -103,7 +105,7 @@ As updated on 2026-10-22:
   `make ALVO_SO=windows` builds locally if MinGW is installed.
 - `make clean` keeps compiled libraries; `make clean-tudo` removes all of `build/`.
 - Verified with a clean Ubuntu 22.04 container (Xvfb) and Wine: menu, embedded Tux, movement and
-  save creation work. Test container/scripts: `~/.codex/dist-teste/`. Not yet tested on real
+  save creation work. Test container/scripts: agent folder's `dist-teste/`. Not yet tested on real
   Windows hardware. No exe icon yet.
 - GitHub Actions (`.github/workflows/executaveis.yml`, user request 2026-11-17): jobs linux,
   windows (both via `make dist-*`) and web (emsdk pinned to 7.0.0, the developer's local version,
@@ -119,6 +121,59 @@ As updated on 2026-10-22:
   emits a warning; no MITM protection) and variables DEPLOY_USER/DEPLOY_DIR/DEPLOY_PORT/DEPLOY_URL; then curls DEPLOY_URL
   and checks for `id="canvas"`. Target: user's nginx at <domain>/meujogo (alias + no-cache + gzip;
   snippet in README). GitHub environment `servidor-web`. Not yet exercised against the real server.
+
+## Startup, menus and audio (2026-11-18)
+
+- User request: a polished loading screen "for the good-game feeling", then a main menu
+  with JOGAR, MANUAL, CONFIGURACOES, SOBRE (+ SAIR on desktop); saves/slots only after
+  JOGAR (Novo jogo / Continuar / Voltar). Settings may grow later.
+- `EstadoJogo::CARREGANDO` shows `interface/TelaCarregamento`: themed boot log, segmented
+  bar with Tux walking, spinner, rotating tips. Real progress is the audio synthesis
+  (`Som::carregar_etapa`, 8 ms per frame) combined with a 3.6 s minimum; a key/click
+  only shortens the wait after it is ready. It fades into the menu background.
+- `interface/FundoMenu` draws the procedural synthwave/computing background (binary
+  rain, striped sun, server racks with LEDs, perspective grid, CRT scanlines), the
+  glitchy logo and glass panels. Menu screens: PRINCIPAL, JOGAR, SLOTS_*, MANUAL
+  (tabs CONTROLES / COMO JOGAR), CONFIGURACOES, SOBRE, PAUSA. Navigation between
+  informational screens is internal to `Menu`; Esc/VOLTAR from slots returns to JOGAR.
+- Settings (`persistencia/ArquivoConfiguracoes`, `saves/configuracoes.txt`, `chave=valor`,
+  temp+rename, invalid lines ignored): music/effects volume 0..10 (defaults 7/8),
+  fullscreen (desktop only, `Plataforma::PERMITE_TELA_CHEIA`), show hitboxes (F2 also
+  toggles and saves it). Saved on every change.
+- SOBRE lists technologies and team names (`INTEGRANTES` in Menu.cpp): Calvin da Serra Ogata
+  de Paula, Felipe Baratela Pimenta (git author felipebp14-207), Joao Pedro Tomaz dos Santos,
+  Pedro Testa Lourenco. Credits Tux to Larry Ewing.
+- Audio is fully synthesized, no audio files: `audio/Sintetizador` (SDL-independent notes ->
+  samples, 44.1 kHz mono), `audio/Repertorio` (effects catalog `EfeitoSonoro` and three looping
+  tracks MENU / FASE / CHEFE composed with a small step sequencer), `audio/Som` (SDL mixer:
+  32 voices, max 4 copies per effect plus minimum retrigger intervals, crossfade between
+  tracks, ducking during pause/minimap, master gain + tanh limiter). Without an audio
+  device the game stays silent. Web uses a 2048-sample buffer (`Plataforma::AMOSTRAS_AUDIO`).
+- Music: MENU on menus/summary/victory, FASE during play, CHEFE while the boss room is in
+  combat, none on loading/game over. Effects are triggered at the event sites (Combate,
+  Sala, Jogador, Inimigo, Obstaculo, Jogo, Menu): per-weapon shots, punch, empty ammo,
+  hits, deaths per enemy class, enemy/boss volleys, waves, summons, shield/health damage,
+  hearts, door lock, room cleared, boss portal, chest, collect/drop/swap weapon, phase
+  complete, player death, game over, continue, victory, cheat and menu navigation.
+- Bitmap font gained `[ ] ( ) < > % =`. `Texto::quebrar_linhas` wraps text by pixel width.
+
+## Defeat and victory sequences (user request 2026-11-18)
+
+- Death no longer restarts instantly: `EstadoJogo::DERROTA` shows `interface/TelaDerrota`
+  over the frozen scene (white/red flash, glitch bars, fake error windows like TROJAN.DLL,
+  a virus swarm from the edges, then "OH NAO! OS CODIGOS MALICIOSOS TOMARAM CONTA DO SEU
+  SISTEMA", "NAO DESISTA, GUERREIRO!", a random programming pun and remaining lives). The
+  life is removed and saved at death; the phase is recreated only when the animation ends
+  (8.5 s, Enter skips after 2.4 s: first press shows the full message, second continues).
+  With no lives left it then goes to the existing game-over countdown.
+- Campaign completion uses `interface/TelaVitoria` (inspired by Minecraft's ending, with
+  original text): celebration (fireworks, confetti, jumping Tux, congratulation about freeing
+  the world from closed/malicious code, final score), then a slow upward scroll of two
+  alternating "voices" (cyan/gold) with life reflections built from programming puns
+  (commits, git reset, warnings, sleep, dependencies...), ending with "SEUS COMMITS NA VIDA
+  VALEM A PENA" and credits. Hold Space/mouse to speed up, Esc skips to credits, Enter in
+  credits returns to the main menu. New track `Musica::FINAL` (slow C major) plays throughout;
+  new effects ERRO_SISTEMA, ENCORAJAR, FOGOS.
 
 ## Room cover (obstacles)
 
@@ -252,8 +307,10 @@ Use the existing `.clang-format` configuration.
 - Saves use a temporary file in the same directory followed by rename; failed
   writes preserve the previous checkpoint. Show failures in menus/pause (hidden during gameplay); F5 retries
   pending writes. Saves are ignored by Git and preserved by make clean.
-- Pause shows PAUSADO, phase name and room name (two lines), followed by Continue, Restart,
-  Main menu and Exit. Restart resets the current phase/player and resumes gameplay;
+- Pause shows PAUSADO, phase name and room name (two lines), followed by Continue, Manual, Restart,
+  Main menu and Exit. Manual opens the same player manual over the veiled game and returns
+  to pause (user request 2026-11-18); the lobby floor no longer draws a controls tutorial,
+  controls live only in the manual. Restart resets the current phase/player and resumes gameplay;
   R has no action. Gameplay HUD, inventory details and navigation/checkpoint hints
   are hidden during pause. Keyboard/mouse navigation remains available. Main-menu Continue uses the disk
   checkpoint; returning there abandons unsaved progress within the current phase.
@@ -275,13 +332,25 @@ Use the existing `.clang-format` configuration.
 ## Workspace preferences
 
 - Keep reusable ad hoc tests, verification scripts, screenshots, logs, and other
-  diagnostic artifacts outside repositories in a persistent directory under
-  `~/.codex`. Reuse existing scripts where available.
+  diagnostic artifacts outside repositories, in a persistent directory belonging to
+  the coding agent you are (user request 2026-11-18). Each agent uses its own folder:
+  - Codex: `~/.codex/` (existing folders such as `~/.codex/aed1/`, `web-teste/`,
+    `dist-teste/`, `audio-teste/`, `telas-teste/`).
+  - Claude Code: `~/.claude/aed1-testes/` (a copy of the reusable scripts above, with a
+    README describing each tool).
+  - OpenCode or any other agent: the equivalent persistent folder of that agent (for
+    example under its config/data directory, such as `~/.config/opencode/`), in an
+    `aed1-testes/` subfolder. If it has no such folder, ask the user.
+  Paths in this document written as `~/.codex/...` refer to Codex's copy; other agents
+  should look for the same-named subfolder in their own directory, and may copy scripts
+  from another agent's folder into theirs when useful. Never read or copy another
+  agent's credentials, sessions or history.
+  Reuse existing scripts where available.
 - Run project commands from their required working directory, but store ad hoc
-  test files and generated diagnostic output under `~/.codex` whenever possible.
+  test files and generated diagnostic output in your own agent folder whenever possible.
 - Do not add test or verification files to the repository unless the user
   explicitly requests them as deliverables.
-- During cleanup, move only artifacts created by Codex. Preserve existing and
+- During cleanup, move only artifacts created by you (the current agent). Preserve existing and
   tracked project files.
 - When a reported issue is resolved, remove its entry from the relevant review
   document. Keep review documents focused on unresolved issues instead of

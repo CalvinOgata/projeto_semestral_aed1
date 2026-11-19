@@ -8,10 +8,12 @@
 #include <sstream>
 #include <vector>
 
+#include "audio/Som.h"
 #include "config/Config.h"
 #include "graficos/Desenho.h"
-#include "interface/Texto.h"
+#include "interface/FundoMenu.h"
 #include "interface/Hud.h"
+#include "interface/Texto.h"
 #include "interface/Minimapa.h"
 #include "nucleo/Plataforma.h"
 
@@ -62,6 +64,14 @@ std::filesystem::path caminho_slot(int slot)
     return diretorio_jogo() / "saves" / ("progresso_" + std::to_string(slot) + ".json");
 }
 
+std::filesystem::path caminho_configuracoes()
+{
+    return diretorio_jogo() / "saves" / "configuracoes.txt";
+}
+
+// Milissegundos de sintese de audio por quadro durante o carregamento.
+constexpr int ORCAMENTO_CARREGAMENTO_MS = 8;
+
 std::string formatar_tempo(float segundos)
 {
     std::ostringstream texto;
@@ -72,7 +82,8 @@ std::string formatar_tempo(float segundos)
 } // namespace
 
 Jogo::Jogo()
-    : janela(nullptr), renderizador(nullptr), estado(EstadoJogo::INICIAL), progresso(caminho_slot(1)),
+    : janela(nullptr), renderizador(nullptr), estado(EstadoJogo::CARREGANDO),
+      arquivoConfiguracoes(caminho_configuracoes()), progresso(caminho_slot(1)),
       tempoAnterior(0),
       esperaTiro(0.0f), atirando(false), mouseTelaX(LARGURA_TELA / 2.0f + 120.0f),
       mouseTelaY(ALTURA_TELA / 2.0f)
@@ -137,7 +148,14 @@ bool Jogo::inicializar()
         return false;
     }
 
-    this->abrir_inicio();
+    // Sem audio o jogo segue mudo; a tela de carregamento continua igual.
+    Som::inicializar();
+    this->configuracoes = this->arquivoConfiguracoes.carregar();
+    this->menu.set_configuracoes(this->configuracoes);
+    this->aplicar_configuracoes();
+
+    this->carregamento.reiniciar();
+    this->estado = EstadoJogo::CARREGANDO;
     this->tempoAnterior = SDL_GetPerformanceCounter();
     return true;
 }
@@ -169,6 +187,15 @@ void Jogo::passo()
 
     this->tratar_eventos();
 
+    if (this->estado == EstadoJogo::CARREGANDO)
+    {
+        this->atualizar_carregamento(dt);
+    }
+    else if (this->estado == EstadoJogo::INICIAL || this->estado == EstadoJogo::PAUSADO)
+    {
+        this->menu.atualizar(dt);
+    }
+
     if (this->estado == EstadoJogo::JOGANDO)
     {
         this->atualizar(dt);
@@ -177,8 +204,103 @@ void Jogo::passo()
     {
         this->atualizar_gameOver(dt);
     }
+    else if (this->estado == EstadoJogo::DERROTA)
+    {
+        this->derrota.atualizar(dt);
+        if (this->derrota.terminou())
+        {
+            this->concluir_derrota();
+        }
+    }
+    else if (this->estado == EstadoJogo::VITORIA)
+    {
+        const Uint8 *teclas = SDL_GetKeyboardState(nullptr);
+        const bool acelerar = teclas[SDL_SCANCODE_SPACE] ||
+                              (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_LMASK);
+        this->vitoria.atualizar(dt, acelerar);
+        if (this->vitoria.terminou())
+        {
+            this->abrir_inicio();
+        }
+    }
 
+    this->atualizar_musica();
     this->desenhar();
+}
+
+void Jogo::atualizar_carregamento(float dt)
+{
+    const bool estavaPronta = this->carregamento.pronta();
+    const float progressoReal = Som::carregar_etapa(ORCAMENTO_CARREGAMENTO_MS);
+    if (this->carregamento.atualizar(dt, progressoReal) > 0)
+    {
+        Som::tocar(EfeitoSonoro::CARREGAMENTO_LINHA);
+    }
+    if (!estavaPronta && this->carregamento.pronta())
+    {
+        Som::tocar(EfeitoSonoro::CARREGAMENTO_PRONTO);
+    }
+    if (this->carregamento.terminou())
+    {
+        this->abrir_inicio();
+    }
+}
+
+void Jogo::atualizar_musica()
+{
+    Musica musica = Musica::MENU;
+    switch (this->estado)
+    {
+    case EstadoJogo::VITORIA:
+        musica = Musica::FINAL;
+        break;
+    case EstadoJogo::CARREGANDO:
+    case EstadoJogo::DERROTA:
+    case EstadoJogo::GAME_OVER:
+    case EstadoJogo::SAINDO:
+        musica = Musica::NENHUMA;
+        break;
+    case EstadoJogo::JOGANDO:
+    case EstadoJogo::PAUSADO:
+    {
+        // A trilha do chefe toca enquanto a luta contra ele estiver em andamento.
+        const Sala &sala = this->campanha.get_faseAtual().get_salaAtual();
+        const bool lutaChefe =
+            sala.get_configuracao().boss && sala.get_estado() == EstadoSala::EM_COMBATE;
+        musica = lutaChefe ? Musica::CHEFE : Musica::FASE;
+        break;
+    }
+    default:
+        break;
+    }
+    Som::tocar_musica(musica);
+    Som::set_abafado(this->estado == EstadoJogo::PAUSADO || this->mostrarMinimapa);
+}
+
+void Jogo::aplicar_configuracoes()
+{
+    const float maximo = static_cast<float>(Configuracoes::VOLUME_MAXIMO);
+    Som::set_volumes(this->configuracoes.volumeMusica / maximo,
+                     this->configuracoes.volumeEfeitos / maximo);
+    if (Plataforma::PERMITE_TELA_CHEIA && this->janela != nullptr)
+    {
+        const bool atual = (SDL_GetWindowFlags(this->janela) & SDL_WINDOW_FULLSCREEN) != 0;
+        if (atual != this->configuracoes.telaCheia)
+        {
+            SDL_SetWindowFullscreen(this->janela, this->configuracoes.telaCheia ?
+                                                      SDL_WINDOW_FULLSCREEN_DESKTOP :
+                                                      0);
+        }
+    }
+}
+
+void Jogo::salvar_configuracoes()
+{
+    // Falhar aqui so perde a preferencia; o jogo continua com os valores atuais.
+    if (this->arquivoConfiguracoes.salvar(this->configuracoes))
+    {
+        Plataforma::persistir_saves();
+    }
 }
 
 void Jogo::tratar_eventos()
@@ -198,6 +320,15 @@ void Jogo::tratar_eventos()
         if (this->estado == EstadoJogo::SAINDO)
         {
             continue; // ja esta encerrando: so consome o que sobrou
+        }
+        if (this->estado == EstadoJogo::CARREGANDO)
+        {
+            if ((evento.type == SDL_KEYDOWN && evento.key.repeat == 0) ||
+                evento.type == SDL_MOUSEBUTTONDOWN)
+            {
+                this->carregamento.pular();
+            }
+            continue;
         }
 
         if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
@@ -235,7 +366,14 @@ void Jogo::tratar_eventos()
             }
             else if (acao == AcaoMenu::VOLTAR)
             {
-                this->abrir_inicio();
+                this->abrir_inicio(true);
+            }
+            else if (acao == AcaoMenu::CONFIGURACOES_ALTERADAS)
+            {
+                this->configuracoes = this->menu.get_configuracoes();
+                this->aplicar_configuracoes();
+                this->salvar_configuracoes();
+                Som::tocar(EfeitoSonoro::MENU_AJUSTE);
             }
             else if (acao == AcaoMenu::SAIR)
             {
@@ -252,6 +390,8 @@ void Jogo::tratar_eventos()
                 if (this->campanha.concluida())
                 {
                     this->estado = EstadoJogo::VITORIA;
+                    this->vitoria.iniciar(this->pontuacaoTotal);
+                    Som::tocar(EfeitoSonoro::VITORIA);
                 }
                 else
                 {
@@ -273,10 +413,28 @@ void Jogo::tratar_eventos()
         }
         if (this->estado == EstadoJogo::VITORIA)
         {
-            if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
-                (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_ESCAPE))
+            if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0)
             {
-                this->abrir_inicio();
+                if (evento.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    this->vitoria.pular();
+                }
+                else if (evento.key.keysym.sym == SDLK_RETURN ||
+                         evento.key.keysym.sym == SDLK_KP_ENTER)
+                {
+                    this->vitoria.avancar();
+                }
+            }
+            continue;
+        }
+        if (this->estado == EstadoJogo::DERROTA)
+        {
+            if ((evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
+                 (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_KP_ENTER ||
+                  evento.key.keysym.sym == SDLK_SPACE)) ||
+                (evento.type == SDL_MOUSEBUTTONDOWN && evento.button.button == SDL_BUTTON_LEFT))
+            {
+                this->derrota.pular();
             }
             continue;
         }
@@ -336,7 +494,9 @@ void Jogo::tratar_eventos()
             }
             else if (evento.key.keysym.sym == SDLK_F2)
             {
-                this->mostrarHitboxes = !this->mostrarHitboxes;
+                this->configuracoes.mostrarHitboxes = !this->configuracoes.mostrarHitboxes;
+                this->menu.set_configuracoes(this->configuracoes);
+                this->salvar_configuracoes();
             }
             else if (evento.key.keysym.sym == SDLK_f)
             {
@@ -344,6 +504,10 @@ void Jogo::tratar_eventos()
             }
             else if (evento.key.keysym.sym == SDLK_q)
             {
+                if (this->jogador.get_armas().get_quantidade() > 1)
+                {
+                    Som::tocar(EfeitoSonoro::ARMA_TROCA);
+                }
                 this->jogador.get_armas().alternar();
             }
             else if (evento.key.keysym.sym == SDLK_g)
@@ -391,14 +555,7 @@ void Jogo::atualizar(float dt)
     this->atualizar_pontuacaoInimigos();
     if (this->jogador.morto())
     {
-        this->vidas = std::max(0, this->vidas - 1);
-        this->campanha.reiniciar_fase(this->jogador);
-        this->preparar_entrada();
-        this->salvar_progresso();
-        if (this->vidas == 0)
-        {
-            this->iniciar_gameOver();
-        }
+        this->iniciar_derrota();
         return;
     }
     if (this->campanha.atualizar_transicao(this->jogador))
@@ -460,9 +617,13 @@ void Jogo::desenhar()
     SDL_SetRenderDrawColor(this->renderizador, 18, 22, 30, 255);
     SDL_RenderClear(this->renderizador);
 
-    if (this->estado == EstadoJogo::INICIAL)
+    if (this->estado == EstadoJogo::CARREGANDO)
     {
-        this->menu.desenhar(this->renderizador);
+        this->carregamento.desenhar(this->renderizador, this->spriteJogador);
+    }
+    else if (this->estado == EstadoJogo::INICIAL)
+    {
+        this->menu.desenhar(this->renderizador, this->spriteJogador);
     }
     else if (this->estado == EstadoJogo::RESUMO_FASE)
     {
@@ -474,21 +635,21 @@ void Jogo::desenhar()
     }
     else if (this->estado == EstadoJogo::VITORIA)
     {
-        Texto::desenhar_centralizado(this->renderizador, "CAMPANHA CONCLUIDA!", 480, 200, 4, COR_TEXTO);
-        Texto::desenhar_centralizado(this->renderizador, "VOCE COMPLETOU AS " + std::to_string(Campanha::TOTAL_FASES) + " FASES", 480, 270, 2, COR_TEXTO);
-        Texto::desenhar_centralizado(this->renderizador, "PONTUACAO FINAL: " +
-                                     std::to_string(this->pontuacaoTotal), 480, 310, 3,
-                                     {255, 222, 110, 255});
-        Texto::desenhar_centralizado(this->renderizador, "ENTER: MENU INICIAL", 480, 360, 2, COR_TEXTO);
+        this->vitoria.desenhar(this->renderizador, this->spriteJogador);
     }
     else
     {
         this->campanha.get_faseAtual().desenhar(this->renderizador, this->camera,
-                                               this->mostrarHitboxes);
+                                               this->configuracoes.mostrarHitboxes);
 
-        this->jogador.desenhar(this->renderizador, this->camera, this->mostrarHitboxes,
+        this->jogador.desenhar(this->renderizador, this->camera,
+                               this->configuracoes.mostrarHitboxes,
                                &this->spriteJogador);
-        if (this->estado != EstadoJogo::PAUSADO)
+        if (this->estado == EstadoJogo::DERROTA)
+        {
+            this->derrota.desenhar(this->renderizador);
+        }
+        else if (this->estado != EstadoJogo::PAUSADO)
         {
             Hud::desenhar(this->renderizador, this->jogador, this->spriteJogador, this->vidas,
                           this->pontosComunsFase + this->pontosBossFase,
@@ -507,7 +668,7 @@ void Jogo::desenhar()
 
         if (this->estado == EstadoJogo::PAUSADO)
         {
-            this->menu.desenhar(this->renderizador);
+            this->menu.desenhar(this->renderizador, this->spriteJogador);
         }
         if (this->tempoMensagemCheat > 0.0f)
         {
@@ -516,7 +677,15 @@ void Jogo::desenhar()
                                         2, {130, 255, 180, 255});
         }
     }
-    if (this->estado != EstadoJogo::JOGANDO && !this->mensagemSave.empty())
+    // Manual e Sobre ocupam a tela inteira; o aviso de save cobriria o botao VOLTAR.
+    const bool painelInteiro = (this->estado == EstadoJogo::INICIAL ||
+                                this->estado == EstadoJogo::PAUSADO) &&
+                               (this->menu.get_tela() == TelaMenu::MANUAL ||
+                                this->menu.get_tela() == TelaMenu::SOBRE);
+    const bool animacao = this->estado == EstadoJogo::CARREGANDO ||
+                          this->estado == EstadoJogo::DERROTA ||
+                          this->estado == EstadoJogo::VITORIA;
+    if (this->estado != EstadoJogo::JOGANDO && !animacao && !painelInteiro && !this->mensagemSave.empty())
     {
         SDL_SetRenderDrawColor(this->renderizador, 18, 22, 30, 240);
         const SDL_Rect aviso = {0, ALTURA_TELA - 62, LARGURA_TELA, 26};
@@ -618,6 +787,7 @@ void Jogo::retomar()
 
 void Jogo::finalizar()
 {
+    Som::finalizar();
     this->spriteJogador.liberar();
     this->spriteGameOver.liberar();
     Desenho::finalizar();
@@ -640,7 +810,7 @@ int Jogo::get_inimigosVivos() const
     return this->campanha.get_faseAtual().get_salaAtual().get_inimigosVivos();
 }
 
-void Jogo::abrir_inicio()
+void Jogo::abrir_inicio(bool telaJogar)
 {
     bool podeContinuar = false;
     int slotsOcupados = 0;
@@ -657,7 +827,7 @@ void Jogo::abrir_inicio()
     }
     const std::string detalhe = slotsOcupados == 0 ? "NENHUM JOGO SALVO" :
         std::to_string(slotsOcupados) + " SLOT(S) OCUPADO(S)";
-    this->menu.configurar_inicial(podeContinuar, detalhe);
+    this->menu.configurar_inicial(podeContinuar, detalhe, telaJogar);
     this->estado = EstadoJogo::INICIAL;
     this->atirando = false;
     this->mostrarMinimapa = false;
@@ -769,6 +939,7 @@ void Jogo::concluir_fase()
     this->resumoFase.tempo = std::max(0.1f, this->tempoFase);
     this->resumoFase.pontosRapidez = static_cast<int>(std::lround(
         PONTOS_RAPIDEZ_BASE * TEMPO_REFERENCIA_FASE / this->resumoFase.tempo));
+    Som::tocar(EfeitoSonoro::FASE_CONCLUIDA);
     this->resumoFase.total = this->resumoFase.pontosComuns + this->resumoFase.pontosBoss +
                              this->resumoFase.pontosRapidez;
     this->pontuacaoTotal += this->resumoFase.total;
@@ -783,8 +954,36 @@ void Jogo::concluir_fase()
     this->estado = EstadoJogo::RESUMO_FASE;
 }
 
+void Jogo::iniciar_derrota()
+{
+    // Perde a vida e grava ja; a fase so e recriada quando a animacao terminar,
+    // para a invasao acontecer sobre a cena congelada do momento da queda.
+    Som::tocar(EfeitoSonoro::MORTE_JOGADOR);
+    this->vidas = std::max(0, this->vidas - 1);
+    this->salvar_progresso();
+    this->atirando = false;
+    this->mostrarMinimapa = false;
+    this->derrota.iniciar(this->vidas, static_cast<int>(SDL_GetTicks() % 100000));
+    this->estado = EstadoJogo::DERROTA;
+}
+
+void Jogo::concluir_derrota()
+{
+    this->campanha.reiniciar_fase(this->jogador);
+    this->preparar_entrada();
+    if (this->vidas == 0)
+    {
+        this->iniciar_gameOver();
+    }
+    else
+    {
+        this->estado = EstadoJogo::JOGANDO;
+    }
+}
+
 void Jogo::iniciar_gameOver()
 {
+    Som::tocar(EfeitoSonoro::GAME_OVER);
     this->tempoGameOver = 10.0f;
     this->mostrarMinimapa = false;
     this->atirando = false;
@@ -797,6 +996,7 @@ void Jogo::aceitar_continue()
     {
         return;
     }
+    Som::tocar(EfeitoSonoro::CONTINUE);
     this->continueDisponivel = false;
     this->vidas = VIDAS_INICIAIS;
     this->campanha.reiniciar_fase(this->jogador);
@@ -847,6 +1047,7 @@ void Jogo::registrar_cheat(SDL_Keycode tecla)
     if (this->progressoCheat == 4)
     {
         this->cheatTiros = true;
+        Som::tocar(EfeitoSonoro::CHEAT);
         this->jogador.set_ignorarTirosInimigos(true);
         this->tempoMensagemCheat = 3.0f;
         this->progressoCheat = 0;

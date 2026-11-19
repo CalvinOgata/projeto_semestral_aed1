@@ -4,6 +4,7 @@
 #include <cmath>
 #include <stdexcept>
 
+#include "audio/Som.h"
 #include "config/Config.h"
 #include "graficos/IconeArma.h"
 #include "graficos/Sprite.h"
@@ -308,6 +309,7 @@ void Jogador::receber_dano(int quantidade)
     const int absorvido = std::min(escudo, quantidade);
     perder_escudo(absorvido);
     perder_vida(quantidade - absorvido);
+    Som::tocar(absorvido == quantidade ? EfeitoSonoro::DANO_ESCUDO : EfeitoSonoro::DANO_VIDA);
     esperaEscudo = 3;
     cargaEscudo = 0;
     invulnerabilidade = 0.5f;

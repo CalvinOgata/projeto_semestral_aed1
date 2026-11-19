@@ -181,9 +181,19 @@ passagem entre tres fases e reinicializa o jogador em cada etapa. `Fase(numero)`
 aplica a dificuldade e quantidade de inimigos daquele estagio, a partir
 da planta ramificada daquele estagio (7, 9 ou 11 salas). Nao e preciso armazenar todas as fases simultaneamente.
 
-`Jogo` coordena os estados `INICIAL`, `JOGANDO`, `PAUSADO`, `VITORIA` e `SAINDO`.
-`Menu` oferece modos inicial e pausa, com teclado e mouse. O menu solicita acoes;
-ele nao le arquivos nem altera diretamente o progresso.
+`Jogo` coordena os estados `CARREGANDO`, `INICIAL`, `JOGANDO`, `PAUSADO`, `VITORIA`,
+`RESUMO_FASE`, `GAME_OVER` e `SAINDO`. `TelaCarregamento` combina o progresso real
+da sintese de audio com uma duracao minima. `Menu` tem as telas principal, jogar,
+slots, manual, configuracoes, sobre e pausa, com teclado e mouse; a navegacao entre
+telas informativas e interna, e o menu so pede ao `Jogo` acoes que envolvem saves,
+partida ou preferencias. Ele nao le arquivos nem altera diretamente o progresso.
+`ArquivoConfiguracoes` grava volumes, tela cheia e hitboxes em texto `chave=valor`
+com o mesmo esquema de arquivo temporario dos saves; valores invalidos voltam ao padrao.
+
+`audio/` separa sintese e reproducao: `Sintetizador` e `Repertorio` nao dependem de
+SDL e transformam listas de `Nota` em amostras; `Som` e a unica parte ligada ao SDL,
+com vozes fixas, transicao cruzada entre trilhas e limitador suave. As entidades
+apenas pedem `Som::tocar(efeito)` nos eventos (dano, morte, bau, sala liberada).
 
 `ArquivoProgresso`, em `persistencia/`, recebe um caminho e trata somente leitura,
 validacao e escrita. O esquema JSON v2 tem `versao`, `fases_concluidas` (0 a 3) e `armas`
@@ -269,8 +279,8 @@ afinidade eficaz contra o boss da fase e depois sorteia uma entre os nove tipos,
 com reposicao. B/E possuem um/dois baus. Nenhum TAD depende
 dessas regras de jogo; armazenamento permanece encapsulado.
 
-A pausa apresenta somente o titulo PAUSADO, fase/nome da sala e quatro opcoes:
-Continuar, Reiniciar, Menu inicial e Sair. O menu inicial mantem tres opcoes.
+A pausa apresenta somente o titulo PAUSADO, fase/nome da sala e as opcoes
+Continuar, Manual, Reiniciar, Menu inicial e Sair; o manual aberto pela pausa volta a ela.
 A quantidade de opcoes usada para desenho, teclado e mouse depende do modo.
 
 ### Corredores e continuidade visual
