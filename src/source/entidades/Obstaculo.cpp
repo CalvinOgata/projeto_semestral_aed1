@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "audio/Som.h"
 #include "config/Config.h"
 
 Obstaculo::Obstaculo(TipoObstaculo tipo, float centroX, float centroY)
@@ -19,7 +20,12 @@ bool Obstaculo::get_intacto() const
 
 void Obstaculo::levar_dano(int quantidade)
 {
+    const bool intacto = this->vida > 0;
     this->vida = std::max(0, this->vida - std::max(0, quantidade));
+    if (intacto && this->vida == 0)
+    {
+        Som::tocar(EfeitoSonoro::OBSTACULO_QUEBRA);
+    }
 }
 
 SDL_FRect Obstaculo::get_retangulo() const

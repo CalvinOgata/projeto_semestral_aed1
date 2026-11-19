@@ -6,6 +6,7 @@
 #include "interface/Texto.h"
 #include <stdexcept>
 
+#include "audio/Som.h"
 #include "config/Config.h"
 #include "graficos/IconeArma.h"
 #include "graficos/Ambiente.h"
@@ -127,6 +128,10 @@ void Sala::ativar()
     {
         estado = configuracao.requisito.eliminarInimigos && combate.get_inimigosVivos() > 0
                      ? EstadoSala::EM_COMBATE : EstadoSala::LIBERADA;
+        if (estado == EstadoSala::EM_COMBATE)
+        {
+            Som::tocar(EfeitoSonoro::PORTAS_TRANCAM);
+        }
     }
 }
 
@@ -162,6 +167,7 @@ void Sala::atualizar(float dt, Jogador &jogador)
                                      jogador.get_centroY() - bau.y) < 64)
         {
             bau.aberto = true;
+            Som::tocar(EfeitoSonoro::BAU_ABRE);
             for (int i = 0; i < 2; ++i)
             {
                 const TipoArma tipo = i == 0 ? sortear_contraBoss(configuracao.tema, sorteio) :
@@ -178,6 +184,9 @@ void Sala::atualizar(float dt, Jogador &jogador)
         if (eliminados)
         {
             this->estado = EstadoSala::LIBERADA;
+            // Na sala do chefe o portal de saida aparece junto com a explosao.
+            Som::tocar(this->configuracao.boss ? EfeitoSonoro::PORTAL_SURGE :
+                                                 EfeitoSonoro::SALA_LIBERADA);
         }
     }
 }
@@ -377,6 +386,7 @@ bool Sala::coletar_arma(Jogador &jogador)
         return false;
     }
     maisProxima->coletada = true;
+    Som::tocar(EfeitoSonoro::ARMA_COLETA);
     return true;
 }
 
@@ -384,7 +394,10 @@ void Sala::soltar_arma(Jogador &jogador)
 {
     Armas arma;
     if (jogador.get_armas().retirar(arma))
+    {
         armasChao.inserir({arma, jogador.get_centroX(), jogador.get_centroY(), false});
+        Som::tocar(EfeitoSonoro::ARMA_SOLTA);
+    }
 }
 
 void Sala::entrar(Jogador &jogador, Direcao entrada)

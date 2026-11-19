@@ -7,11 +7,14 @@
 #include "graficos/Camera.h"
 #include "graficos/Sprite.h"
 #include "interface/Menu.h"
+#include "interface/TelaCarregamento.h"
 #include "mundo/Campanha.h"
+#include "persistencia/ArquivoConfiguracoes.h"
 #include "persistencia/ArquivoProgresso.h"
 
 enum class EstadoJogo
 {
+    CARREGANDO,
     INICIAL,
     VITORIA,
     RESUMO_FASE,
@@ -30,6 +33,9 @@ private:
     EstadoJogo estado;
     Jogador jogador;
     Menu menu;
+    TelaCarregamento carregamento;
+    Configuracoes configuracoes;
+    ArquivoConfiguracoes arquivoConfiguracoes;
     Camera camera;
     Sprite spriteJogador;
     Sprite spriteGameOver;
@@ -66,7 +72,6 @@ private:
 
     Uint64 tempoAnterior;
     float esperaTiro; // segundos que faltam para o proximo disparo
-    bool mostrarHitboxes = false;
     bool mostrarMinimapa = false;
     float tempoTituloFase = 0.0f; // segundos restantes do titulo ao entrar na fase
     bool atirando;    // botao esquerdo do mouse segurado
@@ -101,7 +106,12 @@ private:
 
     void atualizar_camera();
 
-    void abrir_inicio();
+    void atualizar_carregamento(float dt);
+    void atualizar_musica();
+    void aplicar_configuracoes();
+    void salvar_configuracoes();
+
+    void abrir_inicio(bool telaJogar = false);
     void abrir_selecaoSlots(bool novoJogo);
     void iniciar_partida(bool continuar, int slot);
     void salvar_progresso();

@@ -6,10 +6,16 @@
 namespace Plataforma
 {
 // A versao web nao tem como fechar a aba, entao o menu esconde "SAIR".
+// Tela cheia depende de um gesto do usuario no navegador; la a pagina cuida disso.
+// O navegador precisa de um buffer de audio maior para nao picotar.
 #ifdef __EMSCRIPTEN__
 constexpr bool PERMITE_SAIR = false;
+constexpr bool PERMITE_TELA_CHEIA = false;
+constexpr int AMOSTRAS_AUDIO = 2048;
 #else
 constexpr bool PERMITE_SAIR = true;
+constexpr bool PERMITE_TELA_CHEIA = true;
+constexpr int AMOSTRAS_AUDIO = 1024;
 #endif
 
 // Web: monta saves/ sobre o IndexedDB do navegador e comeca a carregar os

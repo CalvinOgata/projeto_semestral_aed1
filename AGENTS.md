@@ -37,7 +37,7 @@ As updated on 2026-10-22:
 - The build uses C++17, SDL2, libpng, zlib and a Makefile. The libraries are vendored and
   linked statically (see "Native distribution builds"). Text uses an embedded bitmap font;
   SDL2_ttf is not required.
-- The game starts at a main menu. Three phases remain (reduced from five by user request), all
+- The game starts at a loading screen, then a main menu (see "Startup, menus and audio"). Three phases remain (reduced from five by user request), all
   trees of 936x516 rooms with lobby, chest rooms and a final boss. The lobby is at the top.
   Phase 1 has seven rooms: Lobby–A, A–B/C/D, C–E, E–F. Physical exits from A are
   west to B, east to C and south to D; C–E and E–F go south.
@@ -119,6 +119,40 @@ As updated on 2026-10-22:
   emits a warning; no MITM protection) and variables DEPLOY_USER/DEPLOY_DIR/DEPLOY_PORT/DEPLOY_URL; then curls DEPLOY_URL
   and checks for `id="canvas"`. Target: user's nginx at <domain>/meujogo (alias + no-cache + gzip;
   snippet in README). GitHub environment `servidor-web`. Not yet exercised against the real server.
+
+## Startup, menus and audio (2026-11-18)
+
+- User request: a polished loading screen "for the good-game feeling", then a main menu
+  with JOGAR, MANUAL, CONFIGURACOES, SOBRE (+ SAIR on desktop); saves/slots only after
+  JOGAR (Novo jogo / Continuar / Voltar). Settings may grow later.
+- `EstadoJogo::CARREGANDO` shows `interface/TelaCarregamento`: themed boot log, segmented
+  bar with Tux walking, spinner, rotating tips. Real progress is the audio synthesis
+  (`Som::carregar_etapa`, 8 ms per frame) combined with a 3.6 s minimum; a key/click
+  only shortens the wait after it is ready. It fades into the menu background.
+- `interface/FundoMenu` draws the procedural synthwave/computing background (binary
+  rain, striped sun, server racks with LEDs, perspective grid, CRT scanlines), the
+  glitchy logo and glass panels. Menu screens: PRINCIPAL, JOGAR, SLOTS_*, MANUAL
+  (tabs CONTROLES / COMO JOGAR), CONFIGURACOES, SOBRE, PAUSA. Navigation between
+  informational screens is internal to `Menu`; Esc/VOLTAR from slots returns to JOGAR.
+- Settings (`persistencia/ArquivoConfiguracoes`, `saves/configuracoes.txt`, `chave=valor`,
+  temp+rename, invalid lines ignored): music/effects volume 0..10 (defaults 7/8),
+  fullscreen (desktop only, `Plataforma::PERMITE_TELA_CHEIA`), show hitboxes (F2 also
+  toggles and saves it). Saved on every change.
+- SOBRE lists technologies and team names (`INTEGRANTES` in Menu.cpp). Felipe's full name
+  is unknown (git author is felipebp14-207); confirm with the user. Credits Tux to Larry Ewing.
+- Audio is fully synthesized, no audio files: `audio/Sintetizador` (SDL-independent notes ->
+  samples, 44.1 kHz mono), `audio/Repertorio` (effects catalog `EfeitoSonoro` and three looping
+  tracks MENU / FASE / CHEFE composed with a small step sequencer), `audio/Som` (SDL mixer:
+  32 voices, max 4 copies per effect plus minimum retrigger intervals, crossfade between
+  tracks, ducking during pause/minimap, master gain + tanh limiter). Without an audio
+  device the game stays silent. Web uses a 2048-sample buffer (`Plataforma::AMOSTRAS_AUDIO`).
+- Music: MENU on menus/summary/victory, FASE during play, CHEFE while the boss room is in
+  combat, none on loading/game over. Effects are triggered at the event sites (Combate,
+  Sala, Jogador, Inimigo, Obstaculo, Jogo, Menu): per-weapon shots, punch, empty ammo,
+  hits, deaths per enemy class, enemy/boss volleys, waves, summons, shield/health damage,
+  hearts, door lock, room cleared, boss portal, chest, collect/drop/swap weapon, phase
+  complete, player death, game over, continue, victory, cheat and menu navigation.
+- Bitmap font gained `[ ] ( ) < > % =`.
 
 ## Room cover (obstacles)
 

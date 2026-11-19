@@ -5,6 +5,7 @@
 #include <random>
 #include <vector>
 
+#include "audio/Som.h"
 #include "config/CampanhaConfig.h"
 #include "config/Config.h"
 
@@ -16,6 +17,33 @@ SDL_Color cor_afinidade(Afinidade afinidade)
     if (afinidade == Afinidade::AZUL) return {76, 156, 255, 255};
     if (afinidade == Afinidade::VERDE) return {96, 230, 118, 255};
     return {235, 240, 248, 255};
+}
+
+// Cada arma tem seu proprio som de disparo.
+EfeitoSonoro efeito_disparo(TipoArma tipo)
+{
+    switch (tipo)
+    {
+    case TipoArma::PISTOLA:
+        return EfeitoSonoro::TIRO_PISTOLA;
+    case TipoArma::SHOTGUN:
+        return EfeitoSonoro::TIRO_SHOTGUN;
+    case TipoArma::LASER:
+        return EfeitoSonoro::TIRO_LASER;
+    case TipoArma::DUPLA:
+        return EfeitoSonoro::TIRO_DUPLA;
+    case TipoArma::RICOCHETE:
+        return EfeitoSonoro::TIRO_RICOCHETE;
+    case TipoArma::ESPADA:
+        return EfeitoSonoro::TIRO_ESPADA;
+    case TipoArma::ARCO:
+        return EfeitoSonoro::TIRO_ARCO;
+    case TipoArma::BOOMERANG:
+        return EfeitoSonoro::TIRO_BOOMERANG;
+    case TipoArma::PULSO:
+        return EfeitoSonoro::TIRO_PULSO;
+    }
+    return EfeitoSonoro::TIRO_PISTOLA;
 }
 }
 
@@ -155,6 +183,7 @@ void Combate::agendar_onda(const Jogador &jogador)
         pontos.push_back({limites.x + limites.w - 90, limites.y + limites.h / 2});
     }
     std::shuffle(pontos.begin(), pontos.end(), sorteio);
+    Som::tocar(EfeitoSonoro::ONDA_ALERTA);
     const int total = reforcoVirus + reforcoBrutos;
     for (int i = 0; i < total; ++i)
     {
@@ -202,6 +231,7 @@ int Combate::get_lacaiosVivos() const
 void Combate::invocar_lacaios(const Inimigo &boss)
 {
     // Dois virus surgem aos lados do boss, dentro da sala.
+    Som::tocar(EfeitoSonoro::INVOCACAO);
     for (int lado = -1; lado <= 1; lado += 2)
     {
         const float x = std::clamp(boss.get_centroX() + lado * 100.0f, limites.x + 40,
@@ -316,13 +346,16 @@ void Combate::disparar(Jogador &jogador)
 
     if (arma == nullptr)
     {
+        Som::tocar(EfeitoSonoro::TIRO_SOCO);
         atacar_soco(jogador);
         return;
     }
     if (!arma->atirar())
     {
+        Som::tocar(EfeitoSonoro::SEM_MUNICAO);
         return; // arma presente, mas sem municao: a fila nao esta vazia
     }
+    Som::tocar(efeito_disparo(arma->get_tipo()));
 
     if (arma->get_tipo() == TipoArma::LASER || arma->get_tipo() == TipoArma::ESPADA)
     {
@@ -613,10 +646,13 @@ void Combate::registrar_pontuacaoMortes()
         if (inimigo.get_tipo() == TipoInimigo::BOSS)
         {
             pontosBoss += PONTOS_BOSS;
+            Som::tocar(EfeitoSonoro::MORTE_CHEFE);
         }
         else
         {
-            pontosComuns += inimigo.get_tipo() == TipoInimigo::BRUTO ? PONTOS_BRUTO : PONTOS_VIRUS;
+            const bool bruto = inimigo.get_tipo() == TipoInimigo::BRUTO;
+            pontosComuns += bruto ? PONTOS_BRUTO : PONTOS_VIRUS;
+            Som::tocar(bruto ? EfeitoSonoro::MORTE_BRUTO : EfeitoSonoro::MORTE_VIRUS);
         }
     }
 }
@@ -742,6 +778,9 @@ void Combate::atualizar_hostis(float dt, Jogador &jogador)
         const float alvoY = jogador.get_centroY() + velocidadeJogador.y * tempo * antecipacao;
         const float angulo = std::atan2(alvoY - origem.y, alvoX - origem.x);
         const int dano = inimigo.get_danoTiro();
+        // Um som por rajada; o do chefe e mais grave. Tiros comuns ficam discretos.
+        Som::tocar(tipo == TipoInimigo::BOSS ? EfeitoSonoro::TIRO_CHEFE : EfeitoSonoro::TIRO_INIMIGO,
+                   tipo == TipoInimigo::VIRUS ? 0.7f : 1.0f);
         if (tipo == TipoInimigo::BOSS)
         {
             // Padrao do boss: invoca lacaios, anel giratorio ou leque mirado.
@@ -805,6 +844,7 @@ void Combate::atualizar_coracoes(float dt, Jogador &jogador)
         {
             jogador.rec_vida(10);
             coracao.tempo = 0;
+            Som::tocar(EfeitoSonoro::CORACAO);
         }
     }
     coracoes.remover_se([](const Coracao &c) { return c.tempo <= 0; });

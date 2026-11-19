@@ -5,6 +5,7 @@
 #include <random>
 #include <stdexcept>
 
+#include "audio/Som.h"
 #include "config/Config.h"
 #include "graficos/Desenho.h"
 #include "graficos/SpriteInimigo.h"
@@ -130,6 +131,7 @@ void Inimigo::levar_dano(int quantidade)
     }
 
     this->vida -= quantidade;
+    Som::tocar(EfeitoSonoro::ACERTO_INIMIGO);
 
     if (this->vida <= 0)
     {

@@ -157,9 +157,11 @@ botao de tela cheia.
 | `F5` | tentar salvar novamente se houver falha de gravacao |
 | `Esc` | abrir o menu de pausa (e voltar ao jogo) |
 | setas / `W` `S` | navegar no menu |
+| setas laterais / `A` `D` | ajustar configuracoes e trocar a aba do manual |
 | `Enter` ou `Espaco` | confirmar |
 
 O menu tambem responde ao mouse (passar por cima seleciona, clique confirma).
+A tela **Manual** do proprio jogo repete estes comandos e resume as regras.
 
 ## Como esta agora
 
@@ -299,9 +301,34 @@ em combate; salas de baus e boss possuem identificacao. Funciona nas tres fases,
 inclusive pelo menu de pausa. M ou Esc fecham o mapa e retornam ao estado anterior.
 Movimento, tiros e temporizadores ficam congelados durante a consulta.
 
-- **Novo jogo** inicia a fase 1 e substitui o progresso salvo.
-- **Continuar** retoma o inicio da proxima fase ainda nao concluida.
-- **Sair** fecha o jogo. No menu de pausa ha tambem **Menu inicial**.
+Ao abrir, o jogo mostra uma tela de carregamento (log de "boot", barra com o Tux
+andando e dicas) enquanto sintetiza os sons; ela dura pelo menos 3,6 s e qualquer
+tecla encurta a espera depois que fica pronta. Em seguida vem o menu principal:
+
+- **Jogar** abre **Novo jogo** (escolhe um slot e substitui o progresso dele) e
+  **Continuar** (retoma o inicio da proxima fase ainda nao concluida).
+- **Manual** mostra os comandos e um resumo de como jogar, em duas abas.
+- **Configuracoes** ajusta volume da musica e dos efeitos (0 a 10), tela cheia
+  (so no desktop) e hitboxes. Fica em `saves/configuracoes.txt` (`chave=valor`).
+- **Sobre** lista as tecnologias usadas e a equipe.
+- **Sair** fecha o jogo (nao aparece na versao web). Na pausa ha tambem **Menu inicial**.
+
+## Audio
+
+Nao ha arquivos de som: `audio/Sintetizador` gera ondas quadrada, triangular,
+serra, senoide e ruido com envelope, varredura de frequencia, vibrato e filtro;
+`audio/Repertorio` compoe cada efeito e as tres trilhas (menu, fases e chefe) como
+listas de notas; `audio/Som` mistura tudo no dispositivo do SDL. A sintese acontece
+durante a tela de carregamento, em fatias de 8 ms por quadro.
+
+- Trilhas: menu em la menor tranquilo; fases em mi menor; chefe em re frigio, que
+  entra enquanto a sala do chefe esta em combate. A pausa e o minimapa abafam a trilha.
+- Efeitos: um disparo diferente por arma, soco, sem municao, acerto, morte de virus,
+  bruto e chefe, tiros inimigos, alerta de reforcos, invocacao, dano no escudo e na
+  vida, coracao, portas trancando, sala liberada, bau, coletar/soltar/trocar arma,
+  portal, fase concluida, morte, game over, continue, vitoria e navegacao dos menus.
+- Repeticoes rapidas do mesmo efeito tem intervalo minimo e no maximo 4 copias
+  simultaneas. Sem dispositivo de audio, o jogo continua mudo.
 
 O jogo salva automaticamente ao iniciar uma nova campanha e ao concluir cada
 fase. O arquivo `saves/progresso.json` fica ao lado do executavel, mesmo quando
@@ -367,11 +394,12 @@ mesmos modulos nos dois diretorios (templates ficam apenas nos cabecalhos):
 | `inventario/` | `FilaArmas`: aplica a fila ao inventario |
 | `entidades/` | `Jogador`, `Inimigo`, `Projetil`, `Armas` |
 | `mundo/` | `Sala`: entidades; `Fase`: salas; `Campanha`: tres fases |
-| `persistencia/` | `ArquivoProgresso`: leitura e escrita do checkpoint JSON |
+| `persistencia/` | `ArquivoProgresso`: checkpoint JSON; `ArquivoConfiguracoes`: preferencias |
+| `audio/` | `Sintetizador`, `Repertorio`: sons gerados por codigo; `Som`: mixer SDL |
 | `sistemas/` | `Combate`: disparos, inimigos, colisoes e remocao de inativos |
 | `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao; `Plataforma`: diferencas desktop/web |
 | `graficos/` | `Camera`, `Desenho`, `Sprite`: coordenadas, desenho e texturas PNG |
-| `interface/` | `Hud`: barras; `Menu`, `Texto`: menus e fonte bitmap |
+| `interface/` | `Hud`: barras; `Menu`, `Texto`: menus e fonte bitmap; `TelaCarregamento`, `FundoMenu`: abertura e cenario animado |
 | `config/` | `Config.h`: resolucao, paleta e constantes |
 
 O Makefile descobre os fontes nos subdiretorios e espelha essa estrutura em
