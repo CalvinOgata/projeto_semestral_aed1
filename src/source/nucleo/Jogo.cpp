@@ -223,7 +223,8 @@ void Jogo::passo()
         const Uint8 *teclas = SDL_GetKeyboardState(nullptr);
         const bool acelerar = teclas[SDL_SCANCODE_SPACE] ||
                               (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_LMASK);
-        this->vitoria.atualizar(dt, acelerar);
+        const int navegar = (teclas[SDL_SCANCODE_DOWN] ? 1 : 0) - (teclas[SDL_SCANCODE_UP] ? 1 : 0);
+        this->vitoria.atualizar(dt, acelerar, navegar);
         if (this->vitoria.terminou())
         {
             this->abrir_inicio();
