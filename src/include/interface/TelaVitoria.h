@@ -49,7 +49,8 @@ private:
 public:
     void iniciar(int pontuacao);
     // acelerar: espaco ou botao do mouse segurado durante o texto.
-    void atualizar(float dt, bool acelerar);
+    // navegar: -1 (seta para cima, volta o texto), 0 ou +1 (seta para baixo, adianta).
+    void atualizar(float dt, bool acelerar, int navegar);
     void avancar(); // Enter: sai da celebracao ou, no fim, volta ao menu
     void pular();   // Esc: vai direto aos creditos
     bool terminou() const;

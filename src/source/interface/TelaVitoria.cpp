@@ -14,8 +14,9 @@ namespace
 constexpr float DURACAO_CELEBRACAO = 11.0f; // depois disso segue sozinha
 constexpr float ESPERA_AVISO = 2.5f;        // so entao Enter avanca
 constexpr float INTERVALO_FOGOS = 0.7f;
-constexpr float VELOCIDADE_TEXTO = 24.0f; // pixels por segundo
+constexpr float VELOCIDADE_TEXTO = 16.0f; // pixels por segundo
 constexpr float FATOR_ACELERADO = 6.0f;
+constexpr float VELOCIDADE_SETAS = 110.0f; // rolagem manual somada a automatica
 constexpr int LARGURA_TEXTO = 700;
 constexpr int ALTURA_LINHA = 22;
 constexpr int PARAGRAFO = 26;
@@ -189,7 +190,7 @@ void TelaVitoria::montar_texto()
     this->rolagemFinal = static_cast<float>(ALTURA_TELA + total - ultimo - 410);
 }
 
-void TelaVitoria::atualizar(float dt, bool acelerar)
+void TelaVitoria::atualizar(float dt, bool acelerar, int navegar)
 {
     this->tempo += dt;
     this->tempoEtapa += dt;
@@ -210,7 +211,10 @@ void TelaVitoria::atualizar(float dt, bool acelerar)
         break;
     }
     case Etapa::MENSAGEM:
-        this->rolagem += dt * VELOCIDADE_TEXTO * (acelerar ? FATOR_ACELERADO : 1.0f);
+        // A rolagem automatica continua; as setas so somam ou subtraem dela.
+        this->rolagem += dt * (VELOCIDADE_TEXTO * (acelerar ? FATOR_ACELERADO : 1.0f) +
+                               navegar * VELOCIDADE_SETAS);
+        this->rolagem = std::max(0.0f, this->rolagem);
         if (this->rolagem >= this->rolagemFinal)
         {
             this->rolagem = this->rolagemFinal;
@@ -219,6 +223,13 @@ void TelaVitoria::atualizar(float dt, bool acelerar)
         }
         break;
     case Etapa::CREDITOS:
+        // Seta para cima volta a reler o texto, sem repetir o escurecimento inicial.
+        if (navegar < 0)
+        {
+            this->etapa = Etapa::MENSAGEM;
+            this->tempoEtapa = 10.0f;
+            this->rolagem = std::max(0.0f, this->rolagem + navegar * VELOCIDADE_SETAS * dt);
+        }
         break;
     }
 }
