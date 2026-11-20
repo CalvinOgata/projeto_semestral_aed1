@@ -23,6 +23,9 @@ struct PecaCobertura
     bool vertical;
 };
 
+// Distancia maxima, do centro do jogador ate a arma no chao, para pegar com F.
+constexpr float ALCANCE_COLETA_ARMA = 54.0f;
+
 constexpr auto C = TipoObstaculo::CAIXOTE;
 constexpr auto B = TipoObstaculo::BARREIRA;
 const PecaCobertura COBERTURA_QUADRANTES[] = {
@@ -353,7 +356,7 @@ void Sala::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool temAn
 bool Sala::coletar_arma(Jogador &jogador)
 {
     ArmaChao *maisProxima = nullptr;
-    float distancia = 54;
+    float distancia = ALCANCE_COLETA_ARMA;
     for (auto &item : armasChao)
     {
         const float atual = std::hypot(item.x - jogador.get_centroX(), item.y - jogador.get_centroY());
@@ -370,6 +373,19 @@ bool Sala::coletar_arma(Jogador &jogador)
     maisProxima->coletada = true;
     Som::tocar(EfeitoSonoro::ARMA_COLETA);
     return true;
+}
+
+bool Sala::tem_armaProxima(const Jogador &jogador) const
+{
+    for (const auto &item : armasChao)
+    {
+        if (!item.coletada && std::hypot(item.x - jogador.get_centroX(),
+                                         item.y - jogador.get_centroY()) < ALCANCE_COLETA_ARMA)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Sala::soltar_arma(Jogador &jogador)

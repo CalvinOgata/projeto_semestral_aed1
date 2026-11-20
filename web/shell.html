@@ -2,7 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Celular: sem zoom de pinca nem de toque duplo, que atrapalham o joystick. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
   <title>M.C.G.A - Make Computers Great Again</title>
   <link rel="icon" href="data:,">
   <style>
@@ -12,6 +17,13 @@
       height: 100%;
       overflow: hidden;
       background: #000;
+      /* Os toques sao do jogo: sem rolagem, zoom, selecao ou menu de contexto. */
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
     body {
       display: flex;
@@ -23,6 +35,7 @@
       display: block;
       outline: none;
       image-rendering: pixelated;
+      touch-action: none;
     }
     #carregando {
       position: fixed;
@@ -34,11 +47,42 @@
       font: 16px monospace;
       pointer-events: none;
     }
+    /* O jogo e horizontal: em pe, o celular pede para ser girado. */
+    #girar {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      background: #0b0d1a;
+      color: #ffde6e;
+      font: bold 18px monospace;
+      text-align: center;
+      padding: 24px;
+      z-index: 10;
+    }
+    #girar .aparelho {
+      width: 46px;
+      height: 80px;
+      border: 4px solid #78c8ff;
+      border-radius: 9px;
+      animation: girar 2.4s ease-in-out infinite;
+    }
+    @keyframes girar {
+      0%, 25% { transform: rotate(0deg); }
+      55%, 100% { transform: rotate(-90deg); }
+    }
+    @media (pointer: coarse) and (orientation: portrait) {
+      #girar { display: flex; }
+    }
   </style>
 </head>
 <body>
   <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
   <div id="carregando">CARREGANDO...</div>
+  <div id="girar"><div class="aparelho"></div>GIRE O APARELHO PARA JOGAR</div>
   <script>
     var Module = {
       canvas: document.getElementById('canvas'),
@@ -66,7 +110,45 @@
       canvas.style.height = Math.floor(540 * escala) + 'px';
     }
     window.addEventListener('resize', ajustarCanvas);
+    window.addEventListener('orientationchange', function () {
+      // Alguns navegadores so atualizam o tamanho da janela depois do giro.
+      setTimeout(ajustarCanvas, 250);
+    });
     ajustarCanvas();
+
+    // Celular: o primeiro toque pede tela cheia na horizontal (onde o navegador
+    // permitir; o iPhone, por exemplo, nao deixa) e todo toque garante que o
+    // audio, bloqueado ate um gesto do usuario, esteja tocando.
+    var pediuTelaCheia = false;
+    function prepararCelular() {
+      var raiz = document.documentElement;
+      var pedir = raiz.requestFullscreen || raiz.webkitRequestFullscreen;
+      if (!pediuTelaCheia && pedir && !document.fullscreenElement &&
+          !document.webkitFullscreenElement) {
+        pediuTelaCheia = true;
+        try {
+          var promessa = pedir.call(raiz, { navigationUI: 'hide' });
+          if (promessa && promessa.then) {
+            promessa.then(function () {
+              if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(function () {});
+              }
+            }).catch(function () {});
+          }
+        } catch (e) {
+        }
+      }
+      destravarAudio();
+    }
+    function destravarAudio() {
+      var sdl = Module.SDL2;
+      if (sdl && sdl.audioContext && sdl.audioContext.state !== 'running') {
+        sdl.audioContext.resume();
+      }
+    }
+    window.addEventListener('touchend', prepararCelular);
+    window.addEventListener('click', destravarAudio);
+    window.addEventListener('keydown', destravarAudio);
     // Dentro do iframe do itch.io as teclas so chegam depois de um clique.
     window.addEventListener('click', function () { window.focus(); });
   </script>

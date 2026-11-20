@@ -182,6 +182,31 @@ As updated on 2026-10-22:
   complete, player death, game over, continue, victory, cheat and menu navigation.
 - Bitmap font gained `[ ] ( ) < > % =`. `Texto::quebrar_linhas` wraps text by pixel width.
 
+## Touch controls (user request 2026-11-20)
+
+- Goal: the web build is playable on phones/tablets. Same code on every platform (no ifdef);
+  touch also works on desktop touchscreens.
+- `SDL_HINT_TOUCH_MOUSE_EVENTS` is 0: SDL_FINGER* events are the only touch input. During
+  JOGANDO without the minimap they go to `interface/ControlesToque`; in every other state
+  `Jogo::tratar_eventos` rewrites them into left-button mouse events (which =
+  SDL_TOUCH_MOUSEID), so menus, pause, slots and manual tabs work by tap. Resume, game over,
+  defeat, minimap and victory also accept left click/tap (resume ignores clicks in its
+  first second so a fire tap does not skip it). Victory accelerates while a finger is held.
+- `Jogo::modoToque` turns on at the first FINGERDOWN and off on a key press or real mouse
+  click/motion. It shows the touch overlay and swaps prompts: manual CONTROLES tab lists touch
+  commands (`COMANDOS_TOQUE`, tab hint hidden), "ENTER:" becomes "TOQUE:" in resume, game
+  over, defeat and victory, minimap says "TOQUE PARA FECHAR".
+- `ControlesToque` tracks up to 10 fingers by id. Left half (not on a button): floating
+  joystick (radius 64, dead zone 15%, analog speed via `Jogador::mover_analogico`), resting
+  at (130,410). Right half: fire button (858,418) r62, but any free right-half point also
+  fires. Buttons PEGAR (glows when `Sala::tem_armaProxima`), TROCAR, SOLTAR, pause (II) and
+  MAPA at top center; tapping the hotbar/cycle-arrow area also swaps. Without enemies the aim
+  follows the last joystick direction. Fingers are released whenever play is not active.
+- `web/shell.html`: no zoom/scroll/selection (`touch-action: none`, viewport
+  `user-scalable=no`), portrait overlay "GIRE O APARELHO PARA JOGAR" on coarse pointers,
+  first touchend requests fullscreen + `screen.orientation.lock('landscape')` (fails
+  silently, e.g. iPhone), and every touch/click/key resumes `Module.SDL2.audioContext`.
+
 ## Defeat and victory sequences (user request 2026-11-18)
 
 - Death no longer restarts instantly: `EstadoJogo::DERROTA` shows `interface/TelaDerrota`
@@ -196,8 +221,10 @@ As updated on 2026-10-22:
   the world from closed/malicious code, final score), then a slow upward scroll of two
   alternating "voices" (cyan/gold) with life reflections built from programming puns
   (commits, git reset, warnings, sleep, dependencies...), ending with "SEUS COMMITS NA VIDA
-  VALEM A PENA" and credits. Hold Space/mouse to speed up, Esc skips to credits, Enter in
-  credits returns to the main menu. New track `Musica::FINAL` (slow C major) plays throughout;
+  VALEM A PENA" and credits. The scroll runs at 16 px/s (slowed by user request 2026-11-19);
+  held Down/Up arrows add/subtract 110 px/s while the automatic scroll continues (Up from
+  the credits returns to the text; no on-screen hint). Hold Space/mouse to speed up, Esc
+  skips to credits, Enter in credits returns to the main menu. New track `Musica::FINAL` (slow C major) plays throughout;
   new effects ERRO_SISTEMA, ENCORAJAR, FOGOS.
 
 ## Room cover (obstacles)
@@ -348,6 +375,8 @@ Use the existing `.clang-format` configuration.
   and outstanding design questions, not a transcript of every conversation.
 - Distinguish confirmed decisions, proposed ideas, and implemented behavior.
   Replace stale information instead of accumulating contradictory notes.
+- Mobile/touch play (user request 2026-11-20, implemented): see "Touch controls". Not yet
+  tested on real phones/tablets, only Chromium mobile emulation (`web-teste/pw_toque.mjs`).
 - Current open decisions include powers, final numerical balancing, branching/procedural stages,
   further progression, animation integration, and stamina rules.
   Procedural generation remains unspecified. Death currently restarts the active phase.

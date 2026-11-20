@@ -180,7 +180,7 @@ bool TelaDerrota::terminou() const
     return this->encerrada || this->tempo >= DURACAO;
 }
 
-void TelaDerrota::desenhar(SDL_Renderer *r) const
+void TelaDerrota::desenhar(SDL_Renderer *r, bool toque) const
 {
     const float t = this->tempo;
     const SDL_Rect tela = {0, 0, LARGURA_TELA, ALTURA_TELA};
@@ -345,7 +345,10 @@ void TelaDerrota::desenhar(SDL_Renderer *r) const
     if (t >= INICIO_AVISO && std::fmod(t, 0.9f) < 0.6f)
     {
         Texto::desenhar_centralizado(
-            r, this->vidasRestantes > 0 ? "ENTER: REINICIAR O SISTEMA" : "ENTER: CONTINUAR", centro,
-            460, 2, {150, 150, 190, 255});
+            r,
+            this->vidasRestantes > 0
+                ? (toque ? "TOQUE: REINICIAR O SISTEMA" : "ENTER: REINICIAR O SISTEMA")
+                : (toque ? "TOQUE: CONTINUAR" : "ENTER: CONTINUAR"),
+            centro, 460, 2, {150, 150, 190, 255});
     }
 }

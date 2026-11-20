@@ -23,7 +23,8 @@ public:
     void atualizar(float dt);
     void pular(); // Enter: vai direto para o fim, se ja passou da invasao
     bool terminou() const;
-    void desenhar(SDL_Renderer *renderizador) const;
+    // toque troca os avisos de tecla por avisos de toque (celular).
+    void desenhar(SDL_Renderer *renderizador, bool toque = false) const;
 };
 
 #endif

@@ -80,6 +80,7 @@ public:
     void disparar(Jogador &jogador);
     bool buscar_alvoMaisProximo(const Jogador &jogador, SDL_FPoint &alvo) const;
     bool coletar_arma(Jogador &jogador);
+    bool tem_armaProxima(const Jogador &jogador) const; // ao alcance de coletar_arma
     void soltar_arma(Jogador &jogador);
     void limitar_jogador(Jogador &jogador) const;
     bool tocando_porta(const Jogador &jogador, bool direita) const;

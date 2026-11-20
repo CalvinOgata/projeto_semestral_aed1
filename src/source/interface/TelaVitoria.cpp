@@ -252,6 +252,11 @@ void TelaVitoria::avancar()
     }
 }
 
+void TelaVitoria::set_modoToque(bool modoToque)
+{
+    this->modoToque = modoToque;
+}
+
 void TelaVitoria::pular()
 {
     if (this->etapa == Etapa::CREDITOS)
@@ -356,7 +361,8 @@ void TelaVitoria::desenhar_celebracao(SDL_Renderer *r, const Sprite &tux) const
     }
     if (t > ESPERA_AVISO && std::fmod(t, 1.0f) < 0.65f)
     {
-        Texto::desenhar_centralizado(r, "ENTER: CONTINUAR", centro, 512, 2, {200, 200, 230, 255});
+        Texto::desenhar_centralizado(r, this->modoToque ? "TOQUE: CONTINUAR" : "ENTER: CONTINUAR",
+                                     centro, 512, 2, {200, 200, 230, 255});
     }
 }
 
@@ -416,13 +422,16 @@ void TelaVitoria::desenhar_mensagem(SDL_Renderer *r) const
     if (this->etapa == Etapa::MENSAGEM && this->tempoEtapa < 7.0f)
     {
         const float alfa = std::min(1.0f, (7.0f - this->tempoEtapa) / 1.5f);
-        Texto::desenhar(r, "SEGURE ESPACO PARA ACELERAR - ESC PULA", 16, ALTURA_TELA - 18, 1,
-                        {120, 120, 160, canal(200 * alfa)});
+        Texto::desenhar(r,
+                        this->modoToque ? "SEGURE O DEDO NA TELA PARA ACELERAR"
+                                        : "SEGURE ESPACO PARA ACELERAR - ESC PULA",
+                        16, ALTURA_TELA - 18, 1, {120, 120, 160, canal(200 * alfa)});
     }
     if (this->etapa == Etapa::CREDITOS && this->tempoEtapa > 1.0f &&
         std::fmod(this->tempoEtapa, 1.0f) < 0.65f)
     {
-        Texto::desenhar_centralizado(r, "ENTER: VOLTAR AO MENU", centro, ALTURA_TELA - 34, 2,
-                                     {200, 200, 230, 255});
+        Texto::desenhar_centralizado(
+            r, this->modoToque ? "TOQUE: VOLTAR AO MENU" : "ENTER: VOLTAR AO MENU", centro,
+            ALTURA_TELA - 34, 2, {200, 200, 230, 255});
     }
 }
