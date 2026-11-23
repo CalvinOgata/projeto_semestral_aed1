@@ -7,7 +7,11 @@
 
 // Caixote: pacote de dados de madeira. Barreira: um bloquinho de firewall; as
 // barreiras das salas sao fileiras desses blocos, que quebram um de cada vez.
-enum class TipoObstaculo { CAIXOTE, BARREIRA };
+enum class TipoObstaculo
+{
+    CAIXOTE,
+    BARREIRA
+};
 
 // Cobertura dentro da sala. Bloqueia corpos e tiros; so ataques do jogador causam dano.
 class Obstaculo

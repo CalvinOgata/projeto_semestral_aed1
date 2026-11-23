@@ -81,8 +81,8 @@ private:
     float esperaTiro; // segundos que faltam para o proximo disparo
     bool mostrarMinimapa = false;
     float tempoTituloFase = 0.0f; // segundos restantes do titulo ao entrar na fase
-    bool atirando;    // botao esquerdo do mouse segurado
-    float mouseTelaX; // posicao do mouse em coordenadas de tela
+    bool atirando;                // botao esquerdo do mouse segurado
+    float mouseTelaX;             // posicao do mouse em coordenadas de tela
     float mouseTelaY;
     ControlesToque toque;
     bool modoToque = false; // o ultimo comando veio de uma tela de toque

@@ -62,7 +62,8 @@ void Obstaculo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool 
         return;
     }
     const SDL_FRect tela = camera.para_tela(this->area);
-    auto bloco = [&](float x, float y, float w, float h, SDL_Color cor) {
+    auto bloco = [&](float x, float y, float w, float h, SDL_Color cor)
+    {
         SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, cor.a);
         const SDL_FRect ret = {tela.x + x, tela.y + y, w, h};
         SDL_RenderFillRectF(renderizador, &ret);

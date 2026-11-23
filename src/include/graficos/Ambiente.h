@@ -10,6 +10,6 @@ void desenhar_piso(SDL_Renderer *renderizador, const SDL_FRect &area);
 void desenhar_paredes(SDL_Renderer *renderizador, const SDL_FRect &area);
 void desenhar_porta(SDL_Renderer *renderizador, const SDL_FRect &area, bool aberta);
 void desenhar_portal(SDL_Renderer *renderizador, float x, float y);
-}
+} // namespace Ambiente
 
 #endif

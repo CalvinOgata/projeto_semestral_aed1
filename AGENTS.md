@@ -23,7 +23,9 @@ trees, save formats and existing synthesized SDL audio were preserved.
 `make USAR_LIBS_SISTEMA=1` is an offline Linux alternative using installed
 SDL2/libpng development packages when the bundled static build cannot run.
 The default vendored build is unchanged. These facts supersede older roster,
-sprite, stamina and weapon notes below; energy is not implemented in the HUD.
+sprite, stamina and weapon notes below; stamina/energy no longer exists in code or HUD.
+On 2026-11-23 README, docs/arquitetura.md (now documenting `Arvore`) and docs/sprites.md were
+rewritten to match this behavior; `make format` was applied to the whole tree.
 
 ## Purpose and direction
 
@@ -130,8 +132,12 @@ As updated on 2026-10-22:
   `make ALVO_SO=windows` builds locally if MinGW is installed.
 - `make clean` keeps compiled libraries; `make clean-tudo` removes all of `build/`.
 - Verified with a clean Ubuntu 22.04 container (Xvfb) and Wine: menu, embedded Tux, movement and
-  save creation work. Test container/scripts: agent folder's `dist-teste/`. Not yet tested on real
-  Windows hardware. No exe icon yet.
+  save creation work. Test container/scripts: agent folder's `dist-teste/`. The team tested on real
+  Windows (user report 2026-11-23). Exe icon (user request 2026-11-23): `ferramentas/windows/jogo.rc`
+  (ICON + VERSIONINFO 1.0.0) compiled by MinGW windres into `$(DIR_BUILD)/recursos`, linked only
+  for ALVO_SO=windows. `assets/icone/jogo.ico` (PNG entries 256..16) is generated from Tux frame 0
+  by `ferramentas/gerar_icone.py` (Pillow, run manually, not part of the build); it is the one
+  file in `assets/` that is not embedded through `ASSETS_EMBUTIDOS`.
 - GitHub Actions (`.github/workflows/executaveis.yml`, user request 2026-11-17): jobs linux,
   windows (both via `make dist-*`) and web (emsdk pinned to 7.0.0, the developer's local version,
   `make web-zip`). Push to main replaces the prerelease `desenvolvimento`; tags `v*` create an
@@ -145,7 +151,7 @@ As updated on 2026-10-22:
   (user chose to run without it on 2026-11-17: the job then ssh-keyscans the host each run and
   emits a warning; no MITM protection) and variables DEPLOY_USER/DEPLOY_DIR/DEPLOY_PORT/DEPLOY_URL; then curls DEPLOY_URL
   and checks for `id="canvas"`. Target: user's nginx at <domain>/meujogo (alias + no-cache + gzip;
-  snippet in README). GitHub environment `servidor-web`. Not yet exercised against the real server.
+  snippet in README). GitHub environment `servidor-web`. Tested against the real server (user report 2026-11-23).
 
 ## Startup, menus and audio (2026-11-18)
 
@@ -267,15 +273,15 @@ subtitle appear for 3 s (fading) on phase entry/restart; pause and minimap show 
   12% and hostile shot speed by 8% per level. A global ease adjustment first keeps 75%,
   then 90% of the remaining calculated health and hostile damage, flooring each step;
   counts are per room.
-  Walls constrain players/enemies and discard projectiles. The camera follows the player continuously within phase bounds, with 12-pixel outer wall margins. The gameplay HUD shows health, shield,
-  energy in one compact translucent top-left box, ammunition as a bare
+  Walls constrain players/enemies and discard projectiles. The camera follows the player continuously within phase bounds, with 12-pixel outer wall margins. The gameplay HUD shows lives, health,
+  shield, score and phase time at top left (no panel), ammunition as a bare
   number in the bottom-right corner, and three weapon slots at top right; phase and room name
   are available during pause. No permanent footer or save banners during play.
 - Room layouts are authored, not procedural. Enemy contact damage is not implemented.
 - Movement, automatic nearest-enemy aiming (mouse fallback in empty rooms), sustained shooting, projectiles, enemy pursuit,
   enemy damage, and a pause menu already exist.
-- `Jogador` models health, shield (initial/max 50), and stamina and provides methods to change them.
-  Shield absorbs incoming shots and regenerates; stamina costs and powers remain unspecified.
+- `Jogador` models health and shield (initial/max 50). Stamina/energy was removed from the code;
+  shield absorbs incoming shots and regenerates. Powers remain unspecified.
 - `FilaArmas` adapts a reusable circular-array FIFO weapon queue with capacity `MAX_ARMAS`
   (currently three). `Armas` holds ammunition and shooting/damage properties.
 - Rendering uses a logical resolution of 960x540 in a resizable window.
@@ -340,22 +346,25 @@ Use the existing `.clang-format` configuration.
 
 ## Campaign and persistence decisions
 
-- Save at new-game start and after each completed phase. Continue resumes at the
+- Save at new-game start, after each lost life and after each completed phase. The campaign has
+  3 lives (`VIDAS_INICIAIS`) and one continue: game over offers it for 10 s (restores 3 lives and
+  restarts the phase); otherwise the slot's save is deleted. Score: 100 per basic enemy, 250 per
+  brute, 2000 per boss plus a speed bonus 1000*300 s/phase time (`CampanhaConfig.h`). Continue resumes at the
   beginning of the next unfinished phase, not the exact room/position.
-- Every phase starts with fresh health, shield and stamina. Weapons and ammo carry
+- Every phase starts with fresh health and shield. Weapons and ammo carry
   over when advancing (user request, 2026-10-22); Campanha snapshots the FilaArmas at
   phase start, and Restart/death restore that snapshot. An empty carried inventory
-  receives the starting pistol. The checkpoint stores that snapshot, so Continue restores
+  receives the starting Zapper (TipoArma::PISTOLA). The checkpoint stores that snapshot, so Continue restores
   the weapons/ammo the next phase starts with. Pause-menu Restart resets only the current
   phase. Completing phase three shows victory and records campaign completion.
-- `saves/progresso.json` is relative to the executable directory, resolved via
-  SDL_GetBasePath. Schema v2 (written): `versao` = 2, `fases_concluidas` = integer 0..3, `armas` = array of
-  0..3 `{"tipo": TipoArma index 0..8, "municao": int >= 0}` in FIFO order. Indices 0..7 retain
-  their previous meanings and PULSO is appended as index 8. v1 (no `armas`)
-  is still accepted and starts with the pistol. Saves above phase 3 are rejected.
+- Three slots `saves/progresso_1..3.json`, relative to the executable directory, resolved via
+  SDL_GetBasePath. Schema v3 (written): `versao` = 3, `fases_concluidas` 0..3, `vidas`,
+  `continue_disponivel` (0/1), `pontuacao_total`, `armas` = array of
+  0..3 `{"tipo": TipoArma index 0..8, "municao": int >= 0}` in FIFO order. v1 (no `armas`)
+  and v2 (no lives/continue/score) are still accepted. Saves above phase 3 are rejected.
   A completed campaign disables Continue. New game replaces the old checkpoint.
 - Persistence is SDL-independent and accepts an explicit file path. Its narrow
-  JSON reader validates the entire v1/v2 schema, version, and ranges. Persistence uses the
+  JSON reader validates the entire v1/v2/v3 schema, version, and ranges. Persistence uses the
   neutral `ArmaSalva`/`ProgressoSalvo` structs; Jogo converts FilaArmas, and
   CampanhaConfig limits are static_asserted against TipoArma/MAX_ARMAS.
   Unknown/duplicate fields and malformed data are rejected. No external JSON
@@ -382,7 +391,7 @@ Use the existing `.clang-format` configuration.
 - Mobile/touch play (user request 2026-11-20, implemented): see "Touch controls". Not yet
   tested on real phones/tablets, only Chromium mobile emulation (`web-teste/pw_toque.mjs`).
 - Current open decisions include powers, final numerical balancing, branching/procedural stages,
-  further progression, animation integration, and stamina rules.
+  and further progression.
   Procedural generation remains unspecified. Death currently restarts the active phase.
 - This document preserves context; it does not authorize implementing the
   entire roadmap without a corresponding user request.
@@ -421,14 +430,14 @@ Use the existing `.clang-format` configuration.
   including difficulty scaling; the bar disappears when the enemy dies.
 
 - The user wants nearly the whole window usable for gameplay, health,
-  shield, energy, ammunition, and the three-slot weapon inventory visible while playing. Hide tutorial footers,
+  shield, lives, score, time, ammunition, and the three-slot weapon inventory visible while playing. Hide tutorial footers,
   room status, and save messages during gameplay; pause shows only phase and room name.
-- `interface/Hud` owns drawing of one translucent 200x104 top-left box containing three
-  stacked stat bars with custom icons and values. Ammunition is only a number
+- `interface/Hud` draws, without a background panel, lives (Tux heads), health and shield
+  bars with custom icons and values, score and phase time at top left. Ammunition is only a number
   at bottom right, without a card or label. `Fase` no longer draws UI. The first room is 936x516 so
   the floor plus 12-pixel walls fills the 960x540 logical viewport.
 - Shield starts at 50/50, absorbs shots before health, and regenerates 10/s after
-  3 seconds without damage. Hits grant 0.5 s invulnerability. Energy reflects stamina.
+  3 seconds without damage. Hits grant 0.5 s invulnerability.
 
 ## Sprite sizing and hitboxes
 
@@ -451,10 +460,10 @@ Use the existing `.clang-format` configuration.
 
 ## Player sprite asset
 
-- The user-provided root `tux.png` was moved intact to
-  `assets/sprites/personagens/tux.png`. It is a 48x61 RGBA PNG, rendered with
-  preserved aspect ratio inside the 48x48 hero visual frame (about 37.8x48).
-  Hitbox remains 32x32; weapon aiming/drawing remains separate.
+- The player uses `assets/sprites/final/00_tux.png` (see "Final integration"); game over
+  uses `personagens/tux-gameover-v2.png`. On 2026-11-23 (user request) every PNG not listed
+  in `ASSETS_EMBUTIDOS` was deleted (tux.png, tux1/2, tux-pixel, tux-pixel-v2,
+  virus-conceito); they remain in git history. Keep `assets/` limited to files the build uses.
 - `graficos/Sprite` decodes an embedded PNG via libpng into an SDL texture, with alpha
   blending and nearest-neighbor scaling.
 - Jogo owns the noncopyable texture resource; load once at startup and free before
@@ -523,8 +532,6 @@ Use the existing `.clang-format` configuration.
   near the hand and rotated with the current aim. Local vertical mirroring keeps grips
   upright when facing left; sword/bow/boomerang use appropriate grip/orientation
   adjustments. An empty inventory draws no held weapon. Shooting rules are unchanged.
-- The user chose to retain the existing embedded virus visual. The generated
-  virus-conceito.png is unused concept art, not the active enemy sprite.
 
 ## Combat, enemy AI and rewards
 

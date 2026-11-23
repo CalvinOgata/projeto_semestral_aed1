@@ -1,9 +1,9 @@
 #include "persistencia/ArquivoProgresso.h"
 
+#include <cctype>
 #include <charconv>
 #include <fstream>
 #include <iterator>
-#include <cctype>
 #include <set>
 
 #include "config/CampanhaConfig.h"
@@ -85,7 +85,8 @@ public:
         {
             return false;
         }
-        const auto resultado = std::from_chars(texto.data() + inicio, texto.data() + posicao, valor);
+        const auto resultado =
+            std::from_chars(texto.data() + inicio, texto.data() + posicao, valor);
         return resultado.ec == std::errc();
     }
 };
@@ -105,7 +106,8 @@ bool ler_arma(LeitorJson &leitor, ArmaSalva &arma)
         {
             return false;
         }
-        int *destino = chave == "tipo" ? &arma.tipo : (chave == "municao" ? &arma.municao : nullptr);
+        int *destino =
+            chave == "tipo" ? &arma.tipo : (chave == "municao" ? &arma.municao : nullptr);
         if (destino == nullptr || !leitor.ler_inteiro(*destino))
         {
             return false;
@@ -155,12 +157,14 @@ bool ler_progresso(const std::string &texto, ProgressoSalvo &progresso)
         {
             return false;
         }
-        const bool lido = chave == "versao" ? leitor.ler_inteiro(versao) :
-            chave == "fases_concluidas" ? leitor.ler_inteiro(progresso.fasesConcluidas) :
-            chave == "armas" ? ler_armas(leitor, progresso.armas) :
-            chave == "vidas" ? leitor.ler_inteiro(progresso.vidas) :
-            chave == "continue_disponivel" ? leitor.ler_inteiro(continueDisponivel) :
-            chave == "pontuacao_total" ? leitor.ler_inteiro(progresso.pontuacaoTotal) : false;
+        const bool lido =
+            chave == "versao"                ? leitor.ler_inteiro(versao)
+            : chave == "fases_concluidas"    ? leitor.ler_inteiro(progresso.fasesConcluidas)
+            : chave == "armas"               ? ler_armas(leitor, progresso.armas)
+            : chave == "vidas"               ? leitor.ler_inteiro(progresso.vidas)
+            : chave == "continue_disponivel" ? leitor.ler_inteiro(continueDisponivel)
+            : chave == "pontuacao_total"     ? leitor.ler_inteiro(progresso.pontuacaoTotal)
+                                             : false;
         if (!lido)
         {
             return false;
@@ -179,17 +183,16 @@ bool ler_progresso(const std::string &texto, ProgressoSalvo &progresso)
     {
         return true;
     }
-    if (versao != 3 || lidas.size() != 6 || !lidas.count("armas") ||
-        !lidas.count("vidas") || !lidas.count("continue_disponivel") ||
-        !lidas.count("pontuacao_total") || progresso.vidas > VIDAS_INICIAIS ||
-        continueDisponivel > 1)
+    if (versao != 3 || lidas.size() != 6 || !lidas.count("armas") || !lidas.count("vidas") ||
+        !lidas.count("continue_disponivel") || !lidas.count("pontuacao_total") ||
+        progresso.vidas > VIDAS_INICIAIS || continueDisponivel > 1)
     {
         return false;
     }
     progresso.continueDisponivel = continueDisponivel == 1;
     return true;
 }
-}
+} // namespace
 
 ArquivoProgresso::ArquivoProgresso(const std::filesystem::path &caminho) : caminho(caminho)
 {
@@ -224,9 +227,10 @@ bool ArquivoProgresso::carregar(ProgressoSalvo &progresso, std::string &mensagem
     }
     progresso = lido;
     const int fasesConcluidas = progresso.fasesConcluidas;
-    mensagem = fasesConcluidas == QUANTIDADE_FASES ? "CAMPANHA SALVA CONCLUIDA" :
-        "CONTINUAR NA FASE " + std::to_string(fasesConcluidas + 1) + "/" +
-        std::to_string(QUANTIDADE_FASES);
+    mensagem = fasesConcluidas == QUANTIDADE_FASES
+                   ? "CAMPANHA SALVA CONCLUIDA"
+                   : "CONTINUAR NA FASE " + std::to_string(fasesConcluidas + 1) + "/" +
+                         std::to_string(QUANTIDADE_FASES);
     return true;
 }
 
@@ -234,9 +238,8 @@ bool ArquivoProgresso::salvar(const ProgressoSalvo &progresso, std::string &mens
 {
     mensagem = "FALHA AO SALVAR - F5: TENTAR NOVAMENTE";
     if (progresso.fasesConcluidas < 0 || progresso.fasesConcluidas > QUANTIDADE_FASES ||
-        static_cast<int>(progresso.armas.size()) > CAPACIDADE_INVENTARIO ||
-        progresso.vidas < 0 || progresso.vidas > VIDAS_INICIAIS ||
-        progresso.pontuacaoTotal < 0)
+        static_cast<int>(progresso.armas.size()) > CAPACIDADE_INVENTARIO || progresso.vidas < 0 ||
+        progresso.vidas > VIDAS_INICIAIS || progresso.pontuacaoTotal < 0)
     {
         return false;
     }
@@ -266,8 +269,7 @@ bool ArquivoProgresso::salvar(const ProgressoSalvo &progresso, std::string &mens
     arquivo << "{\n  \"versao\": 3,\n  \"fases_concluidas\": " << progresso.fasesConcluidas
             << ",\n  \"vidas\": " << progresso.vidas
             << ",\n  \"continue_disponivel\": " << (progresso.continueDisponivel ? 1 : 0)
-            << ",\n  \"pontuacao_total\": " << progresso.pontuacaoTotal
-            << ",\n  \"armas\": [";
+            << ",\n  \"pontuacao_total\": " << progresso.pontuacaoTotal << ",\n  \"armas\": [";
     for (std::size_t i = 0; i < progresso.armas.size(); ++i)
     {
         arquivo << (i == 0 ? "\n" : ",\n") << "    {\"tipo\": " << progresso.armas[i].tipo

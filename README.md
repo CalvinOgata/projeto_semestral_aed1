@@ -35,7 +35,11 @@ make dist           # os dois
 - `dist/jogo` e compilado no Ubuntu 22.04 e roda nele e em distros mais novas
   (Debian 12+, Fedora 36+, Arch...). So depende da libc; X11, Wayland, OpenGL e
   audio sao abertos pelo SDL a partir do sistema, como em qualquer jogo Linux.
-- `dist/jogo.exe` so usa DLLs que acompanham o proprio Windows.
+- `dist/jogo.exe` so usa DLLs que acompanham o proprio Windows. O icone (Tux) e as
+  informacoes de versao vem de `ferramentas/windows/jogo.rc`, compilado pelo
+  `windres` do MinGW. O icone `assets/icone/jogo.ico` (256 a 16 px) foi gerado do
+  primeiro quadro do Tux por `python3 ferramentas/gerar_icone.py` (requer Pillow);
+  rode de novo se a arte do Tux mudar.
 - Basta enviar o arquivo. Os saves sao criados em `saves/` ao lado dele.
 
 Sem Docker, `make ALVO_SO=windows` compila o `.exe` localmente se o
@@ -285,15 +289,24 @@ aumenta vida, velocidade, cadencia e velocidade dos tiros inimigos. Escudo absor
 regenera 10 pontos/s apos 3 segundos sem dano. Ha 0,5 segundo de protecao apos
 um acerto. Cada inimigo morto deixa um coracao de 10 de vida: coleta automatica
 por contato quando falta vida, expiracao em 10 segundos de jogo (inclusive fora
-da sala; pausa congela o tempo). Morrer reinicia a fase atual sem perder fases concluidas.
+da sala; pausa congela o tempo).
+
+A campanha tem **3 vidas** e **um unico continue**. Morrer gasta uma vida, mostra a
+animacao de derrota e reinicia a fase atual, sem perder fases concluidas. Sem vidas,
+aparece o game over com contagem de 10 s: aceitar o continue devolve as 3 vidas e
+recomeca a fase; recusar (ou ja ter usado o continue) apaga o save do slot.
+
+A pontuacao soma 100 por inimigo basico, 250 por bruto e 2000 por boss, mais um
+bonus de rapidez ao concluir a fase (1000 x 300 s / tempo gasto). O resumo de cada
+fase mostra essas parcelas e o total da campanha aparece na tela de vitoria.
 
 A dificuldade aumenta vida e velocidade dos inimigos. Sobre o balanceamento bruto,
 o jogo aplica primeiro uma reducao de 25% e depois outra de 10% sobre o restante,
 tanto na vida final dos inimigos quanto no dano de seus tiros. Na fase 1, as vidas
 sao 2/13/67 e os danos 5/8/11.
 Paredes limitam movimento
-e tiros; a camera acompanha continuamente o jogador pelas salas e corredores de 96 pixels de largura, sem inimigos. O HUD agrupa vida, escudo e energia numa caixa compacta e semitransparente
-no canto superior esquerdo, com barras coloridas e icones. A municao aparece
+e tiros; a camera acompanha continuamente o jogador pelas salas e corredores de 96 pixels de largura, sem inimigos. O HUD mostra vidas, vida, escudo, pontuacao e tempo
+no canto superior esquerdo, direto sobre o jogo, com barras coloridas e icones. A municao aparece
 apenas como numero no canto inferior direito. Na pausa aparecem apenas a fase e o nome da sala,
 com o titulo PAUSADO e as opcoes Continuar, Manual, Reiniciar, Menu inicial e Sair.
 Manual abre o mesmo manual do menu principal e volta para a pausa. Os comandos nao
@@ -305,8 +318,7 @@ As salas de combate, baus e boss possuem cobertura: caixotes (pacotes de dados,
 5 de vida) e barreiras de firewall formadas por fileiras de cinco bloquinhos 24x24
 (3 de vida cada). Cada acerto atinge um so bloquinho, abrindo frestas na barreira. Eles bloqueiam o movimento de
 todos e param os tiros inimigos sem sofrer dano; somente os ataques do jogador os
-quebram, e rachaduras aparecem na metade da vida. O ricochete quica neles, o
-bumerangue volta ao acerta-los, e laser/espada param na primeira peca do caminho; um golpe de espada atinge so um bloco.
+quebram, e rachaduras aparecem na metade da vida. O Canhao CRT ricocheteia neles, e o Raio Avira e os golpes corpo a corpo param na primeira peca do caminho, atingindo so um bloco.
 Pecas quebradas continuam quebradas ao revisitar a sala.
 
 As configuracoes das salas sao fixas. Dano de contato e geracao procedural ainda nao estao implementados.
@@ -356,14 +368,19 @@ durante a tela de carregamento, em fatias de 8 ms por quadro.
   simultaneas. Sem dispositivo de audio, o jogo continua mudo.
 
 O jogo salva automaticamente ao iniciar uma nova campanha e ao concluir cada
-fase. O arquivo `saves/progresso.json` fica ao lado do executavel, mesmo quando
-o jogo e iniciado de outro diretorio. Ele nao e incluido no Git e nem
-`make clean` nem `make clean-tudo` o removem. Exemplo apos concluir uma fase com laser, espada e pistola:
+fase, e tambem ao perder uma vida. Ha tres slots independentes,
+`saves/progresso_1.json` a `progresso_3.json`, na pasta `saves/` ao lado do
+executavel, mesmo quando o jogo e iniciado de outro diretorio (na web, ficam no
+IndexedDB do navegador). Eles nao sao incluidos no Git e nem `make clean` nem
+`make clean-tudo` os removem. Exemplo apos concluir uma fase com Raio Avira, Laminas Malwarebytes e Zapper:
 
 ```json
 {
-  "versao": 2,
+  "versao": 3,
   "fases_concluidas": 1,
+  "vidas": 2,
+  "continue_disponivel": 1,
+  "pontuacao_total": 4310,
   "armas": [
     {"tipo": 2, "municao": 33},
     {"tipo": 5, "municao": 40},
@@ -376,12 +393,13 @@ o jogo e iniciado de outro diretorio. Ele nao e incluido no Git e nem
 proxima fase comeca. `tipo` e o indice de `TipoArma`: 0 Zapper 8-Bits, 1 Clams do
 ClamAV, 2 Raio Avira, 3 Fork Open Source, 4 Canhao CRT, 5 Laminas Malwarebytes,
 6 Penas Apache, 7 Chicote Macintosh e 8 Rifle Wireshark. Os indices 0 a 8
-foram preservados, portanto saves antigos
-(versao 1, sem `armas`) continuam validos e comecam com a pistola.
+foram preservados. `vidas`, `continue_disponivel` (0 ou 1) e `pontuacao_total`
+entraram na versao 3; saves antigos (versao 1 sem `armas`, versao 2 sem esses tres
+campos) continuam validos.
 
 O salvamento e por fase: sair no meio da fase faz `Continuar` voltar ao inicio
 dela. Salas, tiros e posicoes em andamento nao sao serializados. Cada fase comeca
-com vida, estamina e municao iniciais, tanto ao avancar quanto ao carregar.
+com vida e escudo cheios; armas e municao vem do checkpoint.
 Apos a terceira fase, aparece a tela de vitoria e o save registra tres fases
 concluidas. `Continuar` fica desabilitado; escolha `Novo jogo` para recomecar.
 
@@ -445,27 +463,27 @@ as duas seguintes ficam em quadrados de 48x48. Cada tipo tem um sprite de
 pixel art embutido; vagas livres ficam vazias. Q atualiza a ordem mostrada,
 e F/G atualizam os espacos ao coletar/soltar armas.
 
-Vida (rosa/vermelho), escudo (azul) e energia (amarelo) aparecem em barras com
-icones, valores e preenchimento proporcional. As tres barras ficam juntas em uma unica caixa de 200x104 pixels no canto
-superior esquerdo. A municao aparece somente como numero no canto inferior
-direito, sem caixa ou legenda. O escudo inicia com 50/50; vida e energia com 100/100. Os valores voltam
-ao inicial junto com o jogador ao iniciar/reiniciar uma fase. Nao existem dano de contato ou consumo de energia no combate.
+No canto superior esquerdo, sem painel de fundo, ficam: as vidas restantes (cabecas
+do Tux), as barras de vida (vermelha) e escudo (azul) com icones e valores, a
+pontuacao da campanha e o tempo da fase. A municao aparece somente como numero no
+canto inferior direito (`--` nas armas corpo a corpo; vermelho quando acaba). A vida
+inicia com 100/100 e o escudo com 50/50; ambos voltam ao inicial ao iniciar ou
+reiniciar uma fase. Nao existe dano de contato nem barra de energia.
 Os rodapes de ajuda e as mensagens de save ficam ocultos durante a partida;
 mensagens de salvamento podem ser consultadas na pausa ou nos outros menus.
 
 ## Sprites
 
-Hitbox e imagem agora possuem tamanhos separados e configuraveis por entidade.
-Os padroes sao: heroi 32x32 / sprite 48x48; inimigo comum 28x28 / sprite 48x48;
-guarda-costas 44x44 / sprite 64x64; boss 88x88 / sprite 128x128.
-Os dois ultimos sao usados pelos guardioes e bosses, com pixel art por fase.
-Veja o [guia de sprites](docs/sprites.md) para medidas, alinhamento e exportacao.
+Hitbox e imagem possuem tamanhos separados e configuraveis por entidade
+(hitbox / quadro): heroi 32x32 / 64x64; inimigo comum 28x28 / 48x48;
+bruto 44x44 / 128x128; boss 88x88 / 256x256. Personagens sao faixas PNG de tres
+quadros animados. Veja o [guia de sprites](docs/sprites.md) para medidas, alinhamento e exportacao.
 `F2` mostra a hitbox verde sobre os sprites.
 
-O jogador usa `assets/sprites/personagens/tux-pixel-v2.png` (1254x1254), encaixada
-proporcionalmente no quadro de 48x48, sem recorte ou distorcao,
-com transparencia e filtro de pixel art. A hitbox continua 32x32 e a arma gira
-separadamente. O sprite e estatico, ainda sem animacao.
+O jogador usa `assets/sprites/final/00_tux.png`, uma faixa com tres quadros
+desenhados em 64x64 (ciclo 0,1,0,2 ao andar), com transparencia e filtro de pixel
+art. A hitbox continua 32x32 e a arma gira separadamente. Somente os PNG listados em
+`ASSETS_EMBUTIDOS` no Makefile ficam em `assets/`.
 
 Os PNGs usados sao embutidos no executavel durante a compilacao (veja
 "Assets embutidos"); a pasta `assets/` so e necessaria para compilar.
@@ -479,7 +497,7 @@ nem substitui nada. Em todas as fases, as armas vem dos baus. Coletas e
 descartes persistem ao revisitar a sala.
 As armas e a municao acompanham o jogador ao avancar de fase; vida e escudo
 recomecam cheios. Reiniciar ou morrer devolve as armas com que a fase
-comecou. Se o inventario chegar vazio, a pistola inicial e entregue.
+comecou. Se o inventario chegar vazio, o Zapper 8-Bits inicial e entregue.
 `Continuar` restaura as armas e a municao salvas no checkpoint. As armas no chao usam os mesmos icones do inventario,
 em quadros de 36x36 pixels com o nome abaixo, incluindo armas dos baus e descartadas.
 Na mao do personagem, a arma equipada usa esse mesmo icone e acompanha a mira.

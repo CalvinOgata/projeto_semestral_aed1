@@ -1,7 +1,7 @@
 #include "entidades/Projetil.h"
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
 #include "config/Config.h"
 
@@ -28,7 +28,11 @@ Projetil::Projetil(float origemX, float origemY, float dirX, float dirY, int dan
     alcanceRestante = arma.get_alcancePixels();
     const float velocidade = arma.get_velocidadeProjetil();
     // Corpo a corpo e Avira sao resolvidos em Combate, sem criar tiros viajantes.
-    if (velocidade <= 0) { ativo = false; return; }
+    if (velocidade <= 0)
+    {
+        ativo = false;
+        return;
+    }
     lado = tipo == TipoArma::RICOCHETE ? 12 : (tipo == TipoArma::PULSO ? 5 : LADO_PROJETIL);
     this->velX = (dirX / comprimento) * velocidade;
     this->velY = (dirY / comprimento) * velocidade;
@@ -113,31 +117,38 @@ void Projetil::desenhar(SDL_Renderer *renderizador, const Camera &camera) const
 
     SDL_Color cor = {96, 230, 118, 255};
     const Afinidade afinidade = this->get_afinidade();
-    if (afinidade == Afinidade::VERMELHA) cor = {244, 70, 82, 255};
-    if (afinidade == Afinidade::AZUL) cor = {76, 156, 255, 255};
+    if (afinidade == Afinidade::VERMELHA)
+        cor = {244, 70, 82, 255};
+    if (afinidade == Afinidade::AZUL)
+        cor = {76, 156, 255, 255};
     SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, cor.a);
     if (tipo == TipoArma::ARCO)
     {
         const float angulo = std::atan2(velY, velX);
         const float dx = std::cos(angulo), dy = std::sin(angulo);
         const auto centro = camera.para_tela(x, y);
-        SDL_RenderDrawLineF(renderizador, centro.x - dx * 16, centro.y - dy * 16, centro.x + dx * 8, centro.y + dy * 8);
-        SDL_RenderDrawLineF(renderizador, centro.x + dx * 8, centro.y + dy * 8, centro.x - dy * 5, centro.y + dx * 5);
-        SDL_RenderDrawLineF(renderizador, centro.x + dx * 8, centro.y + dy * 8, centro.x + dy * 5, centro.y - dx * 5);
+        SDL_RenderDrawLineF(renderizador, centro.x - dx * 16, centro.y - dy * 16, centro.x + dx * 8,
+                            centro.y + dy * 8);
+        SDL_RenderDrawLineF(renderizador, centro.x + dx * 8, centro.y + dy * 8, centro.x - dy * 5,
+                            centro.y + dx * 5);
+        SDL_RenderDrawLineF(renderizador, centro.x + dx * 8, centro.y + dy * 8, centro.x + dy * 5,
+                            centro.y - dx * 5);
     }
     else if (tipo == TipoArma::BOOMERANG)
     {
         const float giro = alcanceRestante * 0.05f;
         const auto centro = camera.para_tela(x, y);
-        SDL_RenderDrawLineF(renderizador, centro.x, centro.y, centro.x + std::cos(giro) * 14, centro.y + std::sin(giro) * 14);
-        SDL_RenderDrawLineF(renderizador, centro.x, centro.y, centro.x - std::sin(giro) * 14, centro.y + std::cos(giro) * 14);
+        SDL_RenderDrawLineF(renderizador, centro.x, centro.y, centro.x + std::cos(giro) * 14,
+                            centro.y + std::sin(giro) * 14);
+        SDL_RenderDrawLineF(renderizador, centro.x, centro.y, centro.x - std::sin(giro) * 14,
+                            centro.y + std::cos(giro) * 14);
     }
     else if (tipo == TipoArma::PULSO)
     {
         SDL_RenderFillRectF(renderizador, &naTela);
         SDL_SetRenderDrawColor(renderizador, 255, 205, 210, 255);
         const SDL_FRect nucleo = {naTela.x + naTela.w * 0.3f, naTela.y + naTela.h * 0.3f,
-                                 naTela.w * 0.4f, naTela.h * 0.4f};
+                                  naTela.w * 0.4f, naTela.h * 0.4f};
         SDL_RenderFillRectF(renderizador, &nucleo);
     }
     else
@@ -154,7 +165,8 @@ void Projetil::atualizar(float dt, const SDL_FRect &limites, SDL_FPoint alvo)
     }
     (void)alvo; // Mantido na interface para os chamadores de Combate.
     atualizar(dt);
-    if (!ativo) return;
+    if (!ativo)
+        return;
     const float margem = lado / 2;
     const bool foraX = x < limites.x + margem || x > limites.x + limites.w - margem;
     const bool foraY = y < limites.y + margem || y > limites.y + limites.h - margem;
@@ -193,7 +205,8 @@ bool Projetil::atingir(std::size_t indice)
     {
         atingidos.push_back(indice);
         // A pena Apache atravessa no maximo dois inimigos distintos.
-        if (atingidos.size() >= 2) desativar();
+        if (atingidos.size() >= 2)
+            desativar();
     }
     else
     {

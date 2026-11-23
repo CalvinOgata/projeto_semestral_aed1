@@ -1,93 +1,70 @@
-# Medidas para sprites e hitboxes
+# Sprites e hitboxes
 
-## Integracao atual (19/11/2026)
+Todas as medidas sao em pixels logicos, na resolucao de referencia 960x540. O
+redimensionamento da janela (ou da tela do celular) escala o jogo inteiro; um
+quadro de 64x64 ocupa 64x64 no mundo, independentemente do monitor.
 
-O guia anterior abaixo fica como historico. Para a versao integrada, consulte
-`integracao_final.md`: Tux usa quadro 64x64, brutos 128x128, chefes 256x256;
-hitboxes continuam 32x32, 44x44 e 88x88. Comuns usam quadro 48x48/hitbox 28x28.
-As animacoes ja estao integradas em faixas de tres quadros PNG, sem espacamento,
-em `assets/sprites/final`, ciclo 0,1,0,2. Pisos estao em `assets/sprites/pisos`.
-Os novos inimigos medios verdes sao GPU H100; chefes azul/verde sao Windows
-Update e Datacenter Hiperescala. As afirmacoes antigas de ausencia de animacoes
-ou de outros caminhos/tamanhos nao descrevem mais a versao atual.
+## Perfis atuais
 
-## Guia anterior de producao
+`src/include/config/DimensoesEntidade.h` centraliza os perfis. A arte foi
+ampliada na integracao final, mas as hitboxes anteriores foram mantidas para nao
+mudar corredores, colisoes e dificuldade.
 
-Todas as medidas abaixo sao em pixels logicos, na resolucao de referencia
-960x540. O redimensionamento da janela escala o jogo inteiro. Um quadro de
-48x48 e desenhado com 48x48 no mundo; nao depende do tamanho fisico do monitor.
+| Categoria | Hitbox | Quadro visual | Arquivos |
+| --- | --- | --- | --- |
+| Heroi (Tux) | 32x32 | 64x64 | `final/00_tux.png` |
+| Inimigos basicos | 28x28 | 48x48 | ILOVEYOU.EXE, EULA-BOT, NPU DRONE (`01`, `04`, `07`) |
+| Inimigos medios (brutos) | 44x44 | 128x128 | MIRAI SWARM, SENTINELA DRM, GPU H100 (`02`, `05`, `08`) |
+| Bosses | 88x88 | 256x256 | WANNACRY PRIME, WINDOWS UPDATE, DATACENTER HIPERESCALA (`03`, `06`, `09`) |
+| Armas (chao, inventario e mao) | - | 64x64 no PNG | `final/10_` a `final/18_` |
+| Pisos | - | 936x516 | `pisos/faseN_XX.png` e `pisos/bau_compartilhado.png` |
 
-## Padrao de producao
+A hitbox e a area solida usada nas colisoes; o quadro e o espaco completo da
+figura, incluindo pixels transparentes. O centro do quadro coincide com o centro
+da hitbox (o alinhamento **nao** e pelos pes).
 
-| Categoria | Hitbox (largura x altura) | Quadro PNG ideal | Inicio da hitbox dentro do quadro (x, y) | Estado |
-| --- | --- | --- | --- | --- |
-| Herois (Tux, Android, etc.) | 32x32 | 48x48 | (8, 8) | Perfil usado pelo jogador atual; personagens ainda genericos |
-| Inimigos basicos | 28x28 | 48x48 | (10, 10) | ILOVEYOU.EXE, EULA-BOT e NPU DRONE |
-| Inimigos medios | 44x44 | 64x64 | (10, 10) | MIRAI SWARM, SENTINELA DRM e TPU SENTINEL |
-| Bosses | 88x88 | 128x128 | (20, 20) | WANNACRY PRIME, COMPILADOR FECHADO e H100 COLOSSUS |
+## Animacao
 
-A hitbox e a area solida usada nas colisoes, nao o tamanho minimo do arquivo.
-O quadro e o espaco completo reservado para a figura e a animacao, incluindo
-pixels transparentes. Use o tamanho ideal da tabela para exportar cada quadro.
-Os perfis sao padroes iniciais editaveis, nao limites obrigatorios para todo
-personagem futuro. Um personagem especifico pode receber dimensoes proprias.
+Cada personagem e uma faixa PNG com **tres quadros iguais lado a lado**, sem
+espacamento. O ciclo e 0,1,0,2, com 0,16 s por pose para Tux e inimigos comuns,
+0,22 s para brutos e 0,28 s para bosses. Parado, o Tux fica no quadro 0. Pausar
+congela as animacoes.
 
-## Como desenhar e exportar
+## Onde a arte e usada
 
-- Exporte PNG RGBA com fundo transparente, sem fundo branco ou quadriculado gravado.
-- Desenhe o corpo principal sobre a hitbox central. Acessorios, orelhas e efeitos
-  podem ocupar a margem externa; essa margem visual nao recebe tiros.
-- Mantenha a figura centralizada: o centro do quadro coincide com o centro da
-  hitbox. O alinhamento atual **nao** e pelos pes. Para o heroi, o centro e (24,24).
-- Mantenha todos os quadros e direcoes do mesmo personagem com o mesmo tamanho e
-  ponto de alinhamento. Nao recorte automaticamente cada quadro ao conteudo opaco.
-- Use a mesma escala e perspectiva de cima com leve visao frontal em todos os
-  personagens. Para pixel art, desenhe diretamente na grade final, sem suavizacao.
-- Deixe a arma do jogador separada do corpo: o jogo ja gira a arma em direcao ao
-  mouse. Nao desenhe barras de vida ou HUD dentro dos sprites.
-- Por enquanto, envie quadros individuais ou uma folha regular sem espacamento.
-  Exemplo: oito quadros de 48x48 lado a lado formam uma folha de 384x48.
-  A ordem das animacoes, direcoes e duracao dos quadros sera definida na integracao.
-- Se a ferramenta gerar imagens maiores, reduza cada quadro exatamente ao tamanho
-  escolhido antes da entrega, mantendo proporcoes e transparencia. A resolucao
-  de geracao nao muda a hitbox do jogo.
+- Todos os PNG de `assets/` sao listados em `ASSETS_EMBUTIDOS` no Makefile,
+  embutidos no executavel e decodificados por `graficos/Sprite` via libpng, com
+  transparencia e filtro de pixel art (nearest). O jogo nao abre arquivos de
+  imagem ao rodar. A pasta `assets/` contem apenas arquivos usados pelo build; a
+  unica excecao aos embutidos e `icone/jogo.ico`, o icone do `.exe` no Windows.
+- `graficos/CatalogoSprites` carrega uma vez as texturas de inimigos, armas e
+  pisos; `Jogo` carrega o Tux e a imagem de fim de jogo
+  (`personagens/tux-gameover-v2.png`) e libera tudo antes de destruir o
+  renderizador. Reiniciar fases nao recarrega imagens.
+- `graficos/SpriteInimigo` guarda bitmaps de reserva, usados se a textura PNG de
+  um inimigo nao estiver disponivel, e nas miniaturas da tela de derrota e do manual.
+- A arma equipada e desenhada separada do corpo e gira com a mira.
+
+## Como substituir uma arte
+
+- Mantenha nome, dimensoes, transparencia e os tres quadros por personagem.
+- Exporte PNG RGBA com fundo transparente, desenhado diretamente na grade final,
+  sem suavizacao. Nao desenhe barras de vida ou HUD dentro dos sprites.
+- Desenhe o corpo principal sobre a regiao da hitbox, no centro do quadro;
+  acessorios podem ocupar a margem externa, que nao recebe tiros.
+- Para um arquivo novo, inclua `NOME=caminho` em `ASSETS_EMBUTIDOS` e declare o
+  nome em `src/include/graficos/AssetsEmbutidos.h`. Recompile depois.
 
 ## Convencao tecnica
 
-`src/include/config/DimensoesEntidade.h` centraliza os quatro perfis. Cada perfil
-possui largura/altura da hitbox e largura/altura do quadro visual. O quadro deve
-conter a hitbox, e todas as dimensoes precisam ser positivas.
+`Jogador` e `Inimigo` recebem o perfil no construtor. `x` e `y` sao o canto
+superior esquerdo da hitbox. `get_retangulo()` retorna a colisao e
+`get_retanguloVisual()` o destino da imagem, ambos no espaco do mundo; a camera
+converte para a tela. Tiros, paredes e portas usam a hitbox; mira e disparos
+usam seu centro; a barra de vida fica acima do retangulo visual.
 
-`Jogador` e `Inimigo` recebem esse perfil no construtor. `x` e `y` continuam sendo
-o canto superior esquerdo da hitbox. `get_retangulo()` retorna a colisao;
-`get_retanguloVisual()` retorna o destino da imagem, ambos no espaco do mundo.
-A camera converte o retangulo visual para a tela ao desenhar.
+Um perfil retangular tambem funciona, por exemplo `{24, 32, 48, 64}`, desde que o
+quadro contenha a hitbox e todas as dimensoes sejam positivas.
 
-Exemplo para preparar um guarda-costas (perfil usado pelos bruta-montes):
-
-```cpp
-Inimigo guarda(100.0f, 120.0f, 12, 80.0f, DIMENSOES_GUARDA_COSTAS);
-```
-
-Um perfil retangular tambem funciona, por exemplo `{24, 32, 48, 64}`. A separacao
-entre inimigos considera largura e altura dos dois corpos. Tiros, paredes e
-portas usam a hitbox; mira e disparos usam seu centro. A barra de vida fica acima
-do retangulo visual. Nas bordas da sala a imagem pode ultrapassar a parede pela
-margem visual, pois quem limita movimento e a hitbox.
-
-Pressione **F2 durante o jogo** para mostrar/esconder o contorno verde das
-hitboxes. O retangulo colorido maior representa o quadro visual futuro.
-
-O jogador usa `assets/sprites/personagens/tux-pixel-v2.png`, embutido no executavel
-durante a compilacao (lista `ASSETS_EMBUTIDOS` no Makefile) e decodificado por
-`graficos/Sprite` via libpng. O PNG mede 1254x1254 e e reduzido proporcionalmente
-para o quadro 48x48, centralizado, com transparencia e filtro de pixel art. A hitbox permanece 32x32. Para ocupar todo o
-quadro com outra arte, exporte diretamente no formato ideal da tabela.
-
-`Jogo` possui a textura, carrega uma vez e libera antes de destruir o renderizador.
-Reiniciar o jogador ou trocar de fase nao recarrega a imagem. A arma permanece
-separada e gira com a mira. As nove combinacoes de classe e afinidade dos
-inimigos usam bitmaps embutidos provisorios em `graficos/SpriteInimigo`; suas
-cores principais devem continuar vermelha, azul e verde ao substituir a arte.
-Animacoes e folhas de sprites ainda nao foram integradas. Os reinicios ainda criam o heroi padrao;
-selecao de personagem fica para a mecanica de selecao futura.
+Pressione **F2 durante o jogo** (ou ative em Configuracoes) para mostrar o
+contorno verde das hitboxes.

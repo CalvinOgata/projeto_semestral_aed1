@@ -7,7 +7,12 @@
 #include "entidades/Afinidade.h"
 #include "graficos/Camera.h"
 
-enum class TipoInimigo { VIRUS, BRUTO, BOSS };
+enum class TipoInimigo
+{
+    VIRUS,
+    BRUTO,
+    BOSS
+};
 
 class Inimigo
 {
@@ -71,7 +76,7 @@ public:
     float get_centroY() const;
     float get_largura() const;
     float get_altura() const;
-    SDL_FRect get_retangulo() const; // hitbox
+    SDL_FRect get_retangulo() const;       // hitbox
     SDL_FRect get_retanguloVisual() const; // destino do sprite
 
     void desenhar(SDL_Renderer *, const Camera &, bool mostrarHitbox = false) const;

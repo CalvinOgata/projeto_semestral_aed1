@@ -7,9 +7,9 @@
 
 #include "audio/Som.h"
 #include "config/Config.h"
+#include "graficos/CatalogoSprites.h"
 #include "graficos/Desenho.h"
 #include "graficos/SpriteInimigo.h"
-#include "graficos/CatalogoSprites.h"
 
 namespace
 {
@@ -18,7 +18,7 @@ std::mt19937 &sorteio_inimigos()
     static std::mt19937 sorteio(std::random_device{}());
     return sorteio;
 }
-}
+} // namespace
 
 Inimigo::Inimigo() : Inimigo(0.0f, 0.0f)
 {
@@ -37,8 +37,8 @@ void Inimigo::perseguir(float alvoX, float alvoY, float dt)
     }
 
     float dx = alvoX - this->get_centroX();
-    const float duracaoPose = tipo == TipoInimigo::VIRUS ? 0.16f :
-                               (tipo == TipoInimigo::BRUTO ? 0.22f : 0.28f);
+    const float duracaoPose =
+        tipo == TipoInimigo::VIRUS ? 0.16f : (tipo == TipoInimigo::BRUTO ? 0.22f : 0.28f);
     tempoAnimacao = std::fmod(tempoAnimacao + dt, 4 * duracaoPose);
     float dy = alvoY - this->get_centroY();
     const float distancia = std::max(0.001f, std::sqrt(dx * dx + dy * dy));
@@ -70,7 +70,8 @@ void Inimigo::perseguir(float alvoX, float alvoY, float dt)
     }
 
     // Distancia preferida: virus cercam, bruta-montes avancam, boss mantem espaco.
-    const float ideal = tipo == TipoInimigo::VIRUS ? 150.0f : (tipo == TipoInimigo::BRUTO ? 110.0f : 230.0f);
+    const float ideal =
+        tipo == TipoInimigo::VIRUS ? 150.0f : (tipo == TipoInimigo::BRUTO ? 110.0f : 230.0f);
     float avanco = 0;
     if (!visaoLivre)
     {
@@ -84,8 +85,10 @@ void Inimigo::perseguir(float alvoX, float alvoY, float dt)
     {
         avanco = -0.7f;
     }
-    const float giro = !visaoLivre ? 1.0f :
-        (tipo == TipoInimigo::VIRUS ? 0.75f : (tipo == TipoInimigo::BOSS ? 0.55f : 0.35f));
+    const float giro =
+        !visaoLivre
+            ? 1.0f
+            : (tipo == TipoInimigo::VIRUS ? 0.75f : (tipo == TipoInimigo::BOSS ? 0.55f : 0.35f));
     const float mx = dx * avanco - dy * giro * sentidoGiro;
     const float my = dy * avanco + dx * giro * sentidoGiro;
     const float tamanho = std::hypot(mx, my);
@@ -196,13 +199,13 @@ void Inimigo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
     if (!CatalogoSprites::desenhar_inimigo(renderizador, tipo, afinidade, naTela, tempoAnimacao))
         SpriteInimigo::desenhar(renderizador, tipo, afinidade, naTela);
     const auto centro = camera.para_tela(get_centroX(), get_centroY());
-    SDL_Color corAfinidade = afinidade == Afinidade::VERMELHA ? SDL_Color{244, 70, 82, 255} :
-        (afinidade == Afinidade::AZUL ? SDL_Color{76, 156, 255, 255} :
-                                       SDL_Color{96, 230, 118, 255});
+    SDL_Color corAfinidade = afinidade == Afinidade::VERMELHA
+                                 ? SDL_Color{244, 70, 82, 255}
+                                 : (afinidade == Afinidade::AZUL ? SDL_Color{76, 156, 255, 255}
+                                                                 : SDL_Color{96, 230, 118, 255});
     Desenho::retangulo_rotacionado(renderizador, centro.x, centro.y, 30, 8, mira,
                                    {38, 40, 52, 255});
-    Desenho::retangulo_rotacionado(renderizador, centro.x, centro.y - 1, 23, 3, mira,
-                                   corAfinidade);
+    Desenho::retangulo_rotacionado(renderizador, centro.x, centro.y - 1, 23, 3, mira, corAfinidade);
 
     // Barra simples acima do corpo, proporcional a vida inicial deste inimigo.
     const SDL_FRect fundo = {naTela.x, naTela.y - 8.0f, naTela.w, 4.0f};
@@ -219,15 +222,13 @@ void Inimigo::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
         SDL_SetRenderDrawColor(renderizador, 100, 255, 140, 255);
         SDL_RenderDrawRectF(renderizador, &hitbox);
     }
-
 }
 
 Inimigo::Inimigo(float mundoX, float mundoY, int vidaInicial, float velocidadeInicial,
-                 const DimensoesEntidade &dimensoes, TipoInimigo tipo, int tema,
-                 int dificuldade, Afinidade afinidade)
+                 const DimensoesEntidade &dimensoes, TipoInimigo tipo, int tema, int dificuldade,
+                 Afinidade afinidade)
     : tipo(tipo), afinidade(afinidade), tema(tema), dificuldade(std::max(1, dificuldade)),
-      x(mundoX), y(mundoY),
-      dimensoes(dimensoes), velocidade(std::max(0.0f, velocidadeInicial)),
+      x(mundoX), y(mundoY), dimensoes(dimensoes), velocidade(std::max(0.0f, velocidadeInicial)),
       vida(std::max(1, vidaInicial)), vidaMax(std::max(1, vidaInicial)), vivo(true)
 {
     // Inicios diferentes evitam que a sala inteira dispare e gire em sincronia.
@@ -246,8 +247,8 @@ SDL_FRect Inimigo::get_retanguloVisual() const
 {
     const float largura = static_cast<float>(this->dimensoes.larguraSprite);
     const float altura = static_cast<float>(this->dimensoes.alturaSprite);
-    return {this->get_centroX() - largura / 2.0f, this->get_centroY() - altura / 2.0f,
-            largura, altura};
+    return {this->get_centroX() - largura / 2.0f, this->get_centroY() - altura / 2.0f, largura,
+            altura};
 }
 
 void Inimigo::limitar_a(const SDL_FRect &area)
@@ -264,14 +265,18 @@ void Inimigo::deslocar(float dx, float dy)
 
 bool Inimigo::preparar_tiro(float dt)
 {
-    if (!vivo) return false;
-    if (esperaTiro > 0) esperaTiro -= dt;
-    if (esperaTiro > 0 || !visaoLivre) return false;
+    if (!vivo)
+        return false;
+    if (esperaTiro > 0)
+        esperaTiro -= dt;
+    if (esperaTiro > 0 || !visaoLivre)
+        return false;
     // Cadencia cresce com a dificuldade; o boss acelera abaixo de metade da vida.
-    float intervalo = tipo == TipoInimigo::BOSS ? (vida * 2 < vidaMax ? 0.62f : 0.85f) :
-        (tipo == TipoInimigo::BRUTO ? 1.8f : 2.4f);
+    float intervalo = tipo == TipoInimigo::BOSS ? (vida * 2 < vidaMax ? 0.62f : 0.85f)
+                                                : (tipo == TipoInimigo::BRUTO ? 1.8f : 2.4f);
     intervalo /= 1.0f + 0.12f * (dificuldade - 1);
-    esperaTiro = intervalo * std::uniform_real_distribution<float>(0.85f, 1.15f)(sorteio_inimigos());
+    esperaTiro =
+        intervalo * std::uniform_real_distribution<float>(0.85f, 1.15f)(sorteio_inimigos());
     return true;
 }
 
@@ -299,18 +304,24 @@ const char *Inimigo::get_nome() const
 {
     if (afinidade == Afinidade::VERMELHA)
     {
-        if (tipo == TipoInimigo::VIRUS) return "ILOVEYOU.EXE";
-        if (tipo == TipoInimigo::BRUTO) return "MIRAI SWARM";
+        if (tipo == TipoInimigo::VIRUS)
+            return "ILOVEYOU.EXE";
+        if (tipo == TipoInimigo::BRUTO)
+            return "MIRAI SWARM";
         return "WANNACRY PRIME";
     }
     if (afinidade == Afinidade::AZUL)
     {
-        if (tipo == TipoInimigo::VIRUS) return "EULA-BOT";
-        if (tipo == TipoInimigo::BRUTO) return "SENTINELA DRM";
+        if (tipo == TipoInimigo::VIRUS)
+            return "EULA-BOT";
+        if (tipo == TipoInimigo::BRUTO)
+            return "SENTINELA DRM";
         return "WINDOWS UPDATE";
     }
-    if (tipo == TipoInimigo::VIRUS) return "NPU DRONE";
-    if (tipo == TipoInimigo::BRUTO) return "GPU H100";
+    if (tipo == TipoInimigo::VIRUS)
+        return "NPU DRONE";
+    if (tipo == TipoInimigo::BRUTO)
+        return "GPU H100";
     return "DATACENTER HIPERESCALA";
 }
 
@@ -326,7 +337,8 @@ int Inimigo::get_vidaMax() const
 
 bool Inimigo::soltar_coracao()
 {
-    if (vivo || coracaoSolto) return false;
+    if (vivo || coracaoSolto)
+        return false;
     coracaoSolto = true;
     return true;
 }

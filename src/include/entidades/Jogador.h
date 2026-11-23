@@ -65,7 +65,7 @@ public:
     float get_largura() const;
     float get_altura() const;
     float get_velocidade() const;
-    SDL_FRect get_retangulo() const; // hitbox: colisao, portas e limites
+    SDL_FRect get_retangulo() const;       // hitbox: colisao, portas e limites
     SDL_FRect get_retanguloVisual() const; // destino do sprite em coordenadas de mundo
 
     // --- mira e arma ---

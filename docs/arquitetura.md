@@ -8,11 +8,12 @@ armas ou inimigos; as classes do jogo escolhem quando e por que usa-las.
 
 ```text
 Jogo (janela, entrada, estados e laco principal)
-  |-- Jogador (movimento, mira, vida e estamina)
+  |-- Jogador (movimento, mira, vida e escudo)
   |     `-- FilaArmas (inventario: primeira arma = equipada)
   |           `-- Fila<Armas, MAX_ARMAS> (armazenamento FIFO)
   |-- Campanha (tres fases; mantem a fase atual)
   |     `-- Fase (progressao e sala ativa)
+  |           |-- Arvore<size_t> (salas reveladas; base do minimapa)
   |           `-- ListaSequencial<Sala>
   |                 `-- Sala (tamanho, dificuldade, requisitos e estado)
   |                       `-- Combate (entidades exclusivas desta sala)
@@ -45,9 +46,10 @@ usa o mouse. A arma desenhada e os ataques compartilham essa direcao.
 | TAD | Implementacao | Uso atual | Custos |
 | --- | --- | --- | --- |
 | `Fila<T, Capacidade>` | Vetor circular com `std::array`, inicio e quantidade | Armas do jogador | Inserir, retirar, frente e consultar: O(1); memoria O(capacidade) |
-| `ListaSequencial<T>` | Armazenamento dinamico via `std::vector` | Salas de `Fase`, inimigos e projeteis de `Combate` | Acesso O(1), inserir O(1) amortizado, remover por criterio O(n) |
+| `ListaSequencial<T>` | Armazenamento dinamico via `std::vector` | Salas de `Fase`, inimigos, projeteis, obstaculos e armas no chao | Acesso O(1), inserir O(1) amortizado, remover por criterio O(n) |
+| `Arvore<T>` | Arvore enraizada generica com nos encadeados (cada no aponta o pai e guarda os filhos) | Salas reveladas de cada fase, navegacao pai-filho e minimapa | Buscar, contem, obter pai/filho e inserir filho: O(n); percurso em pre-ordem: O(n); memoria O(n) |
 
-A fila foi implementada pelo projeto; a lista sequencial encapsula a biblioteca
+A fila e a arvore foram implementadas pelo projeto; a lista sequencial encapsula a biblioteca
 padrao. Ela **nao** e uma lista encadeada nem uma implementacao manual de
 alocacao. Se a disciplina exigir implementacoes manuais, essa restricao deve
 ser registrada antes de substituir o armazenamento.
@@ -92,6 +94,20 @@ ser registrada antes de substituir o armazenamento.
 | Lista cadastral | Cadastro de definicoes de armas, poderes ou personagens por identificador | Definir registros, chaves unicas e regras de busca/alteracao/exclusao |
 | Lista duplamente encadeada | Navegacao anterior/proximo em uma selecao ou inventario | A mecanica exigir percurso bidirecional e insercoes/remocoes locais |
 | Fila (FIFO) | Eventos ou ondas de inimigos processados por ordem de chegada | Definir essa mecanica e sua politica de processamento |
+
+### Arvore e progressao
+
+- `Arvore<T>` (em `estruturas/Arvore.h`) e generica e nao conhece SDL nem salas.
+  Cada valor aparece no maximo uma vez e todo no, exceto a raiz, tem um unico pai.
+- Operacoes: `definir_raiz`, `inserir_filho(pai, filho)` (recusa pai inexistente
+  ou valor repetido), `obter_filho`, `obter_pai`, `buscar`, `contem`,
+  `percorrer_pre_ordem`, `contar_nos` e `limpar`. A busca e recursiva em
+  profundidade, por isso as consultas custam O(n) no numero de nos.
+- `Fase` guarda uma `Arvore<size_t>` de indices de salas, com raiz no lobby.
+  Liberar uma sala insere seus filhos; atravessar uma porta so e permitido entre
+  pai e filho. O minimapa desenha os nos na ordem de `percorrer_pre_ordem`.
+- Com 7 a 11 salas por fase, o custo linear e desprezivel; um indice por valor
+  so valeria a pena para arvores muito maiores.
 
 Uma lista cadastral descreve operacoes de cadastro; sua representacao pode ser
 sequencial ou encadeada. Uma lista duplamente encadeada descreve a representacao
@@ -151,9 +167,9 @@ arredondando cada etapa para baixo; na fase 1, portanto, as vidas efetivas sao
 `1 + 0.12 * (d - 1)`.
 
 O jogador caminha pelo piso e pelos corredores liberados; inimigos ficam no piso da sala;
-projeteis saindo dele sao desativados, exceto ricochetes e boomerangs. A camera respeita os limites da fase com margem de 12 pixels
+projeteis saindo dele sao desativados, exceto os ricochetes do CRT, que rebatem nas paredes. A camera respeita os limites da fase com margem de 12 pixels
 para paredes. `Sala` desenha piso, portas e entidades; `interface/Hud` desenha
-vida, escudo e energia em uma caixa unica e compacta no canto superior esquerdo
+vidas, vida, escudo, pontuacao e tempo no canto superior esquerdo, sem painel,
 e somente o numero de municao no canto inferior direito, sobre o mundo.
 O inventario aparece no canto superior direito; `IconeArma` desenha sprites
 de bitmap embutidos, sem dependencia grafica em `Armas` ou nos TADs. `Fase` nao desenha interface. Novos objetos de sala devem ter seu ciclo
@@ -196,16 +212,18 @@ com vozes fixas, transicao cruzada entre trilhas e limitador suave. As entidades
 apenas pedem `Som::tocar(efeito)` nos eventos (dano, morte, bau, sala liberada).
 
 `ArquivoProgresso`, em `persistencia/`, recebe um caminho e trata somente leitura,
-validacao e escrita. O esquema JSON v2 tem `versao`, `fases_concluidas` (0 a 3) e `armas`
-(ate tres objetos `{tipo, municao}`); o v1, sem `armas`, ainda e aceito.
+validacao e escrita. O esquema JSON v3 tem `versao`, `fases_concluidas` (0 a 3), `vidas`,
+`continue_disponivel`, `pontuacao_total` e `armas` (ate tres objetos `{tipo, municao}`);
+os esquemas v1 (sem `armas`) e v2 (sem vidas, continue e pontuacao) ainda sao aceitos.
 O leitor e especifico para esses esquemas, sem biblioteca externa; um esquema mais
 complexo deve motivar a revisao dessa escolha. O arquivo temporario e renomeado
 somente apos fechar a escrita com sucesso, preservando o save anterior em erros.
 Isso protege contra escritas incompletas, mas nao promete durabilidade contra
 queda de energia, pois nao utiliza fsync.
 
-A camada de aplicacao resolve `saves/progresso.json` ao lado do executavel e
-salva ao iniciar um jogo novo e quando o contador de fases concluidas muda.
+A camada de aplicacao resolve os tres slots `saves/progresso_N.json` ao lado do executavel e
+salva ao iniciar um jogo novo, ao perder uma vida e quando o contador de fases
+concluidas muda.
 O checkpoint nao armazena entidades, salas intermediarias ou posicoes. Carregar
 reconstroi o inicio da proxima fase; concluir tres fases registra a vitoria.
 Falhas sao exibidas na pausa e nos menus e podem ser repetidas por F5, sem
@@ -271,7 +289,7 @@ de ate 1/240 s. `Inimigo` decide o proprio movimento (distancia preferida, giro
 e contorno) a partir da linha de visao que `Combate` calcula por quadro; `Combate`
 decide os padroes de tiro, a mira antecipada e as ondas de reforco, mantidas
 como contadores e uma `ListaSequencial` de avisos de surgimento. Inimigos novos
-sao inseridos no fim da lista, preservando os indices usados pelo bumerangue.
+sao inseridos no fim da lista, preservando os indices que o Apache usa para nao perfurar o mesmo alvo duas vezes.
 `Jogador` aplica absorcao pelo escudo, protecao de 0,5 s e regeneracao de
 10 pontos/s apos 3 s sem dano.
 

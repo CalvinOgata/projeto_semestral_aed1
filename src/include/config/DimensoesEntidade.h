@@ -12,8 +12,8 @@ struct DimensoesEntidade
 
     constexpr bool valida() const
     {
-        return larguraHitbox > 0 && alturaHitbox > 0 &&
-               larguraSprite >= larguraHitbox && alturaSprite >= alturaHitbox;
+        return larguraHitbox > 0 && alturaHitbox > 0 && larguraSprite >= larguraHitbox &&
+               alturaSprite >= alturaHitbox;
     }
 };
 

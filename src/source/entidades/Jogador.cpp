@@ -10,8 +10,8 @@
 #include "graficos/Sprite.h"
 
 Jogador::Jogador(const DimensoesEntidade &dimensoes)
-    : vida(0), escudo(50), escudoMax(50), vidaMax(0), x(0.0f), y(0.0f),
-      dimensoes(dimensoes), velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
+    : vida(0), escudo(50), escudoMax(50), vidaMax(0), x(0.0f), y(0.0f), dimensoes(dimensoes),
+      velocidade(VELOCIDADE_JOGADOR), anguloMira(0.0f)
 {
     if (!dimensoes.valida())
     {
@@ -193,8 +193,8 @@ SDL_FRect Jogador::get_retanguloVisual() const
 {
     const float largura = static_cast<float>(this->dimensoes.larguraSprite);
     const float altura = static_cast<float>(this->dimensoes.alturaSprite);
-    return {this->get_centroX() - largura / 2.0f, this->get_centroY() - altura / 2.0f,
-            largura, altura};
+    return {this->get_centroX() - largura / 2.0f, this->get_centroY() - altura / 2.0f, largura,
+            altura};
 }
 
 void Jogador::mirar_em(float mundoX, float mundoY)
@@ -280,7 +280,7 @@ void Jogador::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
     {
         const SDL_FPoint direcao = this->get_direcaoMira();
         const SDL_FPoint mao = camera.para_tela(this->get_centroX() + direcao.x * 12,
-                                               this->get_centroY() + 6 + direcao.y * 12);
+                                                this->get_centroY() + 6 + direcao.y * 12);
         IconeArma::desenhar_empunhada(renderizador, arma->get_tipo(), mao, this->anguloMira);
     }
     if (mostrarHitbox)
@@ -289,7 +289,6 @@ void Jogador::desenhar(SDL_Renderer *renderizador, const Camera &camera, bool mo
         SDL_SetRenderDrawColor(renderizador, 100, 255, 140, 255);
         SDL_RenderDrawRectF(renderizador, &hitbox);
     }
-
 }
 
 void Jogador::rec_escudo(int quantidade)
@@ -320,7 +319,8 @@ int Jogador::get_escudoMax() const
 
 void Jogador::receber_dano(int quantidade)
 {
-    if (quantidade <= 0 || morto() || invulnerabilidade > 0 || ignorarTirosInimigos) return;
+    if (quantidade <= 0 || morto() || invulnerabilidade > 0 || ignorarTirosInimigos)
+        return;
     const int absorvido = std::min(escudo, quantidade);
     perder_escudo(absorvido);
     perder_vida(quantidade - absorvido);
@@ -334,7 +334,11 @@ void Jogador::atualizar_defesa(float dt)
     invulnerabilidade = std::max(0.0f, invulnerabilidade - dt);
     const float recuperacao = std::max(0.0f, dt - esperaEscudo);
     esperaEscudo = std::max(0.0f, esperaEscudo - dt);
-    if (morto() || escudo == escudoMax) { cargaEscudo = 0; return; }
+    if (morto() || escudo == escudoMax)
+    {
+        cargaEscudo = 0;
+        return;
+    }
     cargaEscudo += recuperacao * 10;
     const int pontos = static_cast<int>(cargaEscudo);
     rec_escudo(pontos);
