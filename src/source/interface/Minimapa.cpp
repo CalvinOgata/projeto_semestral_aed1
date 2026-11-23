@@ -60,8 +60,8 @@ int direcao_entre(const Fase &fase, std::size_t pai, std::size_t filho)
 }
 }
 
-void Minimapa::desenhar(SDL_Renderer *renderizador, const Fase &fase,
-                       const Jogador &jogador)
+void Minimapa::desenhar(SDL_Renderer *renderizador, const Fase &fase, const Jogador &jogador,
+                        bool toque)
 {
     if (renderizador == nullptr || fase.contar_salasDescobertas() == 0)
     {
@@ -168,7 +168,9 @@ void Minimapa::desenhar(SDL_Renderer *renderizador, const Fase &fase,
                                 1, {226, 235, 247, 255});
     Texto::desenhar_centralizado(renderizador, "CINZA: NAO VISITADA   VERMELHO: EM COMBATE",
                                 480, 470, 1, {183, 199, 218, 255});
-    Texto::desenhar_centralizado(renderizador, "M / ESC: FECHAR   -   JOGO PAUSADO", 480, 486,
-                                1, {255, 222, 110, 255});
+    Texto::desenhar_centralizado(renderizador,
+                                 toque ? "TOQUE PARA FECHAR   -   JOGO PAUSADO"
+                                       : "M / ESC: FECHAR   -   JOGO PAUSADO",
+                                 480, 486, 1, {255, 222, 110, 255});
     SDL_SetRenderDrawBlendMode(renderizador, anterior);
 }

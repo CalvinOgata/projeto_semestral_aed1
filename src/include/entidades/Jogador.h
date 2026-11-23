@@ -55,6 +55,8 @@ public:
     void set_posicao(float, float);
     void set_velocidade(float);
     void mover(int dirX, int dirY, float dt);
+    // Joystick de toque: vetor com comprimento ate 1 (meio caminho = meia velocidade).
+    void mover_analogico(float dirX, float dirY, float dt);
 
     float get_x() const;
     float get_y() const;

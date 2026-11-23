@@ -98,15 +98,21 @@ Jogo::~Jogo()
 
 bool Jogo::inicializar()
 {
+    // Toques chegam como SDL_FINGER*: no jogo viram joystick e botoes e, nas
+    // outras telas, o proprio Jogo os converte em cliques (veja tratar_eventos).
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
         std::fprintf(stderr, "Erro ao iniciar o SDL: %s\n", SDL_GetError());
         return false;
     }
 
-    this->janela =
-        SDL_CreateWindow(TITULO_JANELA, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                         LARGURA_TELA, ALTURA_TELA, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    // ALLOW_HIGHDPI: em telas densas (celulares, Retina) o buffer usa os pixels
+    // fisicos. Sem ela o navegador do celular dava ao canvas so os pixels CSS
+    // (ex.: 640x360), o jogo de 960x540 era reduzido e o texto fino sumia.
+    this->janela = SDL_CreateWindow(
+        TITULO_JANELA, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, LARGURA_TELA,
+        ALTURA_TELA, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (this->janela == nullptr)
     {
         std::fprintf(stderr, "Erro ao criar a janela: %s\n", SDL_GetError());
@@ -192,6 +198,12 @@ void Jogo::passo()
     }
 
     this->tratar_eventos();
+    if (this->estado != EstadoJogo::JOGANDO || this->mostrarMinimapa)
+    {
+        // Dedos que estavam no joystick ou no gatilho nao seguem valendo
+        // depois de pausa, mapa ou troca de tela.
+        this->toque.soltar_tudo();
+    }
 
     if (this->estado == EstadoJogo::CARREGANDO)
     {
@@ -221,8 +233,10 @@ void Jogo::passo()
     else if (this->estado == EstadoJogo::VITORIA)
     {
         const Uint8 *teclas = SDL_GetKeyboardState(nullptr);
+        const SDL_TouchID tela = SDL_GetTouchDevice(0);
         const bool acelerar = teclas[SDL_SCANCODE_SPACE] ||
-                              (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_LMASK);
+                              (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_LMASK) ||
+                              (tela != 0 && SDL_GetNumTouchFingers(tela) > 0);
         const int navegar = (teclas[SDL_SCANCODE_DOWN] ? 1 : 0) - (teclas[SDL_SCANCODE_UP] ? 1 : 0);
         this->vitoria.atualizar(dt, acelerar, navegar);
         if (this->vitoria.terminou())
@@ -328,6 +342,40 @@ void Jogo::tratar_eventos()
         {
             continue; // ja esta encerrando: so consome o que sobrou
         }
+        this->atualizar_modoEntrada(evento);
+        if (evento.type == SDL_FINGERDOWN || evento.type == SDL_FINGERUP ||
+            evento.type == SDL_FINGERMOTION)
+        {
+            if (this->estado == EstadoJogo::JOGANDO && !this->mostrarMinimapa)
+            {
+                this->tratar_toqueJogo(evento);
+                continue;
+            }
+            // Fora da partida um toque vale um clique no mesmo ponto da tela.
+            const SDL_TouchFingerEvent dedo = evento.tfinger;
+            const int x = static_cast<int>(dedo.x * LARGURA_TELA);
+            const int y = static_cast<int>(dedo.y * ALTURA_TELA);
+            SDL_zero(evento);
+            if (dedo.type == SDL_FINGERMOTION)
+            {
+                evento.type = SDL_MOUSEMOTION;
+                evento.motion.which = SDL_TOUCH_MOUSEID;
+                evento.motion.x = x;
+                evento.motion.y = y;
+            }
+            else
+            {
+                evento.type = dedo.type == SDL_FINGERDOWN ? SDL_MOUSEBUTTONDOWN : SDL_MOUSEBUTTONUP;
+                evento.button.which = SDL_TOUCH_MOUSEID;
+                evento.button.button = SDL_BUTTON_LEFT;
+                evento.button.state = dedo.type == SDL_FINGERDOWN ? SDL_PRESSED : SDL_RELEASED;
+                evento.button.clicks = 1;
+                evento.button.x = x;
+                evento.button.y = y;
+            }
+        }
+        const bool clique =
+            evento.type == SDL_MOUSEBUTTONDOWN && evento.button.button == SDL_BUTTON_LEFT;
         if (this->estado == EstadoJogo::CARREGANDO)
         {
             if ((evento.type == SDL_KEYDOWN && evento.key.repeat == 0) ||
@@ -390,9 +438,14 @@ void Jogo::tratar_eventos()
         }
         if (this->estado == EstadoJogo::RESUMO_FASE)
         {
-            if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
-                (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_KP_ENTER ||
-                 evento.key.keysym.sym == SDLK_SPACE))
+            // Um toque ou clique logo apos a fase acabar ainda era um tiro.
+            constexpr Uint32 ESPERA_CLIQUE_RESUMO_MS = 1000;
+            const bool cliqueValido =
+                clique && SDL_GetTicks() - this->inicioResumo >= ESPERA_CLIQUE_RESUMO_MS;
+            if (cliqueValido ||
+                (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
+                 (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_KP_ENTER ||
+                  evento.key.keysym.sym == SDLK_SPACE)))
             {
                 if (this->campanha.concluida())
                 {
@@ -410,9 +463,11 @@ void Jogo::tratar_eventos()
         }
         if (this->estado == EstadoJogo::GAME_OVER)
         {
-            if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
-                (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_KP_ENTER) &&
-                this->continueDisponivel)
+            const bool confirmar =
+                clique ||
+                (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
+                 (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_KP_ENTER));
+            if (confirmar && this->continueDisponivel)
             {
                 this->aceitar_continue();
             }
@@ -420,7 +475,13 @@ void Jogo::tratar_eventos()
         }
         if (this->estado == EstadoJogo::VITORIA)
         {
-            if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0)
+            if (clique)
+            {
+                // Sai da celebracao ou, nos creditos, volta ao menu. Durante o
+                // texto, segurar o dedo ou o botao apenas acelera a rolagem.
+                this->vitoria.avancar();
+            }
+            else if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0)
             {
                 if (evento.key.keysym.sym == SDLK_ESCAPE)
                 {
@@ -462,8 +523,8 @@ void Jogo::tratar_eventos()
         }
         if (this->mostrarMinimapa)
         {
-            if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
-                evento.key.keysym.sym == SDLK_ESCAPE)
+            if (clique || (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
+                           evento.key.keysym.sym == SDLK_ESCAPE))
             {
                 this->mostrarMinimapa = false;
             }
@@ -533,6 +594,61 @@ void Jogo::tratar_eventos()
     }
 }
 
+void Jogo::atualizar_modoEntrada(const SDL_Event &evento)
+{
+    // Os controles de toque aparecem no primeiro toque e somem quando o
+    // jogador volta ao teclado ou ao mouse (notebook com tela de toque).
+    bool toque = this->modoToque;
+    if (evento.type == SDL_FINGERDOWN)
+    {
+        toque = true;
+    }
+    else if (evento.type == SDL_KEYDOWN ||
+             (evento.type == SDL_MOUSEBUTTONDOWN && evento.button.which != SDL_TOUCH_MOUSEID) ||
+             (evento.type == SDL_MOUSEMOTION && evento.motion.which != SDL_TOUCH_MOUSEID))
+    {
+        toque = false;
+    }
+    if (toque == this->modoToque)
+    {
+        return;
+    }
+    this->modoToque = toque;
+    this->toque.soltar_tudo();
+    this->menu.set_modoToque(toque);
+    this->vitoria.set_modoToque(toque);
+}
+
+void Jogo::tratar_toqueJogo(const SDL_Event &evento)
+{
+    Sala &sala = this->campanha.get_faseAtual().get_salaAtual();
+    switch (this->toque.tratar_evento(evento))
+    {
+    case AcaoToque::PAUSAR:
+        this->pausar();
+        break;
+    case AcaoToque::MINIMAPA:
+        this->mostrarMinimapa = true;
+        this->atirando = false;
+        break;
+    case AcaoToque::PEGAR_ARMA:
+        sala.coletar_arma(this->jogador);
+        break;
+    case AcaoToque::TROCAR_ARMA:
+        if (this->jogador.get_armas().get_quantidade() > 1)
+        {
+            Som::tocar(EfeitoSonoro::ARMA_TROCA);
+        }
+        this->jogador.get_armas().alternar();
+        break;
+    case AcaoToque::SOLTAR_ARMA:
+        sala.soltar_arma(this->jogador);
+        break;
+    case AcaoToque::NENHUMA:
+        break;
+    }
+}
+
 void Jogo::atualizar(float dt)
 {
     if (this->campanha.concluida() || this->mostrarMinimapa)
@@ -551,7 +667,7 @@ void Jogo::atualizar(float dt)
     this->esperaTiro -= dt;
     this->tempoTituloFase = std::max(0.0f, this->tempoTituloFase - dt);
 
-    if (this->atirando && this->esperaTiro <= 0.0f)
+    if ((this->atirando || this->toque.get_atirando()) && this->esperaTiro <= 0.0f)
     {
         this->campanha.get_faseAtual().get_salaAtual().disparar(this->jogador);
         const auto *arma = this->jogador.get_armaEquipada();
@@ -605,14 +721,37 @@ void Jogo::mover_jogador(float dt)
     if (teclas[SDL_SCANCODE_S] || teclas[SDL_SCANCODE_DOWN])
         dirY += 1;
 
-    this->jogador.mover(dirX, dirY, dt);
+    float toqueX = 0.0f;
+    float toqueY = 0.0f;
+    this->toque.get_direcao(toqueX, toqueY);
+    if (toqueX != 0.0f || toqueY != 0.0f)
+    {
+        this->jogador.mover_analogico(toqueX, toqueY, dt);
+    }
+    else
+    {
+        this->jogador.mover(dirX, dirY, dt);
+    }
     this->campanha.get_faseAtual().get_salaAtual().limitar_jogador(this->jogador);
 }
 
 void Jogo::atualizar_mira()
 {
     SDL_FPoint alvo;
-    if (!this->campanha.get_faseAtual().get_salaAtual().buscar_alvoMaisProximo(this->jogador, alvo))
+    if (this->campanha.get_faseAtual().get_salaAtual().buscar_alvoMaisProximo(this->jogador, alvo))
+    {
+        // A mira trava no inimigo mais proximo.
+    }
+    else if (this->modoToque)
+    {
+        // Sem mouse, a mira acompanha a ultima direcao do joystick.
+        float dirX = 0.0f;
+        float dirY = 0.0f;
+        this->toque.get_ultimaDirecao(dirX, dirY);
+        alvo = {this->jogador.get_centroX() + dirX * 160.0f,
+                this->jogador.get_centroY() + dirY * 160.0f};
+    }
+    else
     {
         alvo = this->camera.para_mundo(this->mouseTelaX, this->mouseTelaY);
     }
@@ -654,7 +793,7 @@ void Jogo::desenhar()
                                &this->spriteJogador);
         if (this->estado == EstadoJogo::DERROTA)
         {
-            this->derrota.desenhar(this->renderizador);
+            this->derrota.desenhar(this->renderizador, this->modoToque);
         }
         else if (this->estado != EstadoJogo::PAUSADO)
         {
@@ -673,6 +812,11 @@ void Jogo::desenhar()
                                          {220, 204, 240, alfa});
         }
 
+        if (this->estado == EstadoJogo::JOGANDO && this->modoToque && !this->mostrarMinimapa)
+        {
+            const Sala &sala = this->campanha.get_faseAtual().get_salaAtual();
+            this->toque.desenhar(this->renderizador, sala.tem_armaProxima(this->jogador));
+        }
         if (this->estado == EstadoJogo::PAUSADO)
         {
             this->menu.desenhar(this->renderizador, this->spriteJogador);
@@ -704,7 +848,8 @@ void Jogo::desenhar()
     if (this->mostrarMinimapa &&
         (this->estado == EstadoJogo::JOGANDO || this->estado == EstadoJogo::PAUSADO))
     {
-        Minimapa::desenhar(this->renderizador, this->campanha.get_faseAtual(), this->jogador);
+        Minimapa::desenhar(this->renderizador, this->campanha.get_faseAtual(), this->jogador,
+                           this->modoToque);
     }
     SDL_RenderPresent(this->renderizador);
 }
@@ -738,10 +883,11 @@ void Jogo::desenhar_resumoFase() const
     Texto::desenhar_centralizado(this->renderizador,
                                 "TOTAL DA CAMPANHA: " + std::to_string(pontuacaoTotal), 480, 394,
                                 2, {130, 255, 180, 255});
-    Texto::desenhar_centralizado(this->renderizador,
-                                campanha.concluida() ? "ENTER: VER RESULTADO FINAL" :
-                                                      "ENTER: PROXIMA FASE",
-                                480, 450, 2, COR_TEXTO_APAGADO);
+    Texto::desenhar_centralizado(
+        this->renderizador,
+        std::string(modoToque ? "TOQUE" : "ENTER") +
+            (campanha.concluida() ? ": VER RESULTADO FINAL" : ": PROXIMA FASE"),
+        480, 450, 2, COR_TEXTO_APAGADO);
 }
 
 void Jogo::desenhar_gameOver() const
@@ -758,8 +904,10 @@ void Jogo::desenhar_gameOver() const
     {
         Texto::desenhar_centralizado(this->renderizador, "CONTINUE?", 480, 370, 4,
                                     {235, 244, 255, 255});
-        Texto::desenhar_centralizado(this->renderizador, "ENTER: USAR O CONTINUE UNICO", 480,
-                                    430, 2, {130, 255, 180, 255});
+        Texto::desenhar_centralizado(this->renderizador,
+                                     modoToque ? "TOQUE: USAR O CONTINUE UNICO"
+                                               : "ENTER: USAR O CONTINUE UNICO",
+                                     480, 430, 2, {130, 255, 180, 255});
     }
     else
     {
@@ -959,6 +1107,7 @@ void Jogo::concluir_fase()
     this->tempoFase = 0.0f;
     this->salvar_progresso();
     this->atirando = false;
+    this->inicioResumo = SDL_GetTicks();
     this->estado = EstadoJogo::RESUMO_FASE;
 }
 

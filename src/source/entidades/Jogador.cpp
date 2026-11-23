@@ -116,21 +116,32 @@ void Jogador::mover(int dirX, int dirY, float dt)
 {
     if (dirX == 0 && dirY == 0)
     {
+        this->mover_analogico(0.0f, 0.0f, dt);
+        return;
+    }
+    // Normaliza para a diagonal nao ficar mais rapida que a linha reta.
+    const float dx = static_cast<float>(dirX);
+    const float dy = static_cast<float>(dirY);
+    const float comprimento = std::sqrt(dx * dx + dy * dy);
+    this->mover_analogico(dx / comprimento, dy / comprimento, dt);
+}
+
+void Jogador::mover_analogico(float dirX, float dirY, float dt)
+{
+    const float comprimento = std::sqrt(dirX * dirX + dirY * dirY);
+    if (comprimento <= 0.0f)
+    {
         tempoAnimacao = 0;
         return;
     }
+    if (comprimento > 1.0f)
+    {
+        dirX /= comprimento;
+        dirY /= comprimento;
+    }
     tempoAnimacao = std::fmod(tempoAnimacao + dt, 0.64f);
-
-    float dx = static_cast<float>(dirX);
-    float dy = static_cast<float>(dirY);
-
-    // Normaliza para a diagonal nao ficar mais rapida que a linha reta.
-    const float comprimento = std::sqrt(dx * dx + dy * dy);
-    dx /= comprimento;
-    dy /= comprimento;
-
-    this->x += dx * this->velocidade * dt;
-    this->y += dy * this->velocidade * dt;
+    this->x += dirX * this->velocidade * dt;
+    this->y += dirY * this->velocidade * dt;
 }
 
 float Jogador::get_x() const

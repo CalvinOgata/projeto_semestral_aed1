@@ -163,6 +163,23 @@ botao de tela cheia.
 O menu tambem responde ao mouse (passar por cima seleciona, clique confirma).
 A tela **Manual** do proprio jogo repete estes comandos e resume as regras.
 
+### Celular e tablet (versao web)
+
+O primeiro toque na tela liga os controles de toque (teclado ou mouse os desligam):
+
+| Toque | Acao |
+| --- | --- |
+| arrastar na metade esquerda | joystick que nasce onde o dedo encosta (meio curso = meia velocidade) |
+| segurar o alvo ou qualquer ponto livre da direita | atirar; a mira continua automatica e, sem inimigos, segue o joystick |
+| `PEGAR` / `TROCAR` / `SOLTAR` | o mesmo que `F` / `Q` / `G`; `PEGAR` acende perto de uma arma; tocar nas armas do canto tambem troca |
+| `II` / `MAPA` | pausa e minimapa (um toque fecha o mapa) |
+| toque nas demais telas | vale um clique: menus, resumo da fase, derrota, fim de jogo e creditos; segurar acelera o texto final |
+
+Joystick e tiro funcionam ao mesmo tempo (multitoque). A pagina pede tela cheia
+na horizontal no primeiro toque (onde o navegador permite; no iPhone nao) e, com
+o aparelho em pe, mostra um aviso para gira-lo. O manual do jogo mostra os
+comandos de toque quando eles estao ativos.
+
 ## Como esta agora
 
 Uma campanha com **tres fases** ramificadas, todas com salas de 936x516,
@@ -407,7 +424,7 @@ mesmos modulos nos dois diretorios (templates ficam apenas nos cabecalhos):
 | `sistemas/` | `Combate`: disparos, inimigos, colisoes e remocao de inativos |
 | `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao; `Plataforma`: diferencas desktop/web |
 | `graficos/` | `Camera`, `Desenho`, `Sprite`: coordenadas, desenho e texturas PNG |
-| `interface/` | `Hud`: barras; `Menu`, `Texto`: menus e fonte bitmap; `TelaCarregamento`, `FundoMenu`: abertura e cenario animado |
+| `interface/` | `Hud`: barras; `Menu`, `Texto`: menus e fonte bitmap; `TelaCarregamento`, `FundoMenu`: abertura e cenario animado; `ControlesToque`: joystick e botoes de toque |
 | `config/` | `Config.h`: resolucao, paleta e constantes |
 
 O Makefile descobre os fontes nos subdiretorios e espelha essa estrutura em

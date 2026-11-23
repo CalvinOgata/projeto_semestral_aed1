@@ -5,7 +5,9 @@
 
 namespace Minimapa
 {
-void desenhar(SDL_Renderer *renderizador, const Fase &fase, const Jogador &jogador);
-}
+// toque troca o aviso de tecla para fechar por um aviso de toque.
+void desenhar(SDL_Renderer *renderizador, const Fase &fase, const Jogador &jogador,
+              bool toque = false);
+} // namespace Minimapa
 
 #endif

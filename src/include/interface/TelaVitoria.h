@@ -44,6 +44,7 @@ private:
     int pontuacao = 0;
     int fogosDisparados = 0;
     bool encerrada = false;
+    bool modoToque = false; // avisos de toque em vez de teclas
     std::vector<Bloco> blocos;
 
 public:
@@ -54,6 +55,7 @@ public:
     void avancar(); // Enter: sai da celebracao ou, no fim, volta ao menu
     void pular();   // Esc: vai direto aos creditos
     bool terminou() const;
+    void set_modoToque(bool modoToque);
     void desenhar(SDL_Renderer *renderizador, const Sprite &tux) const;
 
 private:

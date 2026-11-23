@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <vector>
 
 #include "audio/Som.h"
@@ -65,6 +66,20 @@ const Comando COMANDOS[] = {
     {{"M"}, "MINIMAPA", "MOSTRA AS SALAS JA DESCOBERTAS DA FASE"},
     {{"ESC"}, "PAUSAR", "CONTINUAR, REINICIAR A FASE OU VOLTAR AO MENU"},
     {{"F2", "F5"}, "EXTRAS", "F2 MOSTRA AS HITBOXES - F5 TENTA SALVAR DE NOVO SE FALHAR"},
+};
+
+// Mesma lista para celular e tablet, mostrada depois do primeiro toque na tela.
+const Comando COMANDOS_TOQUE[] = {
+    {{"ESQUERDA"}, "MOVER", "ARRASTE O DEDO NA METADE ESQUERDA: O JOYSTICK NASCE ONDE VOCE TOCA"},
+    {{"DIREITA"},
+     "ATIRAR",
+     "SEGURE O ALVO OU QUALQUER PONTO LIVRE DA DIREITA. A MIRA E AUTOMATICA"},
+    {{"PEGAR"}, "PEGAR ARMA", "ACENDE PERTO DE UMA ARMA NO CHAO - CABEM 3 NO INVENTARIO"},
+    {{"TROCAR"}, "TROCAR ARMA", "TAMBEM FUNCIONA TOCANDO NAS ARMAS DO CANTO SUPERIOR DIREITO"},
+    {{"SOLTAR"}, "SOLTAR ARMA", "DEIXA A ARMA EQUIPADA NO CHAO COM A MUNICAO QUE SOBROU"},
+    {{"MAPA"}, "MINIMAPA", "MOSTRA AS SALAS JA DESCOBERTAS. TOQUE DE NOVO PARA FECHAR"},
+    {{"II"}, "PAUSAR", "CONTINUAR, REINICIAR A FASE OU VOLTAR AO MENU"},
+    {{"TOQUE"}, "AVANCAR", "NAS TELAS DE RESUMO, DERROTA E FIM DE JOGO, TOQUE PARA SEGUIR"},
 };
 
 struct Secao
@@ -161,6 +176,11 @@ void Menu::set_configuracoes(const Configuracoes &configuracoes)
 const Configuracoes &Menu::get_configuracoes() const
 {
     return this->configuracoes;
+}
+
+void Menu::set_modoToque(bool modoToque)
+{
+    this->modoToque = modoToque;
 }
 
 int Menu::get_quantidadeOpcoes() const
@@ -768,8 +788,11 @@ void Menu::desenhar_manual(SDL_Renderer *r, const SDL_Rect &painel) const
     if (this->abaManual == 0)
     {
         int y = painel.y + 100;
-        for (const Comando &comando : COMANDOS)
+        const Comando *inicio = this->modoToque ? std::begin(COMANDOS_TOQUE) : std::begin(COMANDOS);
+        const Comando *fim = this->modoToque ? std::end(COMANDOS_TOQUE) : std::end(COMANDOS);
+        for (const Comando *atual = inicio; atual != fim; ++atual)
         {
+            const Comando &comando = *atual;
             int x = painel.x + 36;
             for (const char *tecla : comando.teclas)
             {
@@ -809,8 +832,11 @@ void Menu::desenhar_manual(SDL_Renderer *r, const SDL_Rect &painel) const
         }
     }
     this->desenhar_botao(r, this->retangulo_opcao(0), "VOLTAR", true, false, 2);
-    Texto::desenhar(r, "SETAS LATERAIS TROCAM A ABA", painel.x + 20, painel.y + painel.h - 26, 1,
-                    COR_TEXTO_APAGADO);
+    if (!this->modoToque)
+    {
+        Texto::desenhar(r, "SETAS LATERAIS TROCAM A ABA", painel.x + 20, painel.y + painel.h - 26,
+                        1, COR_TEXTO_APAGADO);
+    }
 }
 
 void Menu::desenhar_configuracoes(SDL_Renderer *r, const SDL_Rect &painel) const

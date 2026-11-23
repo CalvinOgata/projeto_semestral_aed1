@@ -70,6 +70,7 @@ private:
     Configuracoes configuracoes;
     int abaManual = 0;
     bool manualDaPausa = false; // o manual aberto na pausa volta para ela
+    bool modoToque = false;     // o manual mostra os controles de toque
     float tempo = 0.0f;         // anima selecao, fundo e personagens
 
 public:
@@ -86,6 +87,7 @@ public:
                           const std::array<bool, QUANTIDADE_SLOTS_SAVE> &disponiveis);
     void set_configuracoes(const Configuracoes &configuracoes);
     const Configuracoes &get_configuracoes() const;
+    void set_modoToque(bool modoToque);
 
     TelaMenu get_tela() const;
     int get_selecionado() const;

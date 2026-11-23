@@ -6,6 +6,7 @@
 #include "entidades/Jogador.h"
 #include "graficos/Camera.h"
 #include "graficos/Sprite.h"
+#include "interface/ControlesToque.h"
 #include "interface/Menu.h"
 #include "interface/TelaCarregamento.h"
 #include "interface/TelaDerrota.h"
@@ -70,6 +71,7 @@ private:
         float tempo = 0.0f;
     } resumoFase;
     float tempoGameOver = 0.0f;
+    Uint32 inicioResumo = 0; // instante em que o resumo da fase apareceu
 
     bool cheatTiros = false;
     int progressoCheat = 0;
@@ -82,6 +84,8 @@ private:
     bool atirando;    // botao esquerdo do mouse segurado
     float mouseTelaX; // posicao do mouse em coordenadas de tela
     float mouseTelaY;
+    ControlesToque toque;
+    bool modoToque = false; // o ultimo comando veio de uma tela de toque
 
 public:
     Jogo();
@@ -100,6 +104,8 @@ public:
 
 private:
     void tratar_eventos();
+    void atualizar_modoEntrada(const SDL_Event &evento);
+    void tratar_toqueJogo(const SDL_Event &evento);
     void atualizar(float dt);
     void atualizar_gameOver(float dt);
     void desenhar();
