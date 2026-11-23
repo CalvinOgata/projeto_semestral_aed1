@@ -202,6 +202,10 @@ As updated on 2026-10-22:
   fires. Buttons PEGAR (glows when `Sala::tem_armaProxima`), TROCAR, SOLTAR, pause (II) and
   MAPA at top center; tapping the hotbar/cycle-arrow area also swaps. Without enemies the aim
   follows the last joystick direction. Fingers are released whenever play is not active.
+- The window uses `SDL_WINDOW_ALLOW_HIGHDPI` (fix 2026-11-23): without it the browser canvas
+  backbuffer matched CSS pixels (e.g. 640x360 on a DPR-3 phone), so the 960x540 frame was
+  downscaled and 1-px bitmap-font strokes vanished. Now the backbuffer uses device pixels.
+  Sprite resolution was not the cause.
 - `web/shell.html`: no zoom/scroll/selection (`touch-action: none`, viewport
   `user-scalable=no`), portrait overlay "GIRE O APARELHO PARA JOGAR" on coarse pointers,
   first touchend requests fullscreen + `screen.orientation.lock('landscape')` (fails

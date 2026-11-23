@@ -107,9 +107,12 @@ bool Jogo::inicializar()
         return false;
     }
 
-    this->janela =
-        SDL_CreateWindow(TITULO_JANELA, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                         LARGURA_TELA, ALTURA_TELA, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    // ALLOW_HIGHDPI: em telas densas (celulares, Retina) o buffer usa os pixels
+    // fisicos. Sem ela o navegador do celular dava ao canvas so os pixels CSS
+    // (ex.: 640x360), o jogo de 960x540 era reduzido e o texto fino sumia.
+    this->janela = SDL_CreateWindow(
+        TITULO_JANELA, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, LARGURA_TELA,
+        ALTURA_TELA, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (this->janela == nullptr)
     {
         std::fprintf(stderr, "Erro ao criar a janela: %s\n", SDL_GetError());
