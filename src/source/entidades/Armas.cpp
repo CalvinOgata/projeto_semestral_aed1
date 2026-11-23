@@ -92,17 +92,24 @@ float Armas::get_alcancePixels() const
 }
 float Armas::get_aberturaGraus() const
 {
-    if (tipo == TipoArma::ESPADA) return 120;
-    if (tipo == TipoArma::DUPLA) return 40;
-    if (tipo == TipoArma::BOOMERANG) return 70;
+    if (tipo == TipoArma::ESPADA)
+        return 120;
+    if (tipo == TipoArma::DUPLA)
+        return 40;
+    if (tipo == TipoArma::BOOMERANG)
+        return 70;
     return 0;
 }
 float Armas::get_velocidadeProjetil() const
 {
-    if (get_alcance() == AlcanceArma::CURTO || tipo == TipoArma::LASER) return 0;
-    if (tipo == TipoArma::SHOTGUN) return 420;
-    if (tipo == TipoArma::ARCO) return 580;
-    if (tipo == TipoArma::PULSO) return 850;
+    if (get_alcance() == AlcanceArma::CURTO || tipo == TipoArma::LASER)
+        return 0;
+    if (tipo == TipoArma::SHOTGUN)
+        return 420;
+    if (tipo == TipoArma::ARCO)
+        return 580;
+    if (tipo == TipoArma::PULSO)
+        return 850;
     return 520;
 }
 bool Armas::municao_infinita() const

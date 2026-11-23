@@ -14,8 +14,8 @@
 #include "graficos/Desenho.h"
 #include "interface/FundoMenu.h"
 #include "interface/Hud.h"
-#include "interface/Texto.h"
 #include "interface/Minimapa.h"
+#include "interface/Texto.h"
 #include "nucleo/Plataforma.h"
 
 namespace
@@ -84,8 +84,7 @@ std::string formatar_tempo(float segundos)
 
 Jogo::Jogo()
     : janela(nullptr), renderizador(nullptr), estado(EstadoJogo::CARREGANDO),
-      arquivoConfiguracoes(caminho_configuracoes()), progresso(caminho_slot(1)),
-      tempoAnterior(0),
+      arquivoConfiguracoes(caminho_configuracoes()), progresso(caminho_slot(1)), tempoAnterior(0),
       esperaTiro(0.0f), atirando(false), mouseTelaX(LARGURA_TELA / 2.0f + 120.0f),
       mouseTelaY(ALTURA_TELA / 2.0f)
 {
@@ -111,8 +110,8 @@ bool Jogo::inicializar()
     // fisicos. Sem ela o navegador do celular dava ao canvas so os pixels CSS
     // (ex.: 640x360), o jogo de 960x540 era reduzido e o texto fino sumia.
     this->janela = SDL_CreateWindow(
-        TITULO_JANELA, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, LARGURA_TELA,
-        ALTURA_TELA, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+        TITULO_JANELA, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, LARGURA_TELA, ALTURA_TELA,
+        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
     if (this->janela == nullptr)
     {
         std::fprintf(stderr, "Erro ao criar a janela: %s\n", SDL_GetError());
@@ -308,9 +307,8 @@ void Jogo::aplicar_configuracoes()
         const bool atual = (SDL_GetWindowFlags(this->janela) & SDL_WINDOW_FULLSCREEN) != 0;
         if (atual != this->configuracoes.telaCheia)
         {
-            SDL_SetWindowFullscreen(this->janela, this->configuracoes.telaCheia ?
-                                                      SDL_WINDOW_FULLSCREEN_DESKTOP :
-                                                      0);
+            SDL_SetWindowFullscreen(
+                this->janela, this->configuracoes.telaCheia ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
         }
     }
 }
@@ -415,8 +413,7 @@ void Jogo::tratar_eventos()
             else if (acao == AcaoMenu::SLOT_1 || acao == AcaoMenu::SLOT_2 ||
                      acao == AcaoMenu::SLOT_3)
             {
-                const int slot = acao == AcaoMenu::SLOT_1 ? 1 :
-                    (acao == AcaoMenu::SLOT_2 ? 2 : 3);
+                const int slot = acao == AcaoMenu::SLOT_1 ? 1 : (acao == AcaoMenu::SLOT_2 ? 2 : 3);
                 this->iniciar_partida(!this->selecionandoNovoJogo, slot);
             }
             else if (acao == AcaoMenu::VOLTAR)
@@ -514,8 +511,7 @@ void Jogo::tratar_eventos()
             this->mouseTelaY = static_cast<float>(evento.motion.y);
         }
 
-        if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
-            evento.key.keysym.sym == SDLK_m)
+        if (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 && evento.key.keysym.sym == SDLK_m)
         {
             this->mostrarMinimapa = !this->mostrarMinimapa;
             this->atirando = false;
@@ -786,11 +782,10 @@ void Jogo::desenhar()
     else
     {
         this->campanha.get_faseAtual().desenhar(this->renderizador, this->camera,
-                                               this->configuracoes.mostrarHitboxes);
+                                                this->configuracoes.mostrarHitboxes);
 
         this->jogador.desenhar(this->renderizador, this->camera,
-                               this->configuracoes.mostrarHitboxes,
-                               &this->spriteJogador);
+                               this->configuracoes.mostrarHitboxes, &this->spriteJogador);
         if (this->estado == EstadoJogo::DERROTA)
         {
             this->derrota.desenhar(this->renderizador, this->modoToque);
@@ -798,8 +793,7 @@ void Jogo::desenhar()
         else if (this->estado != EstadoJogo::PAUSADO)
         {
             Hud::desenhar(this->renderizador, this->jogador, this->spriteJogador, this->vidas,
-                          this->pontosComunsFase + this->pontosBossFase,
-                          this->tempoFase);
+                          this->pontosComunsFase + this->pontosBossFase, this->tempoFase);
         }
         if (this->estado == EstadoJogo::JOGANDO && this->tempoTituloFase > 0.0f)
         {
@@ -824,25 +818,25 @@ void Jogo::desenhar()
         if (this->tempoMensagemCheat > 0.0f)
         {
             Texto::desenhar_centralizado(this->renderizador,
-                                        "CHEAT 6767 ATIVO - TIROS INIMIGOS IGNORADOS", 480, 155,
-                                        2, {130, 255, 180, 255});
+                                         "CHEAT 6767 ATIVO - TIROS INIMIGOS IGNORADOS", 480, 155, 2,
+                                         {130, 255, 180, 255});
         }
     }
     // Manual e Sobre ocupam a tela inteira; o aviso de save cobriria o botao VOLTAR.
-    const bool painelInteiro = (this->estado == EstadoJogo::INICIAL ||
-                                this->estado == EstadoJogo::PAUSADO) &&
-                               (this->menu.get_tela() == TelaMenu::MANUAL ||
-                                this->menu.get_tela() == TelaMenu::SOBRE);
+    const bool painelInteiro =
+        (this->estado == EstadoJogo::INICIAL || this->estado == EstadoJogo::PAUSADO) &&
+        (this->menu.get_tela() == TelaMenu::MANUAL || this->menu.get_tela() == TelaMenu::SOBRE);
     const bool animacao = this->estado == EstadoJogo::CARREGANDO ||
                           this->estado == EstadoJogo::DERROTA ||
                           this->estado == EstadoJogo::VITORIA;
-    if (this->estado != EstadoJogo::JOGANDO && !animacao && !painelInteiro && !this->mensagemSave.empty())
+    if (this->estado != EstadoJogo::JOGANDO && !animacao && !painelInteiro &&
+        !this->mensagemSave.empty())
     {
         SDL_SetRenderDrawColor(this->renderizador, 18, 22, 30, 240);
         const SDL_Rect aviso = {0, ALTURA_TELA - 62, LARGURA_TELA, 26};
         SDL_RenderFillRect(this->renderizador, &aviso);
-        Texto::desenhar_centralizado(this->renderizador, this->mensagemSave, 480,
-                                     ALTURA_TELA - 56, 2, COR_TEXTO);
+        Texto::desenhar_centralizado(this->renderizador, this->mensagemSave, 480, ALTURA_TELA - 56,
+                                     2, COR_TEXTO);
     }
 
     if (this->mostrarMinimapa &&
@@ -862,10 +856,10 @@ void Jogo::desenhar_resumoFase() const
     SDL_SetRenderDrawColor(this->renderizador, 92, 145, 178, 255);
     SDL_RenderDrawRect(this->renderizador, &painel);
     Texto::desenhar_centralizado(this->renderizador,
-                                "FASE " + std::to_string(resumoFase.numero) + " CONCLUIDA",
-                                480, 82, 4, {235, 244, 255, 255});
+                                 "FASE " + std::to_string(resumoFase.numero) + " CONCLUIDA", 480,
+                                 82, 4, {235, 244, 255, 255});
     Texto::desenhar_centralizado(this->renderizador, "TEMPO: " + formatar_tempo(resumoFase.tempo),
-                                480, 145, 2, {207, 220, 236, 255});
+                                 480, 145, 2, {207, 220, 236, 255});
     Texto::desenhar(this->renderizador, "INIMIGOS COMUNS", 245, 205, 2, COR_TEXTO);
     Texto::desenhar(this->renderizador, std::to_string(resumoFase.pontosComuns), 650, 205, 2,
                     {255, 222, 110, 255});
@@ -881,8 +875,8 @@ void Jogo::desenhar_resumoFase() const
     Texto::desenhar(this->renderizador, std::to_string(resumoFase.total), 650, 350, 2,
                     {255, 222, 110, 255});
     Texto::desenhar_centralizado(this->renderizador,
-                                "TOTAL DA CAMPANHA: " + std::to_string(pontuacaoTotal), 480, 394,
-                                2, {130, 255, 180, 255});
+                                 "TOTAL DA CAMPANHA: " + std::to_string(pontuacaoTotal), 480, 394,
+                                 2, {130, 255, 180, 255});
     Texto::desenhar_centralizado(
         this->renderizador,
         std::string(modoToque ? "TOQUE" : "ENTER") +
@@ -894,16 +888,15 @@ void Jogo::desenhar_gameOver() const
 {
     SDL_SetRenderDrawColor(this->renderizador, 8, 8, 14, 255);
     SDL_RenderClear(this->renderizador);
-    Texto::desenhar_centralizado(this->renderizador, "GAME OVER", 480, 52, 6,
-                                {225, 45, 55, 255});
+    Texto::desenhar_centralizado(this->renderizador, "GAME OVER", 480, 52, 6, {225, 45, 55, 255});
     this->spriteGameOver.desenhar(this->renderizador, {385.0f, 104.0f, 190.0f, 180.0f});
     const int segundos = static_cast<int>(std::ceil(tempoGameOver));
     Texto::desenhar_centralizado(this->renderizador, std::to_string(segundos), 480, 296, 7,
-                                {255, 222, 110, 255});
+                                 {255, 222, 110, 255});
     if (continueDisponivel)
     {
         Texto::desenhar_centralizado(this->renderizador, "CONTINUE?", 480, 370, 4,
-                                    {235, 244, 255, 255});
+                                     {235, 244, 255, 255});
         Texto::desenhar_centralizado(this->renderizador,
                                      modoToque ? "TOQUE: USAR O CONTINUE UNICO"
                                                : "ENTER: USAR O CONTINUE UNICO",
@@ -912,9 +905,9 @@ void Jogo::desenhar_gameOver() const
     else
     {
         Texto::desenhar_centralizado(this->renderizador, "SEM CONTINUE", 480, 380, 4,
-                                    {225, 45, 55, 255});
+                                     {225, 45, 55, 255});
         Texto::desenhar_centralizado(this->renderizador, "O SLOT SERA APAGADO", 480, 438, 2,
-                                    COR_TEXTO_APAGADO);
+                                     COR_TEXTO_APAGADO);
     }
 }
 
@@ -929,7 +922,7 @@ void Jogo::pausar()
 {
     const auto &sala = this->campanha.get_faseAtual().get_salaAtual();
     const std::string resumo = std::string(this->campanha.get_faseAtual().get_nome()) + "\n" +
-        sala.get_configuracao().nome;
+                               sala.get_configuracao().nome;
     this->menu.configurar_pausa(resumo);
     this->estado = EstadoJogo::PAUSADO;
     this->atirando = false; // solta o gatilho para nao voltar atirando sozinho
@@ -981,8 +974,9 @@ void Jogo::abrir_inicio(bool telaJogar)
             podeContinuar = podeContinuar || salvo.fasesConcluidas < Campanha::TOTAL_FASES;
         }
     }
-    const std::string detalhe = slotsOcupados == 0 ? "NENHUM JOGO SALVO" :
-        std::to_string(slotsOcupados) + " SLOT(S) OCUPADO(S)";
+    const std::string detalhe = slotsOcupados == 0
+                                    ? "NENHUM JOGO SALVO"
+                                    : std::to_string(slotsOcupados) + " SLOT(S) OCUPADO(S)";
     this->menu.configurar_inicial(podeContinuar, detalhe, telaJogar);
     this->estado = EstadoJogo::INICIAL;
     this->atirando = false;
@@ -1010,16 +1004,16 @@ void Jogo::abrir_selecaoSlots(bool novoJogo)
         }
         else if (salvo.fasesConcluidas == Campanha::TOTAL_FASES)
         {
-            detalhes[indice] = "CAMPANHA CONCLUIDA - PONTOS " +
-                std::to_string(salvo.pontuacaoTotal);
+            detalhes[indice] =
+                "CAMPANHA CONCLUIDA - PONTOS " + std::to_string(salvo.pontuacaoTotal);
         }
         else
         {
             detalhes[indice] = "FASE " + std::to_string(salvo.fasesConcluidas + 1) + "/" +
-                std::to_string(Campanha::TOTAL_FASES) + " - VIDAS " +
-                std::to_string(salvo.vidas) + " - PONTOS " +
-                std::to_string(salvo.pontuacaoTotal) + " - CONTINUE " +
-                (salvo.continueDisponivel ? "SIM" : "NAO");
+                               std::to_string(Campanha::TOTAL_FASES) + " - VIDAS " +
+                               std::to_string(salvo.vidas) + " - PONTOS " +
+                               std::to_string(salvo.pontuacaoTotal) + " - CONTINUE " +
+                               (salvo.continueDisponivel ? "SIM" : "NAO");
         }
     }
     this->selecionandoNovoJogo = novoJogo;
@@ -1093,8 +1087,8 @@ void Jogo::concluir_fase()
     this->resumoFase.pontosComuns = this->pontosComunsFase;
     this->resumoFase.pontosBoss = this->pontosBossFase;
     this->resumoFase.tempo = std::max(0.1f, this->tempoFase);
-    this->resumoFase.pontosRapidez = static_cast<int>(std::lround(
-        PONTOS_RAPIDEZ_BASE * TEMPO_REFERENCIA_FASE / this->resumoFase.tempo));
+    this->resumoFase.pontosRapidez = static_cast<int>(
+        std::lround(PONTOS_RAPIDEZ_BASE * TEMPO_REFERENCIA_FASE / this->resumoFase.tempo));
     Som::tocar(EfeitoSonoro::FASE_CONCLUIDA);
     this->resumoFase.total = this->resumoFase.pontosComuns + this->resumoFase.pontosBoss +
                              this->resumoFase.pontosRapidez;

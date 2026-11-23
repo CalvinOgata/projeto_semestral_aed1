@@ -17,7 +17,12 @@ enum class TipoArma
     PULSO
 };
 
-enum class AlcanceArma { CURTO, MEDIO, LONGO };
+enum class AlcanceArma
+{
+    CURTO,
+    MEDIO,
+    LONGO
+};
 
 class Armas
 {

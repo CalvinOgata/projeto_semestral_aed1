@@ -32,7 +32,7 @@ public:
     // Recorta uma regiao normalizada da mesma textura e a encaixa no quadro.
     // Assim o HUD pode usar literalmente a cabeca do sprite do jogador.
     bool desenhar_recorte(SDL_Renderer *renderizador, const SDL_FRect &quadro,
-                         const SDL_FRect &recorteNormalizado) const;
+                          const SDL_FRect &recorteNormalizado) const;
 };
 
 #endif

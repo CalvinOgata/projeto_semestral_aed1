@@ -1,0 +1,29 @@
+// Recursos do jogo.exe, compilados pelo windres do MinGW (veja o Makefile).
+// O primeiro icone vira o icone do arquivo no Explorer; o SDL tambem o usa na
+// barra de titulo e na barra de tarefas. Caminhos relativos a raiz do projeto.
+
+1 ICON "assets/icone/jogo.ico"
+
+1 VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEOS 0x40004
+FILETYPE 0x1
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041604B0"
+        BEGIN
+            VALUE "FileDescription", "M.C.G.A - Make Computers Great Again"
+            VALUE "ProductName", "M.C.G.A"
+            VALUE "FileVersion", "1.0.0"
+            VALUE "ProductVersion", "1.0.0"
+            VALUE "OriginalFilename", "jogo.exe"
+            VALUE "InternalName", "jogo"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0416, 1200
+    END
+END

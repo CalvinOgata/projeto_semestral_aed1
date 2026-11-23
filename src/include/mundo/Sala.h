@@ -1,12 +1,18 @@
 #ifndef SALA_H
 #define SALA_H
 
-#include <string>
 #include <array>
+#include <string>
 
 #include "sistemas/Combate.h"
 
-enum class Direcao { ESQUERDA, DIREITA, CIMA, BAIXO };
+enum class Direcao
+{
+    ESQUERDA,
+    DIREITA,
+    CIMA,
+    BAIXO
+};
 
 struct RequisitoSala
 {
@@ -31,7 +37,7 @@ struct ConfiguracaoSala
     int tema = 1; // numero da fase, usado nos sprites tematicos
     Afinidade afinidadePrincipal = Afinidade::NEUTRA;
     bool misturarAfinidades = false;
-    int cobertura = 0; // modelo de caixotes/barreiras; 0 deixa a sala livre
+    int cobertura = 0;   // modelo de caixotes/barreiras; 0 deixa a sala livre
     int ondasExtras = 0; // ondas de reforco apos a primeira
     int indicePiso = -1; // indice no catalogo de fundos; 21 = bau compartilhado
 };
@@ -56,7 +62,11 @@ private:
         bool coletada = false;
     };
     ListaSequencial<ArmaChao> armasChao;
-    struct Bau { float x, y; bool aberto = false; };
+    struct Bau
+    {
+        float x, y;
+        bool aberto = false;
+    };
     ListaSequencial<Bau> baus;
     bool preparada = false;
     EstadoSala estado = EstadoSala::NAO_VISITADA;

@@ -24,8 +24,8 @@ void desenhar_icone(SDL_Renderer *renderizador, int x, int y, Icone icone, SDL_C
     if (icone == Icone::VIDA)
     {
         // Coracao de 24x25, grande o bastante para acompanhar a hotbar.
-        const SDL_Rect partes[] = {{x + 2, y, 8, 6}, {x + 14, y, 8, 6},
-                                   {x, y + 5, 24, 8}, {x + 3, y + 13, 18, 5},
+        const SDL_Rect partes[] = {{x + 2, y, 8, 6},       {x + 14, y, 8, 6},
+                                   {x, y + 5, 24, 8},      {x + 3, y + 13, 18, 5},
                                    {x + 6, y + 18, 12, 4}, {x + 9, y + 22, 6, 3}};
         for (const auto &parte : partes)
         {
@@ -35,7 +35,7 @@ void desenhar_icone(SDL_Renderer *renderizador, int x, int y, Icone icone, SDL_C
     else
     {
         // Escudo de 24x25, com cruz igualmente ampliada.
-        const SDL_Point pontos[] = {{x, y}, {x + 24, y}, {x + 24, y + 13},
+        const SDL_Point pontos[] = {{x, y},           {x + 24, y}, {x + 24, y + 13},
                                     {x + 12, y + 25}, {x, y + 13}, {x, y}};
         SDL_RenderDrawLines(renderizador, pontos, 6);
         SDL_RenderDrawLine(renderizador, x + 12, y + 4, x + 12, y + 19);
@@ -51,8 +51,8 @@ void desenhar_cicloFila(SDL_Renderer *renderizador)
     constexpr int CENTRO_Y = 49;
     constexpr float PI = 3.14159265358979323846f;
 
-    auto desenhar_arco = [&](int deslocamentoX, int deslocamentoY, int raioInicial,
-                             int raioFinal, SDL_Color cor)
+    auto desenhar_arco =
+        [&](int deslocamentoX, int deslocamentoY, int raioInicial, int raioFinal, SDL_Color cor)
     {
         SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, cor.a);
         const int minimoQuadrado = raioInicial * raioInicial;
@@ -66,12 +66,12 @@ void desenhar_cicloFila(SDL_Renderer *renderizador)
                 {
                     continue;
                 }
-                const float angulo = std::atan2(static_cast<float>(-y), static_cast<float>(x)) *
-                                     180.0f / PI;
+                const float angulo =
+                    std::atan2(static_cast<float>(-y), static_cast<float>(x)) * 180.0f / PI;
                 if (angulo >= -125.0f && angulo <= 140.0f)
                 {
                     SDL_RenderDrawPoint(renderizador, CENTRO_X + deslocamentoX + x,
-                                       CENTRO_Y + deslocamentoY + y);
+                                        CENTRO_Y + deslocamentoY + y);
                 }
             }
         }
@@ -88,8 +88,7 @@ void desenhar_cicloFila(SDL_Renderer *renderizador)
         const SDL_FPoint ponta = {fimX + direcao.x * 7.0f + deslocamentoX,
                                   fimY + direcao.y * 7.0f + deslocamentoY};
         // A base volta sobre o arco: isso une as duas formas sem uma quina solta.
-        const SDL_FPoint base = {ponta.x - direcao.x * 14.0f,
-                                 ponta.y - direcao.y * 14.0f};
+        const SDL_FPoint base = {ponta.x - direcao.x * 14.0f, ponta.y - direcao.y * 14.0f};
         const SDL_Vertex vertices[] = {
             {ponta, cor, {0, 0}},
             {{base.x + perpendicular.x * 7.0f, base.y + perpendicular.y * 7.0f}, cor, {0, 0}},
@@ -105,11 +104,9 @@ void desenhar_cicloFila(SDL_Renderer *renderizador)
     desenhar_ponta(0, 0, {235, 245, 253, 255});
 
     Texto::desenhar_centralizado(renderizador, "Q", CENTRO_X + 1,
-                                CENTRO_Y - Texto::altura(2) / 2 + 2, 2,
-                                {5, 10, 18, 190});
-    Texto::desenhar_centralizado(renderizador, "Q", CENTRO_X,
-                                CENTRO_Y - Texto::altura(2) / 2, 2,
-                                {255, 255, 255, 255});
+                                 CENTRO_Y - Texto::altura(2) / 2 + 2, 2, {5, 10, 18, 190});
+    Texto::desenhar_centralizado(renderizador, "Q", CENTRO_X, CENTRO_Y - Texto::altura(2) / 2, 2,
+                                 {255, 255, 255, 255});
 }
 
 void desenhar_inventario(SDL_Renderer *renderizador, const FilaArmas &armas)
@@ -129,8 +126,8 @@ void desenhar_inventario(SDL_Renderer *renderizador, const FilaArmas &armas)
         const SDL_Rect caixa = {x, y, lado, lado};
         SDL_SetRenderDrawColor(renderizador, 12, 18, 26, equipada ? 210 : 165);
         SDL_RenderFillRect(renderizador, &caixa);
-        const SDL_Color borda = equipada ? SDL_Color{245, 202, 99, 255} :
-                                          SDL_Color{151, 172, 194, 150};
+        const SDL_Color borda =
+            equipada ? SDL_Color{245, 202, 99, 255} : SDL_Color{151, 172, 194, 150};
         SDL_SetRenderDrawColor(renderizador, borda.r, borda.g, borda.b, borda.a);
         SDL_RenderDrawRect(renderizador, &caixa);
         if (equipada)
@@ -142,7 +139,7 @@ void desenhar_inventario(SDL_Renderer *renderizador, const FilaArmas &armas)
         if (arma != nullptr)
         {
             const SDL_FRect area = {static_cast<float>(x + 8), static_cast<float>(y + 8),
-                                   static_cast<float>(lado - 16), static_cast<float>(lado - 16)};
+                                    static_cast<float>(lado - 16), static_cast<float>(lado - 16)};
             IconeArma::desenhar(renderizador, arma->get_tipo(), area);
         }
         x += lado + ESPACO;
@@ -150,18 +147,18 @@ void desenhar_inventario(SDL_Renderer *renderizador, const FilaArmas &armas)
     desenhar_cicloFila(renderizador);
 }
 
-void desenhar_barra(SDL_Renderer *renderizador, int y, int valor, int maximo,
-                    SDL_Color cor, Icone icone)
+void desenhar_barra(SDL_Renderer *renderizador, int y, int valor, int maximo, SDL_Color cor,
+                    Icone icone)
 {
     desenhar_icone(renderizador, 26, y, icone, cor);
     const std::string valorTexto = std::to_string(valor) + "/" + std::to_string(maximo);
-    Texto::desenhar(renderizador, valorTexto, 272 - Texto::largura(valorTexto, 1),
-                    y, 1, {230, 237, 245, 220});
+    Texto::desenhar(renderizador, valorTexto, 272 - Texto::largura(valorTexto, 1), y, 1,
+                    {230, 237, 245, 220});
     const SDL_Rect trilha = {62, y + 12, 210, 14};
     SDL_SetRenderDrawColor(renderizador, 8, 12, 20, 160);
     SDL_RenderFillRect(renderizador, &trilha);
-    const float proporcao = maximo > 0 ?
-        std::clamp(static_cast<float>(valor) / maximo, 0.0f, 1.0f) : 0.0f;
+    const float proporcao =
+        maximo > 0 ? std::clamp(static_cast<float>(valor) / maximo, 0.0f, 1.0f) : 0.0f;
     const SDL_Rect carga = {trilha.x, trilha.y, static_cast<int>(trilha.w * proporcao), trilha.h};
     SDL_SetRenderDrawColor(renderizador, cor.r, cor.g, cor.b, 195);
     SDL_RenderFillRect(renderizador, &carga);
@@ -189,10 +186,10 @@ std::string formatar_relogio(float segundos)
     std::snprintf(texto, sizeof(texto), "%02d:%02d.%d", minutos, segundosInteiros, decimos);
     return texto;
 }
-}
+} // namespace
 
-void Hud::desenhar(SDL_Renderer *renderizador, const Jogador &jogador,
-                   const Sprite &spriteJogador, int vidas, int pontuacao, float tempoFase)
+void Hud::desenhar(SDL_Renderer *renderizador, const Jogador &jogador, const Sprite &spriteJogador,
+                   int vidas, int pontuacao, float tempoFase)
 {
     if (renderizador == nullptr)
     {
@@ -209,8 +206,8 @@ void Hud::desenhar(SDL_Renderer *renderizador, const Jogador &jogador,
     }
 
     // Vida e escudo ficam diretamente sobre a gameplay, sem painel de fundo.
-    desenhar_barra(renderizador, 50, jogador.get_vida(), jogador.get_vidaMax(),
-                   {235, 88, 111, 255}, Icone::VIDA);
+    desenhar_barra(renderizador, 50, jogador.get_vida(), jogador.get_vidaMax(), {235, 88, 111, 255},
+                   Icone::VIDA);
     desenhar_barra(renderizador, 90, jogador.get_escudo(), jogador.get_escudoMax(),
                    {73, 190, 234, 255}, Icone::ESCUDO);
 

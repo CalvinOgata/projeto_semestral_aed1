@@ -111,15 +111,15 @@ bool Sprite::desenhar_quadro(SDL_Renderer *renderizador, const SDL_FRect &quadro
     }
     // Encaixa a imagem no quadro, centralizada, sem esticar ou recortar.
     const int larguraQuadro = largura / quadros;
-    const SDL_Rect origem{std::clamp(indice, 0, quadros - 1) * larguraQuadro, 0,
-                          larguraQuadro, altura};
+    const SDL_Rect origem{std::clamp(indice, 0, quadros - 1) * larguraQuadro, 0, larguraQuadro,
+                          altura};
     const float escala = std::min(quadro.w / larguraQuadro, quadro.h / this->altura);
     const float w = larguraQuadro * escala;
     const float h = this->altura * escala;
-    const SDL_FRect destino = {quadro.x + (quadro.w - w) / 2.0f,
-                              quadro.y + (quadro.h - h) / 2.0f, w, h};
-    return SDL_RenderCopyExF(renderizador, this->textura, &origem, &destino,
-                             angulo, nullptr, flip) == 0;
+    const SDL_FRect destino = {quadro.x + (quadro.w - w) / 2.0f, quadro.y + (quadro.h - h) / 2.0f,
+                               w, h};
+    return SDL_RenderCopyExF(renderizador, this->textura, &origem, &destino, angulo, nullptr,
+                             flip) == 0;
 }
 
 bool Sprite::desenhar_recorte(SDL_Renderer *renderizador, const SDL_FRect &quadro,
@@ -140,7 +140,7 @@ bool Sprite::desenhar_recorte(SDL_Renderer *renderizador, const SDL_FRect &quadr
     const float escala = std::min(quadro.w / origem.w, quadro.h / origem.h);
     const float w = origem.w * escala;
     const float h = origem.h * escala;
-    const SDL_FRect destino = {quadro.x + (quadro.w - w) / 2.0f,
-                              quadro.y + (quadro.h - h) / 2.0f, w, h};
+    const SDL_FRect destino = {quadro.x + (quadro.w - w) / 2.0f, quadro.y + (quadro.h - h) / 2.0f,
+                               w, h};
     return SDL_RenderCopyF(renderizador, this->textura, &origem, &destino) == 0;
 }

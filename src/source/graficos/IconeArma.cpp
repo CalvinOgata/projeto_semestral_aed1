@@ -15,51 +15,42 @@ struct SpriteArma
     SDL_Color detalhe;
 };
 
-const SpriteArma PISTOLA = {{
-    "............", "............", "..mmmmmmmm..", "..mMMMMMMma.",
-    "..mmmmmmmm..", "...mm..m....", "...mmmmm....", "...mm.......",
-    "..aaa.......", "..aaa.......", "............", "............"
-}, {96, 230, 118, 255}};
-const SpriteArma SHOTGUN = {{
-    "............", "............", ".....mmmmmmm", "....mMMMMMMM",
-    "..aaammmmmmm", ".aaaamMMMMMM", ".aaammmmmmmm", "aaaa..mm....",
-    "aaa.........", "............", "............", "............"
-}, {244, 70, 82, 255}};
-const SpriteArma LASER = {{
-    "............", ".....aa.....", "...mmAAmm...", "..mMMaaMMmaa",
-    "..mMMAAMMMAA", "..mmmmmmmma.", "...mm..m....", "...mmmmm....",
-    "...aa.......", "...aa.......", "............", "............"
-}, {244, 70, 82, 255}};
-const SpriteArma DUPLA = {{
-    "............", "............", "mmmm....mmmm", "MMMMmmmmMMMM",
-    "mmmmMAAMmmmm", "....maam....", "....mmmm....", ".....mm.....",
-    ".....aa.....", ".....aa.....", "............", "............"
-}, {76, 156, 255, 255}};
-const SpriteArma RICOCHETE = {{
-    ".........a..", "........aAa.", ".........a..", "..mmmmmm....",
-    "..mMMMMMmm..", "..mMaaMMMma.", "..mmmmmmmm..", "...mm..m....",
-    "...mmmmm....", "...aa.......", "...aa.......", "............"
-}, {96, 230, 118, 255}};
-const SpriteArma ESPADA = {{
-    ".........MM.", "........MMm.", ".......MMm..", "......MMm...",
-    ".....MMm....", "..a.MMm.....", "..aaMm......", "...aa.......",
-    "..m.aa......", ".m...a......", "a...........", "............"
-}, {76, 156, 255, 255}};
-const SpriteArma ARCO = {{
-    "....a.......", "....maa.....", "....m..a....", "....m...a...",
-    "....m....aM.", ".MMMMMMMMMMM", "....m....aM.", "....m...a...",
-    "....m..a....", "....maa.....", "....a.......", "............"
-}, {76, 156, 255, 255}};
-const SpriteArma BOOMERANG = {{
-    "............", ".....aa.....", "....aAAa....", "...aAAAAa...",
-    "..aAAaaAAa..", ".aAAa..aAAa.", ".aAa....aAa.", ".aa......aa.",
-    ".a........a.", "............", "............", "............"
-}, {96, 230, 118, 255}};
-const SpriteArma PULSO = {{
-    "............", "....aaaa....", "...aAAAAa...", "..amMMMMma..",
-    ".amMMAAMMma.", ".amMMAAMMmaa", "..amMMMMma..", "...mmmmmm...",
-    "...mm..m....", "...mmmmm....", "...aa.......", "............"
-}, {244, 70, 82, 255}};
+const SpriteArma PISTOLA = {{"............", "............", "..mmmmmmmm..", "..mMMMMMMma.",
+                             "..mmmmmmmm..", "...mm..m....", "...mmmmm....", "...mm.......",
+                             "..aaa.......", "..aaa.......", "............", "............"},
+                            {96, 230, 118, 255}};
+const SpriteArma SHOTGUN = {{"............", "............", ".....mmmmmmm", "....mMMMMMMM",
+                             "..aaammmmmmm", ".aaaamMMMMMM", ".aaammmmmmmm", "aaaa..mm....",
+                             "aaa.........", "............", "............", "............"},
+                            {244, 70, 82, 255}};
+const SpriteArma LASER = {{"............", ".....aa.....", "...mmAAmm...", "..mMMaaMMmaa",
+                           "..mMMAAMMMAA", "..mmmmmmmma.", "...mm..m....", "...mmmmm....",
+                           "...aa.......", "...aa.......", "............", "............"},
+                          {244, 70, 82, 255}};
+const SpriteArma DUPLA = {{"............", "............", "mmmm....mmmm", "MMMMmmmmMMMM",
+                           "mmmmMAAMmmmm", "....maam....", "....mmmm....", ".....mm.....",
+                           ".....aa.....", ".....aa.....", "............", "............"},
+                          {76, 156, 255, 255}};
+const SpriteArma RICOCHETE = {{".........a..", "........aAa.", ".........a..", "..mmmmmm....",
+                               "..mMMMMMmm..", "..mMaaMMMma.", "..mmmmmmmm..", "...mm..m....",
+                               "...mmmmm....", "...aa.......", "...aa.......", "............"},
+                              {96, 230, 118, 255}};
+const SpriteArma ESPADA = {{".........MM.", "........MMm.", ".......MMm..", "......MMm...",
+                            ".....MMm....", "..a.MMm.....", "..aaMm......", "...aa.......",
+                            "..m.aa......", ".m...a......", "a...........", "............"},
+                           {76, 156, 255, 255}};
+const SpriteArma ARCO = {{"....a.......", "....maa.....", "....m..a....", "....m...a...",
+                          "....m....aM.", ".MMMMMMMMMMM", "....m....aM.", "....m...a...",
+                          "....m..a....", "....maa.....", "....a.......", "............"},
+                         {76, 156, 255, 255}};
+const SpriteArma BOOMERANG = {{"............", ".....aa.....", "....aAAa....", "...aAAAAa...",
+                               "..aAAaaAAa..", ".aAAa..aAAa.", ".aAa....aAa.", ".aa......aa.",
+                               ".a........a.", "............", "............", "............"},
+                              {96, 230, 118, 255}};
+const SpriteArma PULSO = {{"............", "....aaaa....", "...aAAAAa...", "..amMMMMma..",
+                           ".amMMAAMMma.", ".amMMAAMMmaa", "..amMMMMma..", "...mmmmmm...",
+                           "...mm..m....", "...mmmmm....", "...aa.......", "............"},
+                          {244, 70, 82, 255}};
 
 const SpriteArma &obter_sprite(TipoArma tipo)
 {
@@ -100,11 +91,12 @@ SDL_Color cor_do_pixel(const SpriteArma &sprite, char pixel)
         return sprite.detalhe;
     }
 }
-}
+} // namespace
 
 void IconeArma::desenhar(SDL_Renderer *renderizador, TipoArma tipo, const SDL_FRect &area)
 {
-    if (CatalogoSprites::desenhar_arma(renderizador, tipo, area)) return;
+    if (CatalogoSprites::desenhar_arma(renderizador, tipo, area))
+        return;
     if (renderizador == nullptr || area.w <= 0 || area.h <= 0)
     {
         return;
@@ -131,9 +123,10 @@ void IconeArma::desenhar(SDL_Renderer *renderizador, TipoArma tipo, const SDL_FR
 }
 
 void IconeArma::desenhar_empunhada(SDL_Renderer *renderizador, TipoArma tipo, SDL_FPoint mao,
-                                float anguloGraus)
+                                   float anguloGraus)
 {
-    if (CatalogoSprites::desenhar_empunhada(renderizador, tipo, mao, anguloGraus)) return;
+    if (CatalogoSprites::desenhar_empunhada(renderizador, tipo, mao, anguloGraus))
+        return;
     const auto &sprite = obter_sprite(tipo);
     constexpr float ESCALA = 3.0f;
     SDL_FPoint apoio = {3.5f, 6.5f};
@@ -169,10 +162,9 @@ void IconeArma::desenhar_empunhada(SDL_Renderer *renderizador, TipoArma tipo, SD
             }
             const float localX = (x - apoio.x) * ESCALA;
             const float localY = (y + 0.5f - apoio.y) * ESCALA * (espelhar ? -1 : 1);
-            Desenho::retangulo_rotacionado(renderizador,
-                mao.x + localX * cosseno - localY * seno,
-                mao.y + localX * seno + localY * cosseno,
-                ESCALA, ESCALA, angulo, cor_do_pixel(sprite, pixel));
+            Desenho::retangulo_rotacionado(renderizador, mao.x + localX * cosseno - localY * seno,
+                                           mao.y + localX * seno + localY * cosseno, ESCALA, ESCALA,
+                                           angulo, cor_do_pixel(sprite, pixel));
         }
     }
 }

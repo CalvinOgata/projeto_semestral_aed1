@@ -1,10 +1,10 @@
 #include "mundo/Fase.h"
 
+#include "config/Config.h"
 #include <array>
 #include <iterator>
-#include <string>
-#include "config/Config.h"
 #include <stdexcept>
+#include <string>
 
 #include "config/CampanhaConfig.h"
 
@@ -83,12 +83,11 @@ struct PlantaFase
 };
 
 const PlantaFase PLANTAS[] = {
-    {"FASE DOS COMPILADORES", "SPEEDRUN DO BUILD", PLANTA_FASE_1,
-     std::size(PLANTA_FASE_1), PAIS_FASE_1},
-    {"FASE DA REDE", "MULTIPLAYER COM LAG", PLANTA_FASE_2,
-     std::size(PLANTA_FASE_2), PAIS_FASE_2},
-    {"FASE DO KERNEL", "GAME OVER EM TELA AZUL", PLANTA_FASE_3,
-     std::size(PLANTA_FASE_3), PAIS_FASE_3},
+    {"FASE DOS COMPILADORES", "SPEEDRUN DO BUILD", PLANTA_FASE_1, std::size(PLANTA_FASE_1),
+     PAIS_FASE_1},
+    {"FASE DA REDE", "MULTIPLAYER COM LAG", PLANTA_FASE_2, std::size(PLANTA_FASE_2), PAIS_FASE_2},
+    {"FASE DO KERNEL", "GAME OVER EM TELA AZUL", PLANTA_FASE_3, std::size(PLANTA_FASE_3),
+     PAIS_FASE_3},
 };
 static_assert(std::size(PLANTAS) == QUANTIDADE_FASES, "Cada fase precisa de uma planta");
 
@@ -119,10 +118,14 @@ std::vector<std::array<int, 4>> construir_conexoes(const PlantaFase &planta)
         const int dx = sala.coluna - planta.salas[pai].coluna;
         const int dy = sala.linha - planta.salas[pai].linha;
         int direcao = -1;
-        if (dx == -1 && dy == 0) direcao = static_cast<int>(Direcao::ESQUERDA);
-        if (dx == 1 && dy == 0) direcao = static_cast<int>(Direcao::DIREITA);
-        if (dx == 0 && dy == -1) direcao = static_cast<int>(Direcao::CIMA);
-        if (dx == 0 && dy == 1) direcao = static_cast<int>(Direcao::BAIXO);
+        if (dx == -1 && dy == 0)
+            direcao = static_cast<int>(Direcao::ESQUERDA);
+        if (dx == 1 && dy == 0)
+            direcao = static_cast<int>(Direcao::DIREITA);
+        if (dx == 0 && dy == -1)
+            direcao = static_cast<int>(Direcao::CIMA);
+        if (dx == 0 && dy == 1)
+            direcao = static_cast<int>(Direcao::BAIXO);
         if (direcao < 0)
         {
             throw std::logic_error("Pai e filho precisam compartilhar um corredor reto");
@@ -137,7 +140,7 @@ std::vector<std::array<int, 4>> construir_conexoes(const PlantaFase &planta)
     }
     return conexoes;
 }
-}
+} // namespace
 
 Fase::Fase(int numero) : numero(numero)
 {
@@ -168,7 +171,7 @@ Fase::Fase(int numero) : numero(numero)
         config.indicePiso = sala.baus > 0 ? 21 : indicePiso++;
         salas.inserir(Sala(config));
         origens.inserir({sala.coluna * (largura + Sala::COMPRIMENTO_CORREDOR),
-                        sala.linha * (altura + Sala::COMPRIMENTO_CORREDOR)});
+                         sala.linha * (altura + Sala::COMPRIMENTO_CORREDOR)});
     }
     // A arvore nasce somente com o lobby. As outras salas entram quando suas
     // portas forem liberadas pela gameplay.
@@ -208,15 +211,18 @@ bool Fase::atualizar_transicao(Jogador &jogador)
     {
         const auto direcao = static_cast<Direcao>(d);
         const int destino = get_vizinho(indiceAtual, direcao);
-        if (destino < 0 || !atual.porta_liberada(direcao)) continue;
-        if (!consultar_transicaoArvore(indiceAtual, static_cast<std::size_t>(destino))) continue;
+        if (destino < 0 || !atual.porta_liberada(direcao))
+            continue;
+        if (!consultar_transicaoArvore(indiceAtual, static_cast<std::size_t>(destino)))
+            continue;
         const auto &config = atual.get_configuracao();
         const float comprimento = Sala::COMPRIMENTO_CORREDOR;
-        const bool chegou = d == 0 ? jogador.get_x() <= -comprimento - jogador.get_largura() :
-                            d == 1 ? jogador.get_x() >= config.largura + comprimento :
-                            d == 2 ? jogador.get_y() <= -comprimento - jogador.get_altura() :
-                                     jogador.get_y() >= config.altura + comprimento;
-        if (!chegou) continue;
+        const bool chegou = d == 0   ? jogador.get_x() <= -comprimento - jogador.get_largura()
+                            : d == 1 ? jogador.get_x() >= config.largura + comprimento
+                            : d == 2 ? jogador.get_y() <= -comprimento - jogador.get_altura()
+                                     : jogador.get_y() >= config.altura + comprimento;
+        if (!chegou)
+            continue;
         const auto origem = origens.obter(indiceAtual), alvo = origens.obter(destino);
         const float x = jogador.get_x() + origem.x - alvo.x;
         const float y = jogador.get_y() + origem.y - alvo.y;
@@ -261,14 +267,18 @@ SDL_FRect Fase::get_limitesVisuais() const
     // fase nao deslocam a sala atual para um canto vazio da tela.
     const auto &config = get_salaAtual().get_configuracao();
     const float margem = 12.0f;
-    const float esquerda = get_vizinho(indiceAtual, Direcao::ESQUERDA) >= 0 ?
-        -Sala::COMPRIMENTO_CORREDOR - margem : -margem;
-    const float direita = get_vizinho(indiceAtual, Direcao::DIREITA) >= 0 ?
-        config.largura + Sala::COMPRIMENTO_CORREDOR + margem : config.largura + margem;
-    const float cima = get_vizinho(indiceAtual, Direcao::CIMA) >= 0 ?
-        -Sala::COMPRIMENTO_CORREDOR - margem : -margem;
-    const float baixo = get_vizinho(indiceAtual, Direcao::BAIXO) >= 0 ?
-        config.altura + Sala::COMPRIMENTO_CORREDOR + margem : config.altura + margem;
+    const float esquerda = get_vizinho(indiceAtual, Direcao::ESQUERDA) >= 0
+                               ? -Sala::COMPRIMENTO_CORREDOR - margem
+                               : -margem;
+    const float direita = get_vizinho(indiceAtual, Direcao::DIREITA) >= 0
+                              ? config.largura + Sala::COMPRIMENTO_CORREDOR + margem
+                              : config.largura + margem;
+    const float cima = get_vizinho(indiceAtual, Direcao::CIMA) >= 0
+                           ? -Sala::COMPRIMENTO_CORREDOR - margem
+                           : -margem;
+    const float baixo = get_vizinho(indiceAtual, Direcao::BAIXO) >= 0
+                            ? config.altura + Sala::COMPRIMENTO_CORREDOR + margem
+                            : config.altura + margem;
     return {esquerda, cima, direita - esquerda, baixo - cima};
 }
 
@@ -392,15 +402,18 @@ void Fase::atualizar(float dt, Jogador &jogador)
 {
     for (std::size_t i = 0; i < salas.get_quantidade(); ++i)
     {
-        if (i == indiceAtual) salas.obter(i).atualizar(dt, jogador);
-        else salas.obter(i).envelhecer_coletas(dt);
+        if (i == indiceAtual)
+            salas.obter(i).atualizar(dt, jogador);
+        else
+            salas.obter(i).envelhecer_coletas(dt);
     }
     preparar_adjacentes();
 }
 
 void Fase::preparar_adjacentes()
 {
-    if (!get_salaAtual().liberada()) return;
+    if (!get_salaAtual().liberada())
+        return;
     const PlantaFase &planta = PLANTAS[numero - 1];
     for (std::size_t indiceFilho = 1; indiceFilho < planta.quantidade; ++indiceFilho)
     {

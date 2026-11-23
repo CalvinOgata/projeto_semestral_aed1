@@ -25,7 +25,12 @@ private:
     int reforcoVirus = 0;
     int reforcoBrutos = 0;
     // Marca piscante no ponto de surgimento, para o jogador poder reagir.
-    struct Aviso { float x, y, tempo, duracao; TipoInimigo tipo; Afinidade afinidade; };
+    struct Aviso
+    {
+        float x, y, tempo, duracao;
+        TipoInimigo tipo;
+        Afinidade afinidade;
+    };
     ListaSequencial<Aviso> avisos;
     // Velocidade estimada do jogador, usada na mira antecipada.
     SDL_FPoint posicaoJogadorAnterior = {0, 0};
@@ -43,7 +48,10 @@ private:
         float velocidade = 230;
         Afinidade afinidade = Afinidade::NEUTRA;
     };
-    struct Coracao { float x, y, tempo = 10; };
+    struct Coracao
+    {
+        float x, y, tempo = 10;
+    };
     ListaSequencial<TiroInimigo> tirosInimigos;
     ListaSequencial<Coracao> coracoes;
     void atualizar_hostis(float dt, Jogador &jogador);

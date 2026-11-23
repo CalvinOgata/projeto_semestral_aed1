@@ -11,7 +11,7 @@ void bloco(SDL_Renderer *r, float x, float y, float w, float h, SDL_Color cor)
     const SDL_FRect area{x, y, w, h};
     SDL_RenderFillRectF(r, &area);
 }
-}
+} // namespace
 
 void Ambiente::desenhar_piso(SDL_Renderer *r, const SDL_FRect &area)
 {
@@ -22,7 +22,8 @@ void Ambiente::desenhar_piso(SDL_Renderer *r, const SDL_FRect &area)
             const float x = area.x + coluna * 48, y = area.y + linha * 48;
             const float w = std::min(46.0f, area.w - coluna * 48 - 2);
             const float h = std::min(46.0f, area.h - linha * 48 - 2);
-            if (w <= 0 || h <= 0) continue;
+            if (w <= 0 || h <= 0)
+                continue;
             const Uint8 tom = 43 + (coluna * 17 + linha * 31) % 11;
             bloco(r, x + 1, y + 1, w, h, {tom, Uint8(tom + 6), Uint8(tom + 12), 255});
             bloco(r, x + 2, y + 2, w - 2, 1, {65, 73, 82, 255});
@@ -85,22 +86,21 @@ void Ambiente::desenhar_portal(SDL_Renderer *r, float x, float y)
     // Boca escura no chao, borda de pedra irregular e aneis violetas.
     for (int raio = 54; raio > 0; --raio)
     {
-        const SDL_Color cor = raio > 46 ? SDL_Color{66, 61, 79, 255} :
-                              raio > 39 ? SDL_Color{132, 103, 170, 255} :
-                              raio > 32 ? SDL_Color{62, 43, 93, 255} :
-                                          SDL_Color{12, 10, 23, 255};
+        const SDL_Color cor = raio > 46   ? SDL_Color{66, 61, 79, 255}
+                              : raio > 39 ? SDL_Color{132, 103, 170, 255}
+                              : raio > 32 ? SDL_Color{62, 43, 93, 255}
+                                          : SDL_Color{12, 10, 23, 255};
         SDL_SetRenderDrawColor(r, cor.r, cor.g, cor.b, 255);
         for (int a = 0; a < 180; ++a)
         {
             const float angulo = a * 6.2831853f / 180;
             SDL_RenderDrawPointF(r, x + std::cos(angulo) * raio,
-                                y + std::sin(angulo) * raio * 0.65f);
+                                 y + std::sin(angulo) * raio * 0.65f);
         }
     }
     for (int i = 0; i < 10; ++i)
     {
         const float a = i * 6.2831853f / 10;
-        bloco(r, x + std::cos(a) * 49 - 2, y + std::sin(a) * 32 - 2,
-              4, 4, {207, 176, 231, 255});
+        bloco(r, x + std::cos(a) * 49 - 2, y + std::sin(a) * 32 - 2, 4, 4, {207, 176, 231, 255});
     }
 }

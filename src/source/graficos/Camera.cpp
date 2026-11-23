@@ -53,7 +53,7 @@ SDL_FPoint Camera::para_mundo(float telaX, float telaY) const
 void Camera::limitar_a(const SDL_FRect &area)
 {
     this->x = area.w <= LARGURA_TELA ? area.x + (area.w - LARGURA_TELA) / 2.0f
-                                   : std::clamp(this->x, area.x, area.x + area.w - LARGURA_TELA);
+                                     : std::clamp(this->x, area.x, area.x + area.w - LARGURA_TELA);
     this->y = area.h <= ALTURA_TELA ? area.y + (area.h - ALTURA_TELA) / 2.0f
-                                  : std::clamp(this->y, area.y, area.y + area.h - ALTURA_TELA);
+                                    : std::clamp(this->y, area.y, area.y + area.h - ALTURA_TELA);
 }

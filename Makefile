@@ -30,10 +30,14 @@ SAIDA      ?= jogo.exe
 CXXFLAGS_SO := -D_USE_MATH_DEFINES
 # -static embute libstdc++, libgcc e winpthread; -mwindows evita o console.
 LDFLAGS_SO := -static -mwindows
+# Icone e informacoes de versao do .exe, compilados pelo windres do MinGW.
+WINDRES    := x86_64-w64-mingw32-windres
+RECURSOS   := $(DIR_BUILD)/recursos/jogo.res.o
 else ifeq ($(ALVO_SO),linux)
 CXX        := g++
 SAIDA      ?= jogo
 CXXFLAGS_SO :=
+RECURSOS   :=
 # A glibc continua dinamica (existe em toda distro); o runtime de C++ vai junto.
 LDFLAGS_SO := -static-libstdc++ -static-libgcc
 else
@@ -145,9 +149,14 @@ DOCKER_RODAR = docker run --rm -u "$$(id -u):$$(id -g)" -e HOME=/tmp \
 
 all: $(SAIDA)
 
-$(SAIDA): $(OBJETOS) $(OBJETO_GERADO)
+$(SAIDA): $(OBJETOS) $(OBJETO_GERADO) $(RECURSOS)
 	@mkdir -p $(dir $@)
-	$(CXX) $(OBJETOS) $(OBJETO_GERADO) -o $@ $(LDFLAGS_SO) $(LDLIBS)
+	$(CXX) $(OBJETOS) $(OBJETO_GERADO) $(RECURSOS) -o $@ $(LDFLAGS_SO) $(LDLIBS)
+
+# So no Windows: o .rc referencia o .ico a partir da raiz do projeto.
+$(DIR_BUILD)/recursos/jogo.res.o: ferramentas/windows/jogo.rc assets/icone/jogo.ico
+	@mkdir -p $(dir $@)
+	$(WINDRES) -I. ferramentas/windows/jogo.rc -O coff -o $@
 
 # Os objetos precisam dos cabecalhos do SDL2 compilado em externo/.
 $(DIR_BUILD)/obj/%.o: $(DIR_SRC)/%.cpp | $(EXTERNO_PRONTO)
