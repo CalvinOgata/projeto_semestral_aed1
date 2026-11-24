@@ -1,534 +1,106 @@
-# projeto_semestral_aed1
-
-Roguelike top-down em C++ com SDL2.
-
-## Compilar e rodar
-
-SDL2, libpng e zlib **nao precisam estar instaladas**: o codigo-fonte delas (versoes
-fixadas) fica em `externo/` e o Makefile as compila como bibliotecas estaticas na
-primeira compilacao (cerca de 1 minuto). Os sprites usados sao copiados para dentro
-do executavel. O resultado e um unico arquivo, sem `.so`/DLL nem pasta `assets/`.
-Nao ha SDL2_ttf: o texto usa uma fonte de bitmap embutida.
-
-```sh
-make            # gera ./jogo
-make run        # compila e executa
-make clean      # apaga o codigo compilado do jogo e os executaveis
-make clean-tudo # tambem apaga as bibliotecas ja compiladas (recompila o SDL2)
-```
-
-Ferramentas necessarias: `g++`, `make`, `cmake`, `pkg-config` e `python3`. No Linux o
-SDL2 so ativa o suporte a X11/Wayland/audio cujos cabecalhos (`-dev`) existirem ao
-compilar. No Arch eles ja vem nos pacotes normais; no Debian/Ubuntu instale os
-listados em `ferramentas/docker/linux.Dockerfile`, ou use `make dist-linux`.
-
-### Executaveis para distribuir (Linux e Windows)
-
-Precisa apenas do Docker; cada build roda num container com as ferramentas certas:
-
-```sh
-make dist-linux     # gera dist/jogo      (Linux x86-64, glibc 2.35+)
-make dist-windows   # gera dist/jogo.exe  (Windows 64 bits, compilado com MinGW-w64)
-make dist           # os dois
-```
-
-- `dist/jogo` e compilado no Ubuntu 22.04 e roda nele e em distros mais novas
-  (Debian 12+, Fedora 36+, Arch...). So depende da libc; X11, Wayland, OpenGL e
-  audio sao abertos pelo SDL a partir do sistema, como em qualquer jogo Linux.
-- `dist/jogo.exe` so usa DLLs que acompanham o proprio Windows. O icone (Tux) e as
-  informacoes de versao vem de `ferramentas/windows/jogo.rc`, compilado pelo
-  `windres` do MinGW. O icone `assets/icone/jogo.ico` (256 a 16 px) foi gerado do
-  primeiro quadro do Tux por `python3 ferramentas/gerar_icone.py` (requer Pillow);
-  rode de novo se a arte do Tux mudar.
-- Basta enviar o arquivo. Os saves sao criados em `saves/` ao lado dele.
-
-Sem Docker, `make ALVO_SO=windows` compila o `.exe` localmente se o
-`x86_64-w64-mingw32-g++` estiver instalado.
-
-### Downloads automaticos (GitHub Actions)
-
-O workflow `.github/workflows/executaveis.yml` compila Linux, Windows e web no GitHub:
-
-- **Push no `main`:** atualiza a pre-release `desenvolvimento` (aba *Releases*) com
-  `MCGA-windows-x86_64.exe`, `MCGA-linux-x86_64.tar.gz` e `MCGA-web.zip` do ultimo commit.
-- **Tag `v*`:** cria uma release oficial com os mesmos arquivos:
-  `git tag v1.0 && git push origin v1.0`.
-- **Pull requests:** so compilam (os arquivos ficam em *Actions → execucao → Artifacts*).
-
-As bibliotecas de `externo/` e os ports do Emscripten ficam em cache, entao so a
-primeira execucao (ou uma troca de versao) recompila o SDL2.
-
-### Deploy automatico da versao web (nginx)
-
-O job `deploy-web` envia o `index.html` de cada push no `main` para um servidor por
-SSH (`scp` para `index.html.novo` e depois `mv`, sem deixar o site pela metade). Ele so
-roda se a variavel `DEPLOY_HOST` existir no repositorio.
-
-**1. No servidor**, crie um usuario so para o deploy e a pasta do jogo:
-
-```sh
-sudo useradd -m -s /bin/sh deploy
-sudo mkdir -p /var/www/meujogo && sudo chown deploy: /var/www/meujogo
-```
-
-**2. No seu computador**, gere uma chave exclusiva (sem senha) e autorize-a no servidor:
-
-```sh
-ssh-keygen -t ed25519 -N "" -C "deploy MCGA" -f ~/.ssh/mcga_deploy
-# no servidor, em /home/deploy/.ssh/authorized_keys, uma linha:
-#   restrict ssh-ed25519 AAAA... deploy MCGA
-ssh-keyscan -p 22 SEU_SERVIDOR > /tmp/known_hosts_mcga   # opcional, veja abaixo
-```
-
-**3. No GitHub** (*Settings → Secrets and variables → Actions*), ou pelo terminal:
-
-```sh
-gh secret set DEPLOY_SSH_KEY      < ~/.ssh/mcga_deploy
-gh secret set DEPLOY_KNOWN_HOSTS  < /tmp/known_hosts_mcga   # opcional
-gh variable set DEPLOY_HOST --body "SEU_SERVIDOR"
-gh variable set DEPLOY_USER --body "deploy"
-gh variable set DEPLOY_DIR  --body "/var/www/meujogo"
-gh variable set DEPLOY_URL  --body "https://meudominio.com.br/meujogo/"
-gh variable set DEPLOY_PORT --body "22"        # opcional, padrao 22
-```
-
-`DEPLOY_KNOWN_HOSTS` e opcional. Com ele, o deploy so conecta se a identidade do
-servidor for a cadastrada. Sem ele, o workflow le a identidade do proprio servidor a
-cada execucao (`ssh-keyscan`) e mostra um aviso: funciona, mas nao detecta alguem se
-passando pelo servidor.
-
-**4. No nginx**, dentro do `server { ... }` do dominio:
-
-```nginx
-location = /meujogo { return 301 /meujogo/; }
-
-location /meujogo/ {
-    alias /var/www/meujogo/;
-    index index.html;
-    # Sempre confere se ha versao nova, para o deploy aparecer na hora.
-    add_header Cache-Control "no-cache";
-    gzip on;
-    gzip_types text/html;
-}
-```
-
-Depois `sudo nginx -t && sudo systemctl reload nginx`. Ao final, o job baixa
-`DEPLOY_URL` e confere se a pagina do jogo esta no ar.
-
-### Assets embutidos
-
-`ferramentas/embutir_assets.py` converte os PNGs listados em `ASSETS_EMBUTIDOS` no
-Makefile em um `.cpp` gerado dentro de `build/`. Para usar uma nova imagem:
-declare-a em `src/include/graficos/AssetsEmbutidos.h`, adicione `NOME=caminho` em
-`ASSETS_EMBUTIDOS` e carregue com `Sprite::carregar(renderizador, AssetsEmbutidos::NOME)`.
-
-### Versao web (opcional)
-
-So e necessaria para gerar a versao de navegador; o `make` normal nao depende dela.
-Instale o [emsdk](https://github.com/emscripten-core/emsdk) fora da pasta do projeto:
-
-```sh
-git clone https://github.com/emscripten-core/emsdk.git ~/emsdk
-cd ~/emsdk && ./emsdk install latest && ./emsdk activate latest
-source ~/emsdk/emsdk_env.sh   # em cada terminal (ou no ~/.zshrc / ~/.bashrc)
-```
-
-```sh
-make web       # gera build-web/index.html (unico arquivo, codigo e sprites embutidos)
-make web-zip   # gera jogo-web.zip para o itch.io
-```
-
-O `build-web/index.html` abre direto no navegador (duplo clique), sem servidor.
-No navegador os saves ficam no IndexedDB do proprio navegador e a opcao SAIR
-nao aparece nos menus. O layout da pagina esta em `web/shell.html`.
-
-Publicar no itch.io: projeto do tipo **HTML**, enviar `jogo-web.zip`, marcar
-"This file will be played in the browser", tamanho do embed 960x540 e ativar o
-botao de tela cheia.
-
-## Controles
-
-| Entrada | Acao |
-| --- | --- |
-| `W` `A` `S` `D` ou setas | mover pelas salas e corredores |
-| mouse | mirar quando nao ha inimigos vivos na sala; em combate, a mira acompanha automaticamente o adversario mais proximo |
-| botao esquerdo | atirar (segurar mantem o tiro na cadencia) |
-| `F` | coletar a arma mais proxima (ate 54 pixels), se houver vaga |
-| `Q` | passar a arma equipada para o fim da fila |
-| `G` | soltar a arma equipada no chao |
-| `F2` | mostrar/esconder hitboxes para conferir sprites |
-| `M` | abrir/fechar minimapa da fase; congela o jogo enquanto aberto |
-| `F5` | tentar salvar novamente se houver falha de gravacao |
-| `Esc` | abrir o menu de pausa (e voltar ao jogo) |
-| setas / `W` `S` | navegar no menu |
-| setas laterais / `A` `D` | ajustar configuracoes e trocar a aba do manual |
-| `Enter` ou `Espaco` | confirmar |
-
-O menu tambem responde ao mouse (passar por cima seleciona, clique confirma).
-A tela **Manual** do proprio jogo repete estes comandos e resume as regras.
-
-### Celular e tablet (versao web)
-
-O primeiro toque na tela liga os controles de toque (teclado ou mouse os desligam):
-
-| Toque | Acao |
-| --- | --- |
-| arrastar na metade esquerda | joystick que nasce onde o dedo encosta (meio curso = meia velocidade) |
-| segurar o alvo ou qualquer ponto livre da direita | atirar; a mira continua automatica e, sem inimigos, segue o joystick |
-| `PEGAR` / `TROCAR` / `SOLTAR` | o mesmo que `F` / `Q` / `G`; `PEGAR` acende perto de uma arma; tocar nas armas do canto tambem troca |
-| `II` / `MAPA` | pausa e minimapa (um toque fecha o mapa) |
-| toque nas demais telas | vale um clique: menus, resumo da fase, derrota, fim de jogo e creditos; segurar acelera o texto final |
-
-Joystick e tiro funcionam ao mesmo tempo (multitoque). A pagina pede tela cheia
-na horizontal no primeiro toque (onde o navegador permite; no iPhone nao) e, com
-o aparelho em pe, mostra um aviso para gira-lo. O manual do jogo mostra os
-comandos de toque quando eles estao ativos.
-
-## Como esta agora
-
-Uma campanha com **tres fases** ramificadas, todas com salas de 936x516,
-lobby, salas de bau e boss. Cada fase une um tema de computacao a uma referencia
-de jogos, e seu nome aparece por 3 segundos ao entrar nela:
-
-| Cor/tipo | Inimigo basico | Inimigo medio | Boss |
-|------|------|------------------------|------|
-| Vermelho — Malware | ILOVEYOU.EXE | MIRAI SWARM | WANNACRY PRIME |
-| Azul — Software fechado | EULA-BOT | SENTINELA DRM | WINDOWS UPDATE |
-| Verde — Computacao com IA | NPU DRONE | GPU H100 | DATACENTER HIPERESCALA |
-
-As classes basico, medio e boss controlam forca e comportamento. A afinidade de
-cor e independente: armas vermelhas sao eficazes contra inimigos vermelhos,
-azuis contra azuis e verdes contra verdes. Uma combinacao correta causa **2x o
-dano-base**; as demais causam 1x. O soco da mao vazia e neutro e sempre causa 1x.
-
-A fase 1 possui sete salas (Pre-processador, Cache de build, Analise lexica,
-Parser, Linker e Compilador fechado):
-
-```text
-          Lobby
-          |
- B ------ A ------ C
-(bau)     |        |
-          D        E (2 baus)
-                   |
-                   F (boss)
-```
-
-A tem 4 inimigos basicos e 1 medio. C e D possuem, cada uma, 5 basicos e 2 medios. A, C e D recebem
-uma onda de reforco.
-O lobby e as salas B/E nao possuem inimigos. As portas abrem ao eliminar todos
-os inimigos da sala; atravesse o corredor estreito para chegar a sala seguinte.
-Salas vazias ou limpas ficam abertas, permitindo voltar pelo corredor, inclusive em E–F.
-Derrote o boss de F e toque no portal central para avancar.
-Ao limpar uma sala, seus filhos entram na arvore e sao preparados; seus inimigos so
-comecam a agir quando o jogador entra.
-Salas limpas e baus abertos persistem nas revisitas.
-A fase 2 (dificuldade 2) possui nove salas (Roteador, Cache DNS, Caixa de spam,
-Proxy, Botnet, Ping 999, Loot drop e H100 Colossus):
-
-```text
-          Lobby
-          |
- B ------ A ------ C
-(bau)     |        |
-          D        E
-          |
-          F ------ G (2 baus)
-          |
-          H (H100 COLOSSUS)
-```
-
-A tem 5 basicos e 1 medio; C, 6 e 2; D, 5 e 2; E, 7 e 2; F, 6 e 3. D e F
-recebem duas ondas de reforco; as demais salas de combate, uma.
-
-A fase 3 (dificuldade 3) possui onze salas, com lobby no topo (Kernel panic,
-Rootkit, Ransomware, Spyware, Worm, Cofre de memoria, Deadlock, Save point,
-Processos zumbis e WannaCry Prime):
-
-```text
-          Lobby
-          |
- B ------ A ------ C ------ F (bau)
- |                 |
- D ------ G        E ------ H (2 baus)
-          |
-          I
-          |
-          J (WANNACRY PRIME + 3 basicos)
-```
-
-A tem 6 basicos e 2 medios; B e C, 7 e 2; D, 8 e 2; E, 8 e 3; G, 7 e 3; I, 7 e 4.
-A recebe uma onda de reforco, I recebe tres e as demais, duas.
-Nas tres fases, o boss da ultima sala libera o portal central de saida.
-
-Os desenhos acima e o minimapa preservam as posicoes relativas das salas:
-esquerda, direita, cima e baixo correspondem ao cenario real. A escala e compactada.
-Toda passagem liga exatamente pai e filho, nos dois sentidos; nao existem
-atalhos entre ramos. A tabela de pais gera as portas e corredores, e tambem
-governa a descoberta no minimapa. Cada no do mapa informa ESQ/DIR/CIMA/BAIXO:
-a porta a usar na sala pai para chegar a ele. Os nos ja revelados nao mudam de
-posicao ao descobrir outros ramos. As posicoes e o conteudo das salas continuam
-fixos por fase.
-
-Baus abrem automaticamente a menos de 64 pixels e soltam duas armas: a primeira
-sempre tem a afinidade eficaz contra o boss da fase, e a segunda e sorteada entre
-os nove tipos; repeticoes sao possiveis.
-Use F para coletar, Q para trocar e G para soltar uma arma se o inventario lotar.
-Na fase 1, armas extras vem dos baus, em vez da distribuicao de teste em cada sala.
-
-Cada uma das nove combinacoes de classe e afinidade tem nome e pixel art embutida
-provisoria em `graficos/SpriteInimigo`, pronta para posterior troca por PNG autoral.
-Quando resta no maximo um inimigo, a proxima onda de reforco e anunciada por
-molduras rosas piscando durante 1 segundo, longe do jogador; a sala so libera
-depois de todas as ondas. Os inimigos mantem distancia, circulam o jogador,
-contornam a cobertura quando ela bloqueia a mira (sem desperdicar tiros) e
-antecipam o movimento do jogador. Bruta-montes abrem um leque de tres tiros a
-cada tres ataques. O boss alterna leque mirado, anel giratorio de 12 tiros e a
-invocacao de dois virus, e atira mais rapido abaixo de metade da vida. Cada fase
-aumenta vida, velocidade, cadencia e velocidade dos tiros inimigos. Escudo absorve dano antes da vida e
-regenera 10 pontos/s apos 3 segundos sem dano. Ha 0,5 segundo de protecao apos
-um acerto. Cada inimigo morto deixa um coracao de 10 de vida: coleta automatica
-por contato quando falta vida, expiracao em 10 segundos de jogo (inclusive fora
-da sala; pausa congela o tempo).
-
-A campanha tem **3 vidas** e **um unico continue**. Morrer gasta uma vida, mostra a
-animacao de derrota e reinicia a fase atual, sem perder fases concluidas. Sem vidas,
-aparece o game over com contagem de 10 s: aceitar o continue devolve as 3 vidas e
-recomeca a fase; recusar (ou ja ter usado o continue) apaga o save do slot.
-
-A pontuacao soma 100 por inimigo basico, 250 por bruto e 2000 por boss, mais um
-bonus de rapidez ao concluir a fase (1000 x 300 s / tempo gasto). O resumo de cada
-fase mostra essas parcelas e o total da campanha aparece na tela de vitoria.
-
-A dificuldade aumenta vida e velocidade dos inimigos. Sobre o balanceamento bruto,
-o jogo aplica primeiro uma reducao de 25% e depois outra de 10% sobre o restante,
-tanto na vida final dos inimigos quanto no dano de seus tiros. Na fase 1, as vidas
-sao 2/13/67 e os danos 5/8/11.
-Paredes limitam movimento
-e tiros; a camera acompanha continuamente o jogador pelas salas e corredores de 96 pixels de largura, sem inimigos. O HUD mostra vidas, vida, escudo, pontuacao e tempo
-no canto superior esquerdo, direto sobre o jogo, com barras coloridas e icones. A municao aparece
-apenas como numero no canto inferior direito. Na pausa aparecem apenas a fase e o nome da sala,
-com o titulo PAUSADO e as opcoes Continuar, Manual, Reiniciar, Menu inicial e Sair.
-Manual abre o mesmo manual do menu principal e volta para a pausa. Os comandos nao
-ficam mais escritos no piso do lobby: so aparecem no manual.
-Reiniciar recomeca a fase atual e o jogador, preservando fases concluidas.
-O reinicio manual fica exclusivamente nesse menu; a tecla R nao executa nenhuma acao.
-
-As salas de combate, baus e boss possuem cobertura: caixotes (pacotes de dados,
-5 de vida) e barreiras de firewall formadas por fileiras de cinco bloquinhos 24x24
-(3 de vida cada). Cada acerto atinge um so bloquinho, abrindo frestas na barreira. Eles bloqueiam o movimento de
-todos e param os tiros inimigos sem sofrer dano; somente os ataques do jogador os
-quebram, e rachaduras aparecem na metade da vida. O Canhao CRT ricocheteia neles, e o Raio Avira e os golpes corpo a corpo param na primeira peca do caminho, atingindo so um bloco.
-Pecas quebradas continuam quebradas ao revisitar a sala.
-
-As configuracoes das salas sao fixas. Dano de contato e geracao procedural ainda nao estao implementados.
-
-## Tela inicial e salvamento
-
-O minimapa mostra apenas as salas ja reveladas na arvore: inicialmente o lobby;
-ao liberar uma sala, seus filhos aparecem, mesmo antes da visita. M apenas consulta
-a arvore. A sala atual recebe borda amarela e um marcador. Verde indica sala concluida, cinza nao visitada e vermelho
-em combate; salas de baus e boss possuem identificacao. Funciona nas tres fases,
-inclusive pelo menu de pausa. M ou Esc fecham o mapa e retornam ao estado anterior.
-Movimento, tiros e temporizadores ficam congelados durante a consulta.
-
-Ao abrir, o jogo mostra uma tela de carregamento (log de "boot", barra com o Tux
-andando e dicas) enquanto sintetiza os sons; ela dura pelo menos 3,6 s e qualquer
-tecla encurta a espera depois que fica pronta. Em seguida vem o menu principal:
-
-- **Jogar** abre **Novo jogo** (escolhe um slot e substitui o progresso dele) e
-  **Continuar** (retoma o inicio da proxima fase ainda nao concluida).
-- **Manual** mostra os comandos e um resumo de como jogar, em duas abas.
-- **Configuracoes** ajusta volume da musica e dos efeitos (0 a 10), tela cheia
-  (so no desktop) e hitboxes. Fica em `saves/configuracoes.txt` (`chave=valor`).
-- **Sobre** lista as tecnologias usadas e a equipe.
-- **Sair** fecha o jogo (nao aparece na versao web). Na pausa ha tambem **Menu inicial**.
-
-## Audio
-
-Nao ha arquivos de som: `audio/Sintetizador` gera ondas quadrada, triangular,
-serra, senoide e ruido com envelope, varredura de frequencia, vibrato e filtro;
-`audio/Repertorio` compoe cada efeito e as tres trilhas (menu, fases e chefe) como
-listas de notas; `audio/Som` mistura tudo no dispositivo do SDL. A sintese acontece
-durante a tela de carregamento, em fatias de 8 ms por quadro.
-
-- Trilhas: menu em la menor tranquilo; fases em mi menor; chefe em re frigio, que
-  entra enquanto a sala do chefe esta em combate. A pausa e o minimapa abafam a trilha.
-- Efeitos: um disparo diferente por arma, soco, sem municao, acerto, morte de virus,
-  bruto e chefe, tiros inimigos, alerta de reforcos, invocacao, dano no escudo e na
-  vida, coracao, portas trancando, sala liberada, bau, coletar/soltar/trocar arma,
-  portal, fase concluida, morte, game over, continue, vitoria e navegacao dos menus.
-- Ao morrer, uma animacao mostra o sistema sendo invadido por virus e janelas de erro,
-  seguida de "NAO DESISTA, GUERREIRO!", um trocadilho de programacao e as vidas restantes
-  (Enter acelera). So entao a fase recomeca ou aparece o game over.
-- Ao vencer a campanha: celebracao com fogos, um texto reflexivo que sobe devagar com
-  trocadilhos de programacao (segure Espaco para acelerar, Esc pula) e os creditos, com
-  trilha propria de encerramento.
-- Repeticoes rapidas do mesmo efeito tem intervalo minimo e no maximo 4 copias
-  simultaneas. Sem dispositivo de audio, o jogo continua mudo.
-
-O jogo salva automaticamente ao iniciar uma nova campanha e ao concluir cada
-fase, e tambem ao perder uma vida. Ha tres slots independentes,
-`saves/progresso_1.json` a `progresso_3.json`, na pasta `saves/` ao lado do
-executavel, mesmo quando o jogo e iniciado de outro diretorio (na web, ficam no
-IndexedDB do navegador). Eles nao sao incluidos no Git e nem `make clean` nem
-`make clean-tudo` os removem. Exemplo apos concluir uma fase com Raio Avira, Laminas Malwarebytes e Zapper:
-
-```json
-{
-  "versao": 3,
-  "fases_concluidas": 1,
-  "vidas": 2,
-  "continue_disponivel": 1,
-  "pontuacao_total": 4310,
-  "armas": [
-    {"tipo": 2, "municao": 33},
-    {"tipo": 5, "municao": 40},
-    {"tipo": 0, "municao": 0}
-  ]
-}
-```
-
-`armas` guarda, na ordem da fila (a primeira e a equipada), as armas com que a
-proxima fase comeca. `tipo` e o indice de `TipoArma`: 0 Zapper 8-Bits, 1 Clams do
-ClamAV, 2 Raio Avira, 3 Fork Open Source, 4 Canhao CRT, 5 Laminas Malwarebytes,
-6 Penas Apache, 7 Chicote Macintosh e 8 Rifle Wireshark. Os indices 0 a 8
-foram preservados. `vidas`, `continue_disponivel` (0 ou 1) e `pontuacao_total`
-entraram na versao 3; saves antigos (versao 1 sem `armas`, versao 2 sem esses tres
-campos) continuam validos.
-
-O salvamento e por fase: sair no meio da fase faz `Continuar` voltar ao inicio
-dela. Salas, tiros e posicoes em andamento nao sao serializados. Cada fase comeca
-com vida e escudo cheios; armas e municao vem do checkpoint.
-Apos a terceira fase, aparece a tela de vitoria e o save registra tres fases
-concluidas. `Continuar` fica desabilitado; escolha `Novo jogo` para recomecar.
-
-Sem save, com arquivo invalido ou com campanha concluida, a tela inicial explica
-por que nao e possivel continuar. Falhas de escrita aparecem nos menus/pausa e podem ser
-repetidas com `F5`. O arquivo anterior so e substituido depois da escrita completa
-de um arquivo temporario. Se sair antes de uma gravacao bem-sucedida, apenas o
-ultimo checkpoint gravado estara disponivel.
-
-## Convencoes de nome
-
-| Tipo | Padrao | Exemplo |
+# Make Computers Great Again
+
+Jogo roguelike de ação com visão de cima (*top-down*), escrito em C++ com SDL2 e
+inspirado em **Soul Knight**.
+
+Este projeto é o trabalho semestral da disciplina de **Algoritmos e Estruturas de
+Dados 1 (AED1)**. Além de ser um jogo completo, ele mostra na prática como tipos
+abstratos de dados (TADs) resolvem problemas reais de um programa.
+
+## Equipe
+
+- Felipe Baratela Pimenta ([@felipebp14-207](https://github.com/felipebp14-207))
+- Calvin da Serra Ogata de Paula ([@CalvinOgata](https://github.com/CalvinOgata))
+- João Pedro Tomaz dos Santos ([@jsantos43](https://github.com/jsantos43))
+- Pedro Testa Lourenço ([@pedro-testa-ptl](https://github.com/pedro-testa-ptl))
+
+## O jogo
+
+O mundo da computação foi tomado por **sistemas malignos**: vírus, software fechado
+e hardware de IA descontrolado. Você controla o **Tux**, o pinguim do Linux, que
+representa o "código do bem", e precisa libertar os computadores.
+
+- A campanha tem **três fases**. Cada fase é um mapa de salas ligadas por
+  corredores, com um lobby, salas de combate, salas de baú e um **chefe** no final.
+- As portas trancam durante o combate e só abrem quando todos os inimigos da sala
+  (incluindo as ondas de reforço) são derrotados.
+- Os inimigos têm três cores: **vermelho** (malware, como ILOVEYOU e WannaCry),
+  **azul** (software fechado, como EULA-BOT e Windows Update) e **verde** (hardware
+  de IA, como NPU e GPU H100).
+- Existem nove armas, também em três cores (antivírus, open source e hardware
+  retrô) e três alcances (curto, médio e longo). Usar a arma da **mesma cor** do
+  inimigo causa **o dobro de dano**.
+- O jogador tem vida, escudo que se regenera, 3 vidas e um *continue*. O progresso
+  é salvo automaticamente em três slots.
+- Funciona no computador (teclado e mouse) e no navegador, inclusive em celulares
+  com controles de toque.
+
+**Controles principais:** `WASD` ou setas para andar, botão esquerdo do mouse ou `Espaço` para
+atirar (a mira é automática), `F` pega arma, `Q` troca de arma, `G` solta a arma,
+`M` abre o mapa e `Esc` pausa. A tela **Manual**, dentro do jogo, explica tudo.
+
+## Estruturas de dados (TADs)
+
+As estruturas ficam em `src/include/estruturas/` e não dependem do SDL nem de
+nenhuma regra do jogo. As classes do jogo apenas as utilizam.
+
+| TAD | Como funciona | Onde é usado no jogo |
 | --- | --- | --- |
-| classes | `PascalCase` | `FilaArmas`, `Jogador` |
-| metodos | comecam em minuscula | `vazio()`, `inserir()`, `atirar()` |
-| metodo com frase verbal | `snake_case` | `levar_dano()`, `mirar_em()`, `afastar_de()` |
-| metodo com nome composto | `camelCase` no final | `get_vidaMax()`, `get_anguloMira()` |
-| atributos | `camelCase` | `vidaMax`, `quantidadeDisparos` |
-| constantes | `MAIUSCULA_COM_SUBLINHADO` | `LADO_JOGADOR`, `MAX_ARMAS` |
+| **Fila** (`Fila<T, Capacidade>`) | Fila circular (FIFO) em um vetor de tamanho fixo: insere no fim e retira do início, tudo em O(1) | **Inventário de armas** (`FilaArmas`, até 3 armas). A arma da frente é a equipada; `F` insere no fim, `Q` retira a da frente e a coloca no fim, `G` retira a da frente e a deixa no chão |
+| **Lista sequencial** (`ListaSequencial<T>`) | Lista com acesso por índice, inserção no fim e remoção por critério | **Salas** de cada fase, e, dentro de cada sala, **inimigos**, **projéteis**, **obstáculos**, **corações**, **baús** e **armas no chão** |
+| **Árvore** (`Arvore<T>`) | Árvore enraizada com nós encadeados; cada nó conhece o pai e os filhos; percurso em pré-ordem | **Mapa de cada fase**: o lobby é a raiz e cada sala é filha da sala anterior. Ao limpar uma sala, seus filhos são revelados; só é possível andar entre pai e filho. O **minimapa** desenha a árvore com um percurso em pré-ordem |
 
-O `.clang-format` cuida do espacamento, mas **nao** verifica nomes: a regra
-acima e mista (verbo em `snake_case`, substantivo composto em `camelCase`) e o
-`readability-identifier-naming` do clang-tidy nao consegue descrever isso. Se um
-dia o grupo quiser verificacao automatica, o caminho e adotar `snake_case` puro
-(`get_vida_max`) e ligar o clang-tidy.
+Mais detalhes (contratos, custos e decisões) em
+[docs/arquitetura.md](docs/arquitetura.md).
 
-## Estrutura
+## Ferramentas utilizadas
 
-Cabecalhos ficam em `src/include/` e implementacoes em `src/source/`, com os
-mesmos modulos nos dois diretorios (templates ficam apenas nos cabecalhos):
+- **C++17**: a linguagem do jogo.
+- **SDL2**: abre a janela, desenha na tela, lê teclado/mouse/toque e toca o som.
+- **libpng** e **zlib**: leem as imagens PNG dos personagens, armas e pisos.
+- **Make** e **CMake**: automatizam a compilação do jogo e das bibliotecas.
+- **Emscripten**: transforma o jogo em uma página web (WebAssembly).
+- **Docker** e **MinGW-w64**: geram os executáveis prontos para Linux e Windows.
+- **GitHub Actions**: compila e publica as versões automaticamente a cada atualização.
+- **clang-format**: mantém o código formatado do mesmo jeito para toda a equipe.
 
-| Modulo | Responsabilidade |
+Não há arquivos de som: as músicas e efeitos são sintetizados pelo próprio código.
+
+## Como rodar
+
+### Jeito mais fácil: baixar pronto
+
+Na aba **Releases** do repositório há um arquivo único para cada sistema, sem
+precisar instalar nada:
+
+- **Windows:** `MCGA-windows-x86_64.exe`, é só abrir.
+- **Linux:** `MCGA-linux-x86_64.tar.gz`, extraia e execute `./jogo`.
+- **Navegador:** `MCGA-web.zip`, extraia e abra o `index.html`.
+
+### Compilando o código (Linux)
+
+Instale `g++`, `make`, `cmake`, `pkg-config` e `python3`. Na pasta do projeto:
+
+```sh
+make run
+```
+
+Isso compila e abre o jogo. A primeira compilação demora cerca de um minuto, porque
+também compila o SDL2, a libpng e a zlib, que já vêm na pasta `externo/` (não é
+preciso instalá-las). Depois, basta rodar `./jogo`.
+
+Os saves ficam na pasta `saves/`, ao lado do executável.
+
+Versão para navegador, executáveis para Windows e outras opções estão em
+[docs/compilacao.md](docs/compilacao.md).
+
+## Documentação
+
+| Arquivo | Conteúdo |
 | --- | --- |
-| `estruturas/` | TADs genericos: fila circular e lista sequencial |
-| `inventario/` | `FilaArmas`: aplica a fila ao inventario |
-| `entidades/` | `Jogador`, `Inimigo`, `Projetil`, `Armas` |
-| `mundo/` | `Sala`: entidades; `Fase`: salas; `Campanha`: tres fases |
-| `persistencia/` | `ArquivoProgresso`: checkpoint JSON; `ArquivoConfiguracoes`: preferencias |
-| `audio/` | `Sintetizador`, `Repertorio`: sons gerados por codigo; `Som`: mixer SDL |
-| `sistemas/` | `Combate`: disparos, inimigos, colisoes e remocao de inativos |
-| `nucleo/` | `main`, `Jogo`: janela, eventos, estados e coordenacao; `Plataforma`: diferencas desktop/web |
-| `graficos/` | `Camera`, `Desenho`, `Sprite`: coordenadas, desenho e texturas PNG |
-| `interface/` | `Hud`: barras; `Menu`, `Texto`: menus e fonte bitmap; `TelaCarregamento`, `FundoMenu`: abertura e cenario animado; `ControlesToque`: joystick e botoes de toque |
-| `config/` | `Config.h`: resolucao, paleta e constantes |
-
-O Makefile descobre os fontes nos subdiretorios e espelha essa estrutura em
-`build/`. O executavel continua sendo `./jogo`. O jogo trabalha em 960x540 e o
-SDL escala a imagem quando a janela e redimensionada.
-
-Veja [Arquitetura e TADs](docs/arquitetura.md) para contratos, custos das
-operacoes e exemplos de aplicacao das estruturas ao jogo.
-
-## Area de jogo e HUD
-
-A sala inicial ocupa 936x516 dos 960x540 pixels logicos, com paredes de 12 pixels.
-A camera das salas maiores usa a mesma margem, sem reservar faixas para paineis.
-O HUD e uma sobreposicao e nao bloqueia movimento, mira ou cliques.
-No canto superior direito, o inventario mostra tres espacos na ordem da fila:
-a arma equipada fica a esquerda em um quadrado de 64x64 com borda dourada;
-as duas seguintes ficam em quadrados de 48x48. Cada tipo tem um sprite de
-pixel art embutido; vagas livres ficam vazias. Q atualiza a ordem mostrada,
-e F/G atualizam os espacos ao coletar/soltar armas.
-
-No canto superior esquerdo, sem painel de fundo, ficam: as vidas restantes (cabecas
-do Tux), as barras de vida (vermelha) e escudo (azul) com icones e valores, a
-pontuacao da campanha e o tempo da fase. A municao aparece somente como numero no
-canto inferior direito (`--` nas armas corpo a corpo; vermelho quando acaba). A vida
-inicia com 100/100 e o escudo com 50/50; ambos voltam ao inicial ao iniciar ou
-reiniciar uma fase. Nao existe dano de contato nem barra de energia.
-Os rodapes de ajuda e as mensagens de save ficam ocultos durante a partida;
-mensagens de salvamento podem ser consultadas na pausa ou nos outros menus.
-
-## Sprites
-
-Hitbox e imagem possuem tamanhos separados e configuraveis por entidade
-(hitbox / quadro): heroi 32x32 / 64x64; inimigo comum 28x28 / 48x48;
-bruto 44x44 / 128x128; boss 88x88 / 256x256. Personagens sao faixas PNG de tres
-quadros animados. Veja o [guia de sprites](docs/sprites.md) para medidas, alinhamento e exportacao.
-`F2` mostra a hitbox verde sobre os sprites.
-
-O jogador usa `assets/sprites/final/00_tux.png`, uma faixa com tres quadros
-desenhados em 64x64 (ciclo 0,1,0,2 ao andar), com transparencia e filtro de pixel
-art. A hitbox continua 32x32 e a arma gira separadamente. Somente os PNG listados em
-`ASSETS_EMBUTIDOS` no Makefile ficam em `assets/`.
-
-Os PNGs usados sao embutidos no executavel durante a compilacao (veja
-"Assets embutidos"); a pasta `assets/` so e necessaria para compilar.
-
-## Armas e inventario
-
-`Armas` representa cada arma e `FilaArmas` guarda ate tres: coleta entra no
-fim, a frente fica equipada. Q retira a frente e a reinsere no fim; G retira
-somente a frente e preserva sua municao no chao. F com fila cheia nao coleta
-nem substitui nada. Em todas as fases, as armas vem dos baus. Coletas e
-descartes persistem ao revisitar a sala.
-As armas e a municao acompanham o jogador ao avancar de fase; vida e escudo
-recomecam cheios. Reiniciar ou morrer devolve as armas com que a fase
-comecou. Se o inventario chegar vazio, o Zapper 8-Bits inicial e entregue.
-`Continuar` restaura as armas e a municao salvas no checkpoint. As armas no chao usam os mesmos icones do inventario,
-em quadros de 36x36 pixels com o nome abaixo, incluindo armas dos baus e descartadas.
-Na mao do personagem, a arma equipada usa esse mesmo icone e acompanha a mira.
-Trocar ou soltar a arma atualiza o desenho; sem armas, a mao fica sem icone.
-
-| Tipo | Alcance | Arma | Ataque |
-| --- | --- | --- | --- |
-| Antivirus (vermelho) | Curto | Laminas Malwarebytes | Setor de 120 graus, 96 px, dano 3, intervalo 0,38 s |
-| Antivirus (vermelho) | Medio | Clams do ClamAV | Tres tiros a -15/0/+15 graus, 320 px, dano 1 por tiro, 0,50 s |
-| Antivirus (vermelho) | Longo | Raio Avira | Raio instantaneo que atravessa inimigos, para na cobertura, 900 px, dano 3, 0,65 s |
-| Open Source (azul) | Curto | Fork Open Source | Estocada em setor de 40 graus, 116 px, dano 4, 0,50 s |
-| Open Source (azul) | Medio | Penas Apache | Atravessa ate dois inimigos diferentes, 480 px, dano 2, 0,45 s |
-| Open Source (azul) | Longo | Rifle Wireshark | Projetil preciso de 850 px/s, alcance 900 px, dano 4, 0,75 s |
-| Hardware retro (verde) | Curto | Chicote Macintosh | Setor de 70 graus, 150 px, dano 3, 0,65 s |
-| Hardware retro (verde) | Medio | Zapper 8-Bits | Tiro reto, 420 px, dano 1, 0,20 s |
-| Hardware retro (verde) | Longo | Canhao CRT | Ate quatro ricochetes; 1050 px de trajeto total, dano 3, 0,65 s |
-
-Cada ataque a distancia consome uma unidade de municao, inclusive os tres tiros do ClamAV.
-As novas armas com municao iniciam com 40 unidades (Zapper: 50). As tres armas corpo a corpo sao
-reutilizaveis e mostram `--` no contador. Cada tipo tem sua cadencia; trocar
-arma nao cancela o intervalo do ultimo ataque. Projeteis e efeitos sao
-removidos ao sair da sala. Cada golpe corpo a corpo acerta cada inimigo no maximo uma vez.
-
-O cenario usa os pisos PNG de baixo contraste de `assets/sprites/pisos`, com identidade
-propria por fase e sala; todas as salas de bau usam a mesma textura. Paredes,
-obstaculos e portais continuam desenhados por SDL. Personagens possuem tres poses
-em faixas PNG de `assets/sprites/final`; armas e HUD usam os mesmos icones.
-
-### Compilacao local alternativa (Linux)
-
-Se CMake nao estiver instalado, mas SDL2 e libpng de desenvolvimento estiverem
-disponiveis via pkg-config, use `make USAR_LIBS_SISTEMA=1` e depois `./jogo`.
-Esta opcao nao baixa dependencias e gera um binario ligado as bibliotecas locais.
-O modo padrao continua usando as dependencias empacotadas em `externo/`.
+| [docs/jogo.md](docs/jogo.md) | Manual completo: controles, fases, inimigos, armas, HUD, áudio e saves |
+| [docs/compilacao.md](docs/compilacao.md) | Compilação, executáveis, versão web, GitHub Actions e deploy |
+| [docs/arquitetura.md](docs/arquitetura.md) | Arquitetura do código e TADs em detalhe |
+| [docs/desenvolvimento.md](docs/desenvolvimento.md) | Convenções de nomes, estrutura das pastas e imagens embutidas |
+| [docs/sprites.md](docs/sprites.md) | Medidas e regras para criar sprites |
+| [docs/integracao_final.md](docs/integracao_final.md) | Registro da integração final da arte e do arsenal |
