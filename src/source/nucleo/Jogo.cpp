@@ -435,14 +435,15 @@ void Jogo::tratar_eventos()
         }
         if (this->estado == EstadoJogo::RESUMO_FASE)
         {
-            // Um toque ou clique logo apos a fase acabar ainda era um tiro.
+            // Um toque, clique ou espaco logo apos a fase acabar ainda era um tiro.
             constexpr Uint32 ESPERA_CLIQUE_RESUMO_MS = 1000;
-            const bool cliqueValido =
-                clique && SDL_GetTicks() - this->inicioResumo >= ESPERA_CLIQUE_RESUMO_MS;
-            if (cliqueValido ||
+            const bool esperaPassou =
+                SDL_GetTicks() - this->inicioResumo >= ESPERA_CLIQUE_RESUMO_MS;
+            const bool espaco = evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
+                                evento.key.keysym.sym == SDLK_SPACE;
+            if (((clique || espaco) && esperaPassou) ||
                 (evento.type == SDL_KEYDOWN && evento.key.repeat == 0 &&
-                 (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_KP_ENTER ||
-                  evento.key.keysym.sym == SDLK_SPACE)))
+                 (evento.key.keysym.sym == SDLK_RETURN || evento.key.keysym.sym == SDLK_KP_ENTER)))
             {
                 if (this->campanha.concluida())
                 {
@@ -556,6 +557,10 @@ void Jogo::tratar_eventos()
             {
                 this->pausar();
             }
+            else if (evento.key.keysym.sym == SDLK_SPACE)
+            {
+                this->atirando = true;
+            }
             else if (evento.key.keysym.sym == SDLK_F2)
             {
                 this->configuracoes.mostrarHitboxes = !this->configuracoes.mostrarHitboxes;
@@ -583,7 +588,8 @@ void Jogo::tratar_eventos()
         {
             this->atirando = true;
         }
-        else if (evento.type == SDL_MOUSEBUTTONUP && evento.button.button == SDL_BUTTON_LEFT)
+        else if ((evento.type == SDL_MOUSEBUTTONUP && evento.button.button == SDL_BUTTON_LEFT) ||
+                 (evento.type == SDL_KEYUP && evento.key.keysym.sym == SDLK_SPACE))
         {
             this->atirando = false;
         }

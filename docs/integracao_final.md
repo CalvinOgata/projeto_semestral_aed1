@@ -25,7 +25,7 @@ anteriores foram preservados; a imagem especifica de game over continua sendo
 a versao anterior, enquanto menu, HUD, vitoria e jogador usam o novo Tux.
 
 Os nove IDs numericos de armas foram preservados para compatibilidade com saves.
-O arsenal e as medidas exatas constam da tabela atualizada do README. Corpo a
+O arsenal e as medidas exatas constam da tabela de armas em [jogo.md](jogo.md). Corpo a
 corpo usa setores finitos a frente do Tux, sem municao; medio e longo usam
 alcances e velocidades diferentes. Um inimigo atingido por varios raios do mesmo
 golpe recebe dano uma unica vez. Avira e instantaneo, Apache perfura dois alvos

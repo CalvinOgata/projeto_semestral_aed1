@@ -26,6 +26,11 @@ The default vendored build is unchanged. These facts supersede older roster,
 sprite, stamina and weapon notes below; stamina/energy no longer exists in code or HUD.
 On 2026-11-23 README, docs/arquitetura.md (now documenting `Arvore`) and docs/sprites.md were
 rewritten to match this behavior; `make format` was applied to the whole tree.
+Later on 2026-11-23 (user request) README.md became a short overview titled "Make Computers
+Great Again" (AED1 context, team, game summary, TAD usage, tools, simple run steps); its former
+detailed content moved verbatim to docs/compilacao.md (build/dist/web/CI/deploy), docs/jogo.md
+(controls, rules, weapons, HUD, audio, saves) and docs/desenvolvimento.md (naming, module map,
+embedded assets). Keep detailed behavior notes in those docs, not in README.
 
 ## Purpose and direction
 
@@ -278,6 +283,8 @@ subtitle appear for 3 s (fading) on phase entry/restart; pause and minimap show 
   number in the bottom-right corner, and three weapon slots at top right; phase and room name
   are available during pause. No permanent footer or save banners during play.
 - Room layouts are authored, not procedural. Enemy contact damage is not implemented.
+- Fire is held with the left mouse button or Space (user request 2026-11-23); both share
+  `Jogo::atirando`. Space on the phase summary obeys the same 1 s wait as clicks.
 - Movement, automatic nearest-enemy aiming (mouse fallback in empty rooms), sustained shooting, projectiles, enemy pursuit,
   enemy damage, and a pause menu already exist.
 - `Jogador` models health and shield (initial/max 50). Stamina/energy was removed from the code;
